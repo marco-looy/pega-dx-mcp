@@ -1,0 +1,27 @@
+{
+  "name": "pega-dx-mcp",
+  "version": "1.0.0",
+  "description": "Pega DX MCP Server",
+  "keywords": [
+    "Pega",
+    "GenAI",
+    "Agent",
+    "DX",
+    "MCP"
+  ],
+  "homepage": "https://github.com/MarcoLooy/pega-dx-mcp#readme",
+  "bugs": {
+    "url": "https://github.com/MarcoLooy/pega-dx-mcp/issues"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/MarcoLooy/pega-dx-mcp.git"
+  },
+  "license": "SEE LICENSE IN LICENSE",
+  "author": "marco.looy@gmail.com",
+  "type": "module",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  }
+}
