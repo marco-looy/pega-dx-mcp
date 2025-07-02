@@ -120,6 +120,83 @@ function updateMcpConfig(configPath, envVars) {
 }
 
 /**
+ * Update generic MCP client configuration with environment variables
+ * @param {string} mcpConfigPath - Path to MCP client's configuration file
+ * @param {Object} envVars - Environment variables
+ */
+function updateGenericMcpConfig(mcpConfigPath, envVars) {
+    if (!mcpConfigPath || !fs.existsSync(mcpConfigPath)) {
+        console.log(`⚠️  MCP client config not found at: ${mcpConfigPath || 'undefined'}`);
+        console.log('   Skipping MCP client configuration update.');
+        return;
+    }
+
+    let mcpConfig;
+    
+    try {
+        const configContent = fs.readFileSync(mcpConfigPath, 'utf8');
+        mcpConfig = JSON.parse(configContent);
+    } catch (error) {
+        console.error(`❌ Error parsing MCP client config: ${error.message}`);
+        return;
+    }
+    
+    // Check if pega-dx-mcp server exists in MCP config
+    if (!mcpConfig.mcpServers || !mcpConfig.mcpServers['pega-dx-mcp']) {
+        console.log(`⚠️  pega-dx-mcp server not found in MCP client configuration.`);
+        console.log('   Please add the server through your MCP client settings first.');
+        return;
+    }
+    
+    const mcpServerConfig = mcpConfig.mcpServers['pega-dx-mcp'];
+    
+    console.log('🔄 Updating MCP client configuration...');
+    
+    // Map of environment variables to include
+    const envVarsToInclude = [
+        'PEGA_BASE_URL',
+        'PEGA_API_VERSION',
+        'PEGA_CLIENT_ID',
+        'PEGA_CLIENT_SECRET',
+        'LOG_LEVEL',
+        'CACHE_TTL',
+        'REQUEST_TIMEOUT'
+    ];
+    
+    let updated = false;
+    
+    // Update each environment variable
+    for (const envVar of envVarsToInclude) {
+        if (envVars[envVar]) {
+            const oldValue = mcpServerConfig.env?.[envVar];
+            
+            if (!mcpServerConfig.env) {
+                mcpServerConfig.env = {};
+            }
+            
+            mcpServerConfig.env[envVar] = envVars[envVar];
+            
+            if (oldValue !== envVars[envVar]) {
+                console.log(`  ✓ ${envVar}: ${oldValue ? 'updated' : 'added'} in MCP client config`);
+                updated = true;
+            }
+        }
+    }
+    
+    if (updated) {
+        // Write updated MCP config
+        try {
+            fs.writeFileSync(mcpConfigPath, JSON.stringify(mcpConfig, null, 2));
+            console.log(`✅ MCP client configuration updated successfully: ${mcpConfigPath}`);
+        } catch (error) {
+            console.error(`❌ Error writing MCP client config: ${error.message}`);
+        }
+    } else {
+        console.log('ℹ️  MCP client configuration already up to date.');
+    }
+}
+
+/**
  * Main function
  */
 function main() {
@@ -138,8 +215,15 @@ function main() {
     const envVars = parseEnvFile(envPath);
     console.log(`📋 Found ${Object.keys(envVars).length} environment variables`);
     
-    // Update MCP config
+    // Update local MCP config
     updateMcpConfig(configPath, envVars);
+    
+    // Update MCP client configuration if path is provided
+    if (envVars.MCP_CONFIG_PATH) {
+        console.log('');
+        console.log(`📄 Updating MCP client config at: ${envVars.MCP_CONFIG_PATH}`);
+        updateGenericMcpConfig(envVars.MCP_CONFIG_PATH, envVars);
+    }
     
     console.log('');
     console.log('🎉 Configuration update completed!');
