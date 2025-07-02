@@ -5,6 +5,7 @@ import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js'
 import { CallToolRequestSchema, ListToolsRequestSchema } from '@modelcontextprotocol/sdk/types.js';
 import { GetCaseTool } from './tools/cases/get-case.js';
 import { CreateCaseTool } from './tools/cases/create-case.js';
+import { DeleteCaseTool } from './tools/cases/delete-case.js';
 import { PingServiceTool } from './tools/ping-service.js';
 
 class PegaDXMCPServer {
@@ -29,6 +30,7 @@ class PegaDXMCPServer {
     // Initialize tools
     this.getCaseTool = new GetCaseTool();
     this.createCaseTool = new CreateCaseTool();
+    this.deleteCaseTool = new DeleteCaseTool();
     this.pingServiceTool = new PingServiceTool();
   }
 
@@ -39,6 +41,7 @@ class PegaDXMCPServer {
         tools: [
           GetCaseTool.getDefinition(),
           CreateCaseTool.getDefinition(),
+          DeleteCaseTool.getDefinition(),
           PingServiceTool.getDefinition()
         ]
       };
@@ -55,6 +58,9 @@ class PegaDXMCPServer {
 
           case 'create_case':
             return await this.createCaseTool.execute(args);
+
+          case 'delete_case':
+            return await this.deleteCaseTool.execute(args);
 
           case 'ping_pega_service':
             return await this.pingServiceTool.execute(args);

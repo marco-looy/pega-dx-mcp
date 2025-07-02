@@ -2,15 +2,15 @@
 
 **Priority:** HIGH (Core functionality)  
 **Complexity:** MODERATE  
-**Current Status:** 2/18 endpoints completed
+**Current Status:** 3/18 endpoints completed
 
 ## ✅ Completed Tools
 - [x] `get_case` - Get case details (GET /cases/{caseID}) - ✅ **IMPLEMENTED** in `src/tools/cases/get-case.js`
 - [x] `create_case` - Creates new case (POST /cases) - ✅ **IMPLEMENTED** in `src/tools/cases/create-case.js`
+- [x] `delete_case` - Delete case in create stage (DELETE /cases/{caseID}) - ✅ **IMPLEMENTED** in `src/tools/cases/delete-case.js`
 - [x] `ping_pega_service` - Test connectivity - ✅ **IMPLEMENTED** in `src/tools/ping-service.js`
 
 ## 🔄 High Priority (Core Operations)
-- [ ] `delete_case` - Delete case in create stage (DELETE /cases/{caseID})
 - [ ] `get_case_actions` - Get case actions details (GET /cases/{caseID}/actions/{actionID})  
 - [ ] `perform_case_action` - Perform case action (PATCH /cases/{caseID}/actions/{actionID})
 - [ ] `get_case_view` - Get view details for a case (GET /cases/{caseID}/views/{viewID})

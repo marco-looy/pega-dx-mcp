@@ -88,6 +88,22 @@ export class PegaAPIClient {
   }
 
   /**
+   * Delete a case (only works for cases in create stage)
+   */
+  async deleteCase(caseID) {
+    // URL encode the case ID to handle spaces and special characters
+    const encodedCaseID = encodeURIComponent(caseID);
+    const url = `${this.baseUrl}/cases/${encodedCaseID}`;
+
+    return await this.makeRequest(url, {
+      method: 'DELETE',
+      headers: {
+        'x-origin-channel': 'Web'
+      }
+    });
+  }
+
+  /**
    * Make an authenticated HTTP request to Pega API
    */
   async makeRequest(url, options = {}) {
