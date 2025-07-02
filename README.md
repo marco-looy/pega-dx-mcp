@@ -4,18 +4,18 @@
 
 🧪 **GENAI INNOVATION & ENABLEMENT EXPERIMENT**
 
-The Pega DX MCP Server is an experimental project from Pegasystems' GenAI Innovation & Enablement team, exploring the intersection of Model Context Protocol and Pega Infinity capabilities. This is not an official Pegasystems product and is not generally available. All commands, parameters, and other features are subject to change or deprecation at any time, with or without notice. Don't implement production functionality with these tools. This experiment aims to demonstrate the potential of natural language interfaces for Pega Infinity interactions. We welcome feedback and contributions to help shape the future direction of this innovation.
+The Pega DX MCP Server is an experimental project exploring the intersection of Model Context Protocol and Pega Infinity&trade; capabilities. This is not an official Pegasystems product and is not generally available. All commands, parameters, and other features are subject to change or deprecation at any time, with or without notice. Don't implement production functionality with this MCP server. This experiment aims to demonstrate the potential of natural language interfaces for Pega Infinity&trade; interactions. We welcome feedback and contributions to help explore the future direction of GenAI Agents.
 
 ---
 
-## Model Context Protocol server for Pega Digital Experience APIs
+## Model Context Protocol server utilizing Pega DX APIs
 
 [![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](LICENSE)
 [![Node.js](https://img.shields.io/badge/Node.js-20%2B-green.svg)](https://nodejs.org/)
 [![MCP](https://img.shields.io/badge/MCP-Compatible-purple.svg)](https://modelcontextprotocol.io/)
 [![Pega Platform](https://img.shields.io/badge/Pega-8.8%2B-red.svg)](https://www.pega.com/)
 
-This experimental initiative explores how to transform Pega Infinity interactions into intuitive, conversational experiences by exposing Pega DX APIs through the standardized Model Context Protocol. The project demonstrates the potential for GenAI Agents, IDEs, and other MCP-enabled tools to interact with Pega through natural language interfaces.
+This experimental initiative explores how to transform Pega Infinity&trade; interactions into intuitive, conversational experiences by calling the Pega DX APIs via the standardized Model Context Protocol. The project demonstrates the potential for GenAI Agents, IDEs, and other MCP-enabled tools to interact with Pega Infinity&trade; through natural language interfaces.
 
 ---
 
@@ -41,9 +41,6 @@ This experimental initiative explores how to transform Pega Infinity interaction
 ```bash
 # Install from npm (recommended)
 npm install -g @marco-looy/pega-dx-mcp
-
-# Or install locally for development
-npm install @marco-looy/pega-dx-mcp
 ```
 
 ### Integration with Claude Desktop
@@ -53,7 +50,7 @@ Add to your Claude Desktop MCP configuration:
 ```json
 {
   "mcpServers": {
-    "pega-dx": {
+    "pega-dx-mcp": {
       "command": "npx",
       "args": ["-y", "@marco-looy/pega-dx-mcp"],
       "env": {
@@ -75,14 +72,14 @@ Add to your Cursor `mcp.json` file:
 ```json
 {
   "mcpServers": {
-    "pega-dx": {
+    "pega-dx-mcp": {
       "command": {
         "path": "npx",
         "args": ["-y", "@marco-looy/pega-dx-mcp"]
       },
       "env": {
         "PEGA_BASE_URL": "https://your-pega-instance.com",
-        "PEGA_CLIENT_ID": "your-client-id", 
+        "PEGA_CLIENT_ID": "your-client-id",
         "PEGA_CLIENT_SECRET": "your-client-secret"
       }
     }
@@ -97,7 +94,7 @@ Add to your Cline `cline_mcp_settings.json` file:
 ```json
 {
   "mcpServers": {
-    "pega-dx": {
+    "pega-dx-mcp": {
       "command": "npx",
       "args": ["-y", "@marco-looy/pega-dx-mcp"],
       "env": {
@@ -113,13 +110,14 @@ Add to your Cline `cline_mcp_settings.json` file:
 **Other Clients**
 
 For other MCP-enabled clients, refer to their documentation for adding MCP servers and follow the same pattern using:
+
 - **Command**: `npx`
 - **Args**: `["-y", "@marco-looy/pega-dx-mcp"]`
 - **Environment variables**: Pega connection details
 
 ## 🏗️ Architecture
 
-The Pega DX MCP Server bridges AI applications with Pega Platform using the Model Context Protocol:
+The Pega DX MCP Server bridges AI applications with Pega Infinity using the Model Context Protocol:
 
 ![Pega DX MCP Server Architecture](./media/architecture.png)
 
@@ -127,17 +125,17 @@ The Pega DX MCP Server bridges AI applications with Pega Platform using the Mode
 
 ### Case Management
 
-| Tool                     | Description                                        | Example Usage                              |
-| ------------------------ | -------------------------------------------------- | ------------------------------------------ |
-| `get_case`               | Get detailed information about a Pega case by ID  | "Show me details for case TRAVEL-001"     |
-| `create_case`            | Create a new Pega case with specified case type   | "Create a travel claim for John to NYC"   |
-| `delete_case`            | Delete a case that is currently in create stage   | "Delete case TRAVEL-001"                  |
+| Tool          | Description                                      | Example Usage                           |
+| ------------- | ------------------------------------------------ | --------------------------------------- |
+| `get_case`    | Get detailed information about a Pega case by ID | "Show me details for case TRAVEL-001"   |
+| `create_case` | Create a new Pega case with specified case type  | "Create a travel claim for John to NYC" |
+| `delete_case` | Delete a case that is currently in create stage  | "Delete case TRAVEL-001"                |
 
 ### System Management
 
-| Tool                     | Description                                        | Example Usage                              |
-| ------------------------ | -------------------------------------------------- | ------------------------------------------ |
-| `ping_pega_service`      | Test OAuth2 connectivity to Pega Platform         | "Test the connection to Pega"             |
+| Tool                | Description                               | Example Usage                 |
+| ------------------- | ----------------------------------------- | ----------------------------- |
+| `ping_pega_service` | Test OAuth2 connectivity to Pega Platform | "Test the connection to Pega" |
 
 ## 💬 Usage Examples
 
@@ -181,7 +179,6 @@ PEGA_API_VERSION=v2
 # OAuth 2.1 Authentication
 PEGA_CLIENT_ID=your-oauth-client-id
 PEGA_CLIENT_SECRET=your-oauth-client-secret
-PEGA_SCOPE=api
 
 # Server Configuration
 LOG_LEVEL=info
@@ -205,7 +202,7 @@ Join us in this exciting GenAI Innovation experiment! As an experimental project
 ### Ways to Contribute
 
 - 🔬 **Experiment Feedback** - Share your experiences and insights from testing the prototype
-- 💡 **Innovation Ideas** - Contribute to the GenAI Innovation roadmap with creative suggestions  
+- 💡 **Innovation Ideas** - Contribute to the GenAI Innovation roadmap with creative suggestions
 - 🐛 **Issue Reports** - Help identify challenges in this experimental environment
 - 🔧 **Code Contributions** - Contribute to the experimental codebase and proof-of-concept features
 - 📖 **Documentation** - Help document learnings and experimental outcomes
