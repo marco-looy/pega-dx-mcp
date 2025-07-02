@@ -28,8 +28,8 @@ The Pega DX MCP Server is an experimental project exploring the intersection of 
 
 ### Prerequisites
 
-- Node.js 20+ and npm
-- Access to Pega Platform (8.8+) with DX API enabled
+- Node.js (22+) and npm
+- Access to Pega Infinity&trade; (23+) with DX API enabled
 - OAuth 2.1 client credentials
 
 ### Installation
@@ -113,7 +113,7 @@ For other MCP-enabled clients, refer to their documentation for adding MCP serve
 
 ## 🏗️ Architecture
 
-The Pega DX MCP Server bridges AI applications with Pega Infinity using the Model Context Protocol:
+The Pega DX MCP Server bridges GenAI applications with Pega Infinity using the Model Context Protocol:
 
 ![Pega DX MCP Server Architecture](./media/architecture.png)
 
@@ -199,8 +199,8 @@ Join us in this exciting GenAI Innovation experiment! As an experimental project
 
 - 🔬 **Experiment Feedback** - Share your experiences and insights from testing the prototype
 - 💡 **Innovation Ideas** - Contribute to the GenAI Innovation roadmap with creative suggestions
-- 🐛 **Issue Reports** - Help identify challenges in this experimental environment
-- 🔧 **Code Contributions** - Contribute to the experimental codebase and proof-of-concept features
+- 🐛 **Issue Reports** - Help identify challenges in this experimental project
+- 🔧 **Code Contributions** - Contribute to the codebase and proof-of-concept features
 - 📖 **Documentation** - Help document learnings and experimental outcomes
 - 🧪 **Testing & Validation** - Participate in testing new experimental capabilities
 
