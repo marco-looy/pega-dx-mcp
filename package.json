@@ -33,7 +33,6 @@
     "test:delete": "node tests/delete-case-test.js",
     "test:casetypes": "node tests/get-case-types-test.js",
     "test:bulk-action": "node tests/get-case-type-bulk-action-test.js"
-=======
     "test": "echo \"TODO: no test specified\" && exit 0"
   }
 }
