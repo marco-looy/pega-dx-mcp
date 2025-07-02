@@ -6,6 +6,7 @@ import { CallToolRequestSchema, ListToolsRequestSchema } from '@modelcontextprot
 import { GetCaseTool } from './tools/cases/get-case.js';
 import { CreateCaseTool } from './tools/cases/create-case.js';
 import { DeleteCaseTool } from './tools/cases/delete-case.js';
+import { GetCaseTypeBulkActionTool } from './tools/casetypes/get-case-type-bulk-action.js';
 import { PingServiceTool } from './tools/ping-service.js';
 
 class PegaDXMCPServer {
@@ -31,6 +32,7 @@ class PegaDXMCPServer {
     this.getCaseTool = new GetCaseTool();
     this.createCaseTool = new CreateCaseTool();
     this.deleteCaseTool = new DeleteCaseTool();
+    this.getCaseTypeBulkActionTool = new GetCaseTypeBulkActionTool();
     this.pingServiceTool = new PingServiceTool();
   }
 
@@ -42,6 +44,7 @@ class PegaDXMCPServer {
           GetCaseTool.getDefinition(),
           CreateCaseTool.getDefinition(),
           DeleteCaseTool.getDefinition(),
+          GetCaseTypeBulkActionTool.getDefinition(),
           PingServiceTool.getDefinition()
         ]
       };
@@ -61,6 +64,9 @@ class PegaDXMCPServer {
 
           case 'delete_case':
             return await this.deleteCaseTool.execute(args);
+
+          case 'get_case_type_bulk_action':
+            return await this.getCaseTypeBulkActionTool.execute(args);
 
           case 'ping_pega_service':
             return await this.pingServiceTool.execute(args);

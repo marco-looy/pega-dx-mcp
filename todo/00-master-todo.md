@@ -1,6 +1,6 @@
 # Pega DX MCP Server - Master Todo List
 
-**Project Status:** 3/54 endpoints implemented (5.6% complete)  
+**Project Status:** 4/54 endpoints implemented (7.4% complete)  
 **Last Updated:** January 7, 2025
 
 ## 📊 Progress Summary
@@ -11,7 +11,7 @@
 | Assignments | HIGH | MODERATE | ⭕ Not Started | 0 | 9 | 0% |
 | Attachments | HIGH | MODERATE-HIGH | ⭕ Not Started | 0 | 7 | 0% |
 | Participants | MEDIUM-HIGH | MODERATE | ⭕ Not Started | 0 | 7 | 0% |
-| Case Types | MEDIUM | SIMPLE | ⭕ Not Started | 0 | 2 | 0% |
+| Case Types | MEDIUM | SIMPLE | 🔄 Active | 1 | 2 | 50% |
 | Related Cases | MEDIUM | SIMPLE | ⭕ Not Started | 0 | 3 | 0% |
 | Documents | MEDIUM | SIMPLE | ⭕ Not Started | 0 | 2 | 0% |
 | Followers | LOW-MEDIUM | SIMPLE | ⭕ Not Started | 0 | 3 | 0% |

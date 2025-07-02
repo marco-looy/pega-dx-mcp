@@ -1,12 +1,12 @@
-# Case Types API - Todo List
+T Case Types API - Todo List
 
 **Priority:** MEDIUM (Metadata functionality)  
 **Complexity:** SIMPLE  
-**Current Status:** 0/2 endpoints completed
+**Current Status:** 1/2 endpoints completed
 
 ## 🔄 Medium Priority (Metadata Operations)
 - [ ] `get_case_types` - Get list of case types for your application (GET /casetypes)
-- [ ] `get_case_type_bulk_action` - Get bulk action details for this case type (GET /casetypes/{caseTypeID}/actions/{actionID})
+- [x] `get_case_type_bulk_action` - Get bulk action details for this case type (GET /casetypes/{caseTypeID}/actions/{actionID}) ✅
 
 ## Implementation Notes
 - **Dependencies:** PegaAPIClient, OAuth2Client
