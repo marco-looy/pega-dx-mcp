@@ -127,21 +127,17 @@ The Pega DX MCP Server bridges AI applications with Pega Platform using the Mode
 
 ### Case Management
 
-| Tool                   | Description                   | Example Usage                                   |
-| ---------------------- | ----------------------------- | ----------------------------------------------- |
-| `pega_case_types_list` | List available case types     | "What case types are available?"                |
-| `pega_case_types_get`  | Get case type details         | "What fields are required for travel requests?" |
-| `pega_cases_create`    | Create new cases              | "Create a travel claim for John to New York"    |
-| `pega_cases_list`      | List cases with filtering     | "Show me all open insurance claims"             |
-| `pega_cases_get`       | Get detailed case information | "Show me details for case TRAVEL-001"           |
+| Tool                     | Description                                        | Example Usage                              |
+| ------------------------ | -------------------------------------------------- | ------------------------------------------ |
+| `get_case`               | Get detailed information about a Pega case by ID  | "Show me details for case TRAVEL-001"     |
+| `create_case`            | Create a new Pega case with specified case type   | "Create a travel claim for John to NYC"   |
+| `delete_case`            | Delete a case that is currently in create stage   | "Delete case TRAVEL-001"                  |
 
-### Assignment Management
+### System Management
 
-| Tool                       | Description                   | Example Usage                 |
-| -------------------------- | ----------------------------- | ----------------------------- |
-| `pega_assignments_next`    | Get next available assignment | "What's my next task?"        |
-| `pega_assignments_list`    | List user assignments         | "Show my pending assignments" |
-| `pega_assignments_execute` | Execute assignment actions    | "Approve the travel request"  |
+| Tool                     | Description                                        | Example Usage                              |
+| ------------------------ | -------------------------------------------------- | ------------------------------------------ |
+| `ping_pega_service`      | Test OAuth2 connectivity to Pega Platform         | "Test the connection to Pega"             |
 
 ## 💬 Usage Examples
 
