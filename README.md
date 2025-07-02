@@ -9,7 +9,7 @@
 [![MCP](https://img.shields.io/badge/MCP-Compatible-purple.svg)](https://modelcontextprotocol.io/)
 [![Pega Platform](https://img.shields.io/badge/Pega-8.8%2B-red.svg)](https://www.pega.com/)
 
-Transform complex Pega Platform interactions into intuitive, conversational experiences by exposing Pega DX APIs through the standardized Model Context Protocol. Enable AI applications, IDEs, and development tools to interact with Pega through natural language.
+[Guru changes please ignore] Transform complex Pega Platform interactions into intuitive, conversational experiences by exposing Pega DX APIs through the standardized Model Context Protocol. Enable AI applications, IDEs, and development tools to interact with Pega through natural language.
 
 ---
 
