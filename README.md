@@ -2,25 +2,31 @@
 
 # Pega DX MCP Server
 
-**Official Model Context Protocol server for Pega Digital Experience APIs**
+🧪 **GENAI INNOVATION & ENABLEMENT EXPERIMENT**
+
+The Pega DX MCP Server is an experimental project from Pegasystems' GenAI Innovation & Enablement team, exploring the intersection of Model Context Protocol and Pega Infinity capabilities. This is not an official Pegasystems product and is not generally available. All commands, parameters, and other features are subject to change or deprecation at any time, with or without notice. Don't implement production functionality with these tools. This experiment aims to demonstrate the potential of natural language interfaces for Pega Infinity interactions. We welcome feedback and contributions to help shape the future direction of this innovation.
+
+---
+
+## Model Context Protocol server for Pega Digital Experience APIs
 
 [![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](LICENSE)
 [![Node.js](https://img.shields.io/badge/Node.js-20%2B-green.svg)](https://nodejs.org/)
 [![MCP](https://img.shields.io/badge/MCP-Compatible-purple.svg)](https://modelcontextprotocol.io/)
 [![Pega Platform](https://img.shields.io/badge/Pega-8.8%2B-red.svg)](https://www.pega.com/)
 
-Transform complex Pega Platform interactions into intuitive, conversational experiences by exposing Pega DX APIs through the standardized Model Context Protocol. Enable GenAI Agents, IDEs, and other MCP-enabled tools to interact with Pega through natural language.
+This experimental initiative explores how to transform Pega Infinity interactions into intuitive, conversational experiences by exposing Pega DX APIs through the standardized Model Context Protocol. The project demonstrates the potential for GenAI Agents, IDEs, and other MCP-enabled tools to interact with Pega through natural language interfaces.
 
 ---
 
 ## 🌟 Key Features
 
-- **🤖 Natural Language Interface** - "Create a travel claim for John" → Automated case creation
-- **🔌 Plug-and-Play Integration** - Compatible with GenAI Agents, IDEs, and MCP-enabled tools
-- **🏢 Enterprise Grade** - Production-ready with comprehensive error handling and audit logging
-- **📡 Complete API Coverage** - Access to cases, assignments, attachments, and data operations
-- **⚡ High Performance** - Intelligent caching and optimization for responsive interactions
-- **🛡️ Secure** - OAuth 2.1 with PKCE and role-based access control
+- **🤖 Natural Language Interface** - Demonstrates conversational case creation: "Create a travel claim for John"
+- **🔌 Plug-and-Play Integration** - Experimental compatibility with GenAI Agents, IDEs, and MCP-enabled tools
+- **🧪 Innovation Prototype** - Exploring enterprise-grade patterns with comprehensive error handling approaches
+- **📡 API Integration Exploration** - Investigating access to cases, assignments, attachments, and data operations
+- **⚡ Performance Research** - Experimenting with intelligent caching and optimization strategies
+- **🛡️ Security Framework** - Implementing OAuth 2.1 with PKCE and role-based access control patterns
 
 ## 🚀 Quick Start
 
@@ -33,19 +39,11 @@ Transform complex Pega Platform interactions into intuitive, conversational expe
 ### Installation
 
 ```bash
-# Clone the repository
-git clone https://github.com/MarcoLooy/pega-dx-mcp.git
-cd pega-dx-mcp
+# Install from npm (recommended)
+npm install -g @marco-looy/pega-dx-mcp
 
-# Install dependencies
-npm install
-
-# Configure environment
-cp .env.example .env
-# Edit .env with your Pega Platform details
-
-# Start the MCP server
-npm start
+# Or install locally for development
+npm install @marco-looy/pega-dx-mcp
 ```
 
 ### Integration with Claude Desktop
@@ -56,8 +54,8 @@ Add to your Claude Desktop MCP configuration:
 {
   "mcpServers": {
     "pega-dx": {
-      "command": "node",
-      "args": ["/path/to/pega-dx-mcp/src/index.js"],
+      "command": "npx",
+      "args": ["-y", "@marco-looy/pega-dx-mcp"],
       "env": {
         "PEGA_BASE_URL": "https://your-pega-instance.com",
         "PEGA_CLIENT_ID": "your-client-id",
@@ -67,6 +65,57 @@ Add to your Claude Desktop MCP configuration:
   }
 }
 ```
+
+### Integration with Other MCP Clients
+
+**Cursor**
+
+Add to your Cursor `mcp.json` file:
+
+```json
+{
+  "mcpServers": {
+    "pega-dx": {
+      "command": {
+        "path": "npx",
+        "args": ["-y", "@marco-looy/pega-dx-mcp"]
+      },
+      "env": {
+        "PEGA_BASE_URL": "https://your-pega-instance.com",
+        "PEGA_CLIENT_ID": "your-client-id", 
+        "PEGA_CLIENT_SECRET": "your-client-secret"
+      }
+    }
+  }
+}
+```
+
+**Cline**
+
+Add to your Cline `cline_mcp_settings.json` file:
+
+```json
+{
+  "mcpServers": {
+    "pega-dx": {
+      "command": "npx",
+      "args": ["-y", "@marco-looy/pega-dx-mcp"],
+      "env": {
+        "PEGA_BASE_URL": "https://your-pega-instance.com",
+        "PEGA_CLIENT_ID": "your-client-id",
+        "PEGA_CLIENT_SECRET": "your-client-secret"
+      }
+    }
+  }
+}
+```
+
+**Other Clients**
+
+For other MCP-enabled clients, refer to their documentation for adding MCP servers and follow the same pattern using:
+- **Command**: `npx`
+- **Args**: `["-y", "@marco-looy/pega-dx-mcp"]`
+- **Environment variables**: Pega connection details
 
 ## 🏗️ Architecture
 
@@ -95,6 +144,8 @@ The Pega DX MCP Server bridges AI applications with Pega Platform using the Mode
 | `pega_assignments_execute` | Execute assignment actions    | "Approve the travel request"  |
 
 ## 💬 Usage Examples
+
+> **Note**: The following examples demonstrate envisioned capabilities and planned user experiences. These scenarios represent the experimental goals of this GenAI Innovation project and may not reflect current implementation status.
 
 ### Creating a Case
 
@@ -153,15 +204,16 @@ For detailed setup instructions, see our [Configuration Guide](docs/configuratio
 
 ## 🤝 Contributing
 
-We welcome contributions from the community! Here's how you can help:
+Join us in this exciting GenAI Innovation experiment! As an experimental project exploring the future of natural language interfaces for enterprise platforms, we welcome community participation in shaping this innovation journey.
 
 ### Ways to Contribute
 
-- 🐛 **Report Issues** - Found a bug? Let us know!
-- 💡 **Feature Requests** - Have an idea? We'd love to hear it!
-- 🔧 **Code Contributions** - Submit pull requests for fixes and features
-- 📖 **Documentation** - Help improve our docs and examples
-- 🧪 **Testing** - Add test cases and improve coverage
+- 🔬 **Experiment Feedback** - Share your experiences and insights from testing the prototype
+- 💡 **Innovation Ideas** - Contribute to the GenAI Innovation roadmap with creative suggestions  
+- 🐛 **Issue Reports** - Help identify challenges in this experimental environment
+- 🔧 **Code Contributions** - Contribute to the experimental codebase and proof-of-concept features
+- 📖 **Documentation** - Help document learnings and experimental outcomes
+- 🧪 **Testing & Validation** - Participate in testing new experimental capabilities
 
 ### Development Setup
 
