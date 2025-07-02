@@ -140,3 +140,5 @@ vite.config.ts.timestamp-*
 
 # Memory Bank
 memory-bank/
+.clinerules/default-rules.md
+.clinerules/workflows/workflow-new-tools.md
