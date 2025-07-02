@@ -9,14 +9,14 @@
 [![MCP](https://img.shields.io/badge/MCP-Compatible-purple.svg)](https://modelcontextprotocol.io/)
 [![Pega Platform](https://img.shields.io/badge/Pega-8.8%2B-red.svg)](https://www.pega.com/)
 
-Transform complex Pega Platform interactions into intuitive, conversational experiences by exposing Pega DX APIs through the standardized Model Context Protocol. Enable AI applications, IDEs, and development tools to interact with Pega through natural language.
+Transform complex Pega Platform interactions into intuitive, conversational experiences by exposing Pega DX APIs through the standardized Model Context Protocol. Enable GenAI Agents, IDEs, and other MCP-enabled tools to interact with Pega through natural language.
 
 ---
 
 ## 🌟 Key Features
 
 - **🤖 Natural Language Interface** - "Create a travel claim for John" → Automated case creation
-- **🔌 Plug-and-Play Integration** - Compatible with Claude, IDEs, and MCP-enabled tools
+- **🔌 Plug-and-Play Integration** - Compatible with GenAI Agents, IDEs, and MCP-enabled tools
 - **🏢 Enterprise Grade** - Production-ready with comprehensive error handling and audit logging
 - **📡 Complete API Coverage** - Access to cases, assignments, attachments, and data operations
 - **⚡ High Performance** - Intelligent caching and optimization for responsive interactions
@@ -34,7 +34,7 @@ Transform complex Pega Platform interactions into intuitive, conversational expe
 
 ```bash
 # Clone the repository
-git clone https://github.com/pegasystems/pega-dx-mcp.git
+git clone https://github.com/MarcoLooy/pega-dx-mcp.git
 cd pega-dx-mcp
 
 # Install dependencies
