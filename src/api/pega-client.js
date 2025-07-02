@@ -124,6 +124,21 @@ export class PegaAPIClient {
   }
 
   /**
+   * Get list of case types that the user can create
+   * @returns {Promise<Object>} API response with case types list
+   */
+  async getCaseTypes() {
+    const url = `${this.baseUrl}/casetypes`;
+
+    return await this.makeRequest(url, {
+      method: 'GET',
+      headers: {
+        'x-origin-channel': 'Web'
+      }
+    });
+  }
+
+  /**
    * Make an authenticated HTTP request to Pega API
    */
   async makeRequest(url, options = {}) {

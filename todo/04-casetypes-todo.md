@@ -1,11 +1,11 @@
-T Case Types API - Todo List
+# Case Types API - Todo List
 
 **Priority:** MEDIUM (Metadata functionality)  
 **Complexity:** SIMPLE  
-**Current Status:** 1/2 endpoints completed
+**Current Status:** 2/2 endpoints completed ✅ COMPLETE
 
 ## 🔄 Medium Priority (Metadata Operations)
-- [ ] `get_case_types` - Get list of case types for your application (GET /casetypes)
+- [x] `get_case_types` - Get list of case types for your application (GET /casetypes) ✅
 - [x] `get_case_type_bulk_action` - Get bulk action details for this case type (GET /casetypes/{caseTypeID}/actions/{actionID}) ✅
 
 ## Implementation Notes

@@ -1,6 +1,6 @@
 # Pega DX MCP Server - Master Todo List
 
-**Project Status:** 4/54 endpoints implemented (7.4% complete)  
+**Project Status:** 5/54 endpoints implemented (9.3% complete)  
 **Last Updated:** January 7, 2025
 
 ## 📊 Progress Summary
@@ -11,13 +11,13 @@
 | Assignments | HIGH | MODERATE | ⭕ Not Started | 0 | 9 | 0% |
 | Attachments | HIGH | MODERATE-HIGH | ⭕ Not Started | 0 | 7 | 0% |
 | Participants | MEDIUM-HIGH | MODERATE | ⭕ Not Started | 0 | 7 | 0% |
-| Case Types | MEDIUM | SIMPLE | 🔄 Active | 1 | 2 | 50% |
+| Case Types | MEDIUM | SIMPLE | ✅ Complete | 2 | 2 | 100% |
 | Related Cases | MEDIUM | SIMPLE | ⭕ Not Started | 0 | 3 | 0% |
 | Documents | MEDIUM | SIMPLE | ⭕ Not Started | 0 | 2 | 0% |
 | Followers | LOW-MEDIUM | SIMPLE | ⭕ Not Started | 0 | 3 | 0% |
 | Tags | LOW-MEDIUM | SIMPLE | ⭕ Not Started | 0 | 3 | 0% |
 
-## ✅ Completed Tools (3/54)
+## ✅ Completed Tools (5/54)
 
 ### Core Infrastructure
 - [x] `ping_pega_service` - Test OAuth2 connectivity and verify authentication - ✅ **IMPLEMENTED** in `src/tools/ping-service.js`
@@ -25,6 +25,10 @@
 ### Cases API (2/18)
 - [x] `get_case` - Get case details (GET /cases/{caseID}) - ✅ **IMPLEMENTED** in `src/tools/cases/get-case.js`
 - [x] `create_case` - Creates new case (POST /cases) - ✅ **IMPLEMENTED** in `src/tools/cases/create-case.js`
+
+### Case Types API (2/2) ✅ COMPLETE
+- [x] `get_case_types` - Get list of case types (GET /casetypes) - ✅ **IMPLEMENTED** in `src/tools/casetypes/get-case-types.js`
+- [x] `get_case_type_bulk_action` - Get bulk action metadata (GET /casetypes/{caseTypeID}/actions/{actionID}) - ✅ **IMPLEMENTED** in `src/tools/casetypes/get-case-type-bulk-action.js`
 
 ## 🎯 Development Roadmap
 
