@@ -22,7 +22,7 @@
   "type": "module",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1",
+    "test": "echo \"TODO: no test specified\" && exit 0",
     "start": "node src/index.js",
     "update-config": "node tools/update-mcp-config.js",
     "test:oauth": "node tests/oauth-debug.js",
@@ -33,6 +33,5 @@
     "test:delete": "node tests/delete-case-test.js",
     "test:casetypes": "node tests/get-case-types-test.js",
     "test:bulk-action": "node tests/get-case-type-bulk-action-test.js"
-    "test": "echo \"TODO: no test specified\" && exit 0"
   }
 }
