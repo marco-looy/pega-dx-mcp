@@ -36,7 +36,7 @@ The Pega DX MCP Server is an experimental project exploring the intersection of 
 
 ```bash
 # Install from npm (recommended)
-npm install -g @marco-looy/pega-dx-mcp
+npm install -g @pega-enablement/pega-dx-mcp
 ```
 
 ### Integration with Claude Desktop
@@ -48,7 +48,7 @@ Add to your Claude Desktop MCP configuration:
   "mcpServers": {
     "pega-dx-mcp": {
       "command": "npx",
-      "args": ["-y", "@marco-looy/pega-dx-mcp"],
+      "args": ["-y", "@pega-enablement/pega-dx-mcp"],
       "env": {
         "PEGA_BASE_URL": "https://your-pega-instance.com",
         "PEGA_CLIENT_ID": "your-client-id",
@@ -71,7 +71,7 @@ Add to your Cursor `mcp.json` file:
     "pega-dx-mcp": {
       "command": {
         "path": "npx",
-        "args": ["-y", "@marco-looy/pega-dx-mcp"]
+        "args": ["-y", "@pega-enablement/pega-dx-mcp"]
       },
       "env": {
         "PEGA_BASE_URL": "https://your-pega-instance.com",
@@ -92,7 +92,7 @@ Add to your Cline `cline_mcp_settings.json` file:
   "mcpServers": {
     "pega-dx-mcp": {
       "command": "npx",
-      "args": ["-y", "@marco-looy/pega-dx-mcp"],
+      "args": ["-y", "@pega-enablement/pega-dx-mcp"],
       "env": {
         "PEGA_BASE_URL": "https://your-pega-instance.com",
         "PEGA_CLIENT_ID": "your-client-id",
@@ -108,7 +108,7 @@ Add to your Cline `cline_mcp_settings.json` file:
 For other MCP-enabled clients, refer to their documentation for adding MCP servers and follow the same pattern using:
 
 - **Command**: `npx`
-- **Args**: `["-y", "@marco-looy/pega-dx-mcp"]`
+- **Args**: `["-y", "@pega-enablement/pega-dx-mcp"]`
 - **Environment variables**: Pega connection details
 
 ## 🏗️ Architecture
