@@ -7,7 +7,7 @@
 [![MCP](https://img.shields.io/badge/MCP-Compatible-purple.svg)](https://modelcontextprotocol.io/)
 [![Pega Platform](https://img.shields.io/badge/Pega_Infinity-23%2B-red.svg)](https://www.pega.com/)
 
-## Enabling conversational AI interaction with Pega Applications
+## Enabling conversational interaction with Pega Infinity&trade; Applications
 
 This package transforms Pega Infinity&trade; interactions into intuitive, conversational experiences through the Model Context Protocol. By bridging Pega DX APIs with natural language interfaces, it enables GenAI Agents, IDEs, and other MCP-enabled tools to interact with Pega Infinity&trade; applications using simple, human-readable commands.
 
@@ -123,18 +123,12 @@ AI: ✅ Opening claim documentation review for INS-CLAIM-789
 ### Environment Variables
 
 ```bash
-# Pega Platform Connection
+# Pega Infinity Connection
 PEGA_BASE_URL=https://your-pega-instance.com
-PEGA_API_VERSION=v2
 
 # OAuth 2.1 Authentication
 PEGA_CLIENT_ID=your-oauth-client-id
 PEGA_CLIENT_SECRET=your-oauth-client-secret
-
-# Server Configuration
-LOG_LEVEL=info
-CACHE_TTL=300000
-REQUEST_TIMEOUT=30000
 ```
 
 ### OAuth Setup
