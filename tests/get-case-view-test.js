@@ -54,8 +54,8 @@ async function testGetCaseViewTool() {
     params: {
       name: 'get_case_view',
       arguments: {
-        caseID: 'METE-MYDEMOAPP-WORK T-3',
-        viewID: 'CaseDetails'
+        caseID: 'ON6E5R-DIYRECIPE-WORK R-1008',
+        viewID: 'CREATE'
       }
     }
   };
@@ -72,7 +72,7 @@ async function testGetCaseViewTool() {
     params: {
       name: 'get_case_view',
       arguments: {
-        caseID: 'METE-MYDEMOAPP-WORK T-3'
+        caseID: 'ON6E5R-DIYRECIPE-WORK R-1008'
         // Missing viewID parameter
       }
     }
