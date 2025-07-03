@@ -1,4 +1,4 @@
-![Pega DX MCP Server](./media/pega-dx-mcp.png)
+![Pega DX MCP Server](./media/pega-dx-mcp-1280x640.png)
 
 # Pega DX MCP Server
 
