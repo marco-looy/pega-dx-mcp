@@ -1,13 +1,21 @@
 {
   "name": "@marco-looy/pega-dx-mcp",
   "version": "0.1.0-alpha.2",
-  "description": "Pega DX MCP Server",
+  "description": "MCP Server enabling conversational AI interaction with Pega Infinity applications. Bridge GenAI agents, IDEs, and AI assistants to Pega DX APIs for natural language case management, workflow automation, and business process operations.",
   "keywords": [
     "Pega",
+    "Pega Infinity",
+    "Pega DX API",
+    "Pega GenAI",
+    "AI",
+    "AI Agent",
     "GenAI",
+    "GenAI Agent",
     "Agent",
-    "DX",
-    "MCP"
+    "DX API",
+    "MCP",
+    "MCP Server",
+    "Model Context Protocol"
   ],
   "homepage": "https://github.com/MarcoLooy/pega-dx-mcp#readme",
   "bugs": {
