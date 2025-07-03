@@ -120,7 +120,7 @@ async function testMCPTool() {
   
   console.log('\n🔧 Usage Example:');
   console.log('Once connected to your MCP client, you can ask:');
-  console.log('"Get details for case METE-MYDEMOAPP-WORK T-3"');
+  console.log('"Ping Pega"');
   console.log('or');
   console.log('"Show me information about case [YOUR-CASE-ID]"');
 }
