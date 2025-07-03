@@ -1,6 +1,6 @@
 {
   "name": "@pega-enablement/pega-dx-mcp",
-  "version": "0.1.0-alpha.4",
+  "version": "0.1.0-alpha.5",
   "description": "MCP Server enabling conversational AI interaction with Pega Infinity applications. Bridge GenAI agents, IDEs, and AI assistants to Pega DX APIs for natural language case management, workflow automation, and business process operations.",
   "keywords": [
     "Pega",
@@ -41,5 +41,8 @@
     "test:delete": "node tests/delete-case-test.js",
     "test:casetypes": "node tests/get-case-types-test.js",
     "test:bulk-action": "node tests/get-case-type-bulk-action-test.js"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.13.3"
   }
 }
