@@ -39,53 +39,9 @@ The Pega DX MCP Server is an experimental project exploring the intersection of 
 npm install -g @pega-enablement/pega-dx-mcp
 ```
 
-### Integration with Claude Desktop
+### Integration with MCP Clients
 
-Add to your Claude Desktop MCP configuration:
-
-```json
-{
-  "mcpServers": {
-    "pega-dx-mcp": {
-      "command": "npx",
-      "args": ["-y", "@pega-enablement/pega-dx-mcp"],
-      "env": {
-        "PEGA_BASE_URL": "https://your-pega-instance.com",
-        "PEGA_CLIENT_ID": "your-client-id",
-        "PEGA_CLIENT_SECRET": "your-client-secret"
-      }
-    }
-  }
-}
-```
-
-### Integration with Other MCP Clients
-
-**Cursor**
-
-Add to your Cursor `mcp.json` file:
-
-```json
-{
-  "mcpServers": {
-    "pega-dx-mcp": {
-      "command": {
-        "path": "npx",
-        "args": ["-y", "@pega-enablement/pega-dx-mcp"]
-      },
-      "env": {
-        "PEGA_BASE_URL": "https://your-pega-instance.com",
-        "PEGA_CLIENT_ID": "your-client-id",
-        "PEGA_CLIENT_SECRET": "your-client-secret"
-      }
-    }
-  }
-}
-```
-
-**Cline**
-
-Add to your Cline `cline_mcp_settings.json` file:
+Compatible with Claude Desktop, Cursor, Cline, and other MCP-enabled applications. Add to your MCP client's configuration file:
 
 ```json
 {
@@ -103,13 +59,12 @@ Add to your Cline `cline_mcp_settings.json` file:
 }
 ```
 
-**Other Clients**
+**Configuration file locations:**
+- **Claude Desktop**: `~/Library/Application Support/Claude/claude_desktop_config.json` (macOS) or `%APPDATA%/Claude/claude_desktop_config.json` (Windows)
+- **Cursor**: `.cursor/mcp.json` in your project root
+- **Cline**: MCP settings in VS Code
 
-For other MCP-enabled clients, refer to their documentation for adding MCP servers and follow the same pattern using:
-
-- **Command**: `npx`
-- **Args**: `["-y", "@pega-enablement/pega-dx-mcp"]`
-- **Environment variables**: Pega connection details
+**Verify installation:** Restart your MCP client and confirm the Pega DX tools are available.
 
 ## 🏗️ Architecture
 
