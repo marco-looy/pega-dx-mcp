@@ -18,7 +18,6 @@ if (baseUrl && baseUrl.includes('/prweb')) {
 export const config = {
   pega: {
     baseUrl: baseUrl,
-    apiVersion: process.env.PEGA_API_VERSION || 'v2',
     clientId: process.env.PEGA_CLIENT_ID,
     clientSecret: process.env.PEGA_CLIENT_SECRET,
     scope: process.env.PEGA_SCOPE || '',
@@ -27,13 +26,8 @@ export const config = {
       return `${this.baseUrl}/prweb/PRRestService/oauth2/v1/token`;
     },
     get apiBaseUrl() {
-      return `${this.baseUrl}/prweb/api/application/${this.apiVersion}`;
+      return `${this.baseUrl}/prweb/api/application/v2`;
     }
-  },
-  server: {
-    logLevel: process.env.LOG_LEVEL || 'info',
-    cacheTtl: parseInt(process.env.CACHE_TTL) || 300000,
-    requestTimeout: parseInt(process.env.REQUEST_TIMEOUT) || 30000,
   }
 };
 

@@ -40,7 +40,7 @@ export class OAuth2Client {
           'Authorization': `Basic ${Buffer.from(`${clientId}:${clientSecret}`).toString('base64')}`
         },
         body: 'grant_type=client_credentials',
-        timeout: config.server.requestTimeout
+        timeout: 30000
       });
 
       if (!response.ok) {

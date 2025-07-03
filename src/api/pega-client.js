@@ -158,7 +158,7 @@ export class PegaAPIClient {
       const response = await fetch(url, {
         ...options,
         headers,
-        timeout: config.server.requestTimeout
+        timeout: 30000
       });
 
       // Handle different response scenarios

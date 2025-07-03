@@ -6,13 +6,9 @@
         "/home/mete/pega-dx-mcp/src/index.js"
       ],
       "env": {
-        "PEGA_BASE_URL": "https://pega.3a86b68c153.pegaenablement.com",
-        "PEGA_API_VERSION": "v2",
+        "PEGA_BASE_URL": "https://pega.52a90b217c219.pegaenablement.com",
         "PEGA_CLIENT_ID": "27825049298136835474",
-        "PEGA_CLIENT_SECRET": "D1DE86BC2CDD880280DA3CA6A0314591",
-        "LOG_LEVEL": "info",
-        "CACHE_TTL": "300000",
-        "REQUEST_TIMEOUT": "30000"
+        "PEGA_CLIENT_SECRET": "D1DE86BC2CDD880280DA3CA6A0314591"
       }
     }
   }
