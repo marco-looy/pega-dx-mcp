@@ -159,6 +159,24 @@ export class PegaAPIClient {
   }
 
   /**
+   * Get case stages details by case ID
+   * @param {string} caseID - Full case handle
+   * @returns {Promise<Object>} API response with stages, processes, steps and visited status
+   */
+  async getCaseStages(caseID) {
+    // URL encode the case ID to handle spaces and special characters
+    const encodedCaseID = encodeURIComponent(caseID);
+    const url = `${this.baseUrl}/cases/${encodedCaseID}/stages`;
+
+    return await this.makeRequest(url, {
+      method: 'GET',
+      headers: {
+        'x-origin-channel': 'Web'
+      }
+    });
+  }
+
+  /**
    * Make an authenticated HTTP request to Pega API
    */
   async makeRequest(url, options = {}) {
