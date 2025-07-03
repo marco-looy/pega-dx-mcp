@@ -139,6 +139,26 @@ export class PegaAPIClient {
   }
 
   /**
+   * Get case view details by case ID and view ID
+   * @param {string} caseID - Full case handle
+   * @param {string} viewID - Name of the view
+   * @returns {Promise<Object>} API response with view data and UI resources
+   */
+  async getCaseView(caseID, viewID) {
+    // URL encode both the case ID and view ID to handle spaces and special characters
+    const encodedCaseID = encodeURIComponent(caseID);
+    const encodedViewID = encodeURIComponent(viewID);
+    const url = `${this.baseUrl}/cases/${encodedCaseID}/views/${encodedViewID}`;
+
+    return await this.makeRequest(url, {
+      method: 'GET',
+      headers: {
+        'x-origin-channel': 'Web'
+      }
+    });
+  }
+
+  /**
    * Make an authenticated HTTP request to Pega API
    */
   async makeRequest(url, options = {}) {
