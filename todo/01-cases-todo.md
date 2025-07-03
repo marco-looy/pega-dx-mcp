@@ -2,22 +2,23 @@
 
 **Priority:** HIGH (Core functionality)  
 **Complexity:** MODERATE  
-**Current Status:** 6/18 endpoints completed
+**Current Status:** 7/18 endpoints completed (38.9% complete)
 
-## ✅ Completed Tools
+## ✅ Completed Tools (7/18)
 - [x] `get_case` - Get case details (GET /cases/{caseID}) - ✅ **IMPLEMENTED** in `src/tools/cases/get-case.js`
 - [x] `create_case` - Creates new case (POST /cases) - ✅ **IMPLEMENTED** in `src/tools/cases/create-case.js`
 - [x] `delete_case` - Delete case in create stage (DELETE /cases/{caseID}) - ✅ **IMPLEMENTED** in `src/tools/cases/delete-case.js`
 - [x] `get_case_view` - Get view details for a case (GET /cases/{caseID}/views/{viewID}) - ✅ **IMPLEMENTED** in `src/tools/cases/get-case-view.js`
 - [x] `get_case_stages` - Get case stages list (GET /cases/{caseID}/stages) - ✅ **IMPLEMENTED** in `src/tools/cases/get-case-stages.js`
-- [x] `ping_pega_service` - Test connectivity - ✅ **IMPLEMENTED** in `src/tools/ping-service.js`
+- [x] `get_case_action` - Get case action details (GET /cases/{caseID}/actions/{actionID}) - ✅ **IMPLEMENTED** in `src/tools/cases/get-case-action.js`
+- [x] `perform_bulk_action` - Perform bulk action (PATCH /cases) - ✅ **IMPLEMENTED** in `src/tools/cases/perform-bulk-action.js`
 
-## ✅ Related Completed Tools (Case Types)
+## ✅ Related Completed Tools (Case Types - 2/2) ✅ COMPLETE
 - [x] `get_case_types` - List available case types (GET /casetypes) - ✅ **IMPLEMENTED** in `src/tools/casetypes/get-case-types.js`
 - [x] `get_case_type_bulk_action` - Get bulk action metadata (GET /casetypes/{caseTypeID}/actions/{actionID}) - ✅ **IMPLEMENTED** in `src/tools/casetypes/get-case-type-bulk-action.js`
 
-## ✅ Recently Completed
-- [x] `get_case_action` - Get case action details (GET /cases/{caseID}/actions/{actionID}) - ✅ **IMPLEMENTED** in `src/tools/cases/get-case-action.js`
+## ✅ Core Infrastructure
+- [x] `ping_pega_service` - Test OAuth2 connectivity - ✅ **IMPLEMENTED** in `src/tools/ping-service.js`
 
 ## 🔄 High Priority (Core Operations)
 - [ ] `perform_case_action` - Perform case action (PATCH /cases/{caseID}/actions/{actionID})
@@ -31,7 +32,7 @@
 
 ## 🔄 Advanced Priority (Specialized Operations)
 - [ ] `get_bulk_actions` - Get bulk actions (POST /cases/bulk-actions)
-- [ ] `perform_bulk_action` - Perform bulk action (PATCH /cases)
+- [x] `perform_bulk_action` - Perform bulk action (PATCH /cases) - ✅ **IMPLEMENTED** in `src/tools/cases/perform-bulk-action.js`
 - [ ] `add_optional_process` - Add optional process (POST /cases/{caseID}/processes/{processID})
 - [ ] `recalculate_case_fields` - Recalculate calculated fields (PATCH /cases/{caseID}/actions/{actionID}/recalculate)
 - [ ] `refresh_case_action` - Refresh case action (PATCH /cases/{caseID}/actions/{actionID}/refresh)

@@ -215,65 +215,175 @@ export class PegaAPIClient {
   }
 
   /**
-   * Make an authenticated HTTP request to Pega API
+   * Perform case action by case ID and action ID
+   * @param {string} caseID - Full case handle
+   * @param {string} actionID - Flow action name
+   * @param {Object} options - Optional parameters
+   * @param {Object} options.content - Case content/form data to submit
+   * @param {Array} options.pageInstructions - Page-related operations for embedded pages
+   * @param {Array} options.attachments - Attachments to add to specific attachment fields
+   * @param {string} options.eTag - ETag for optimistic locking (from previous GET request)
+   * @param {string} options.viewType - Type of view data to return ("none", "form", or "page")
+   * @param {string} options.pageName - Specific page name to return view metadata for
+   * @returns {Promise<Object>} API response with updated case data
+   */
+  async performCaseAction(caseID, actionID, options = {}) {
+    const { content, pageInstructions, attachments, eTag, viewType, pageName } = options;
+    
+    // URL encode both the case ID and action ID to handle spaces and special characters
+    const encodedCaseID = encodeURIComponent(caseID);
+    const encodedActionID = encodeURIComponent(actionID);
+    let url = `${this.baseUrl}/cases/${encodedCaseID}/actions/${encodedActionID}`;
+
+    // Add query parameters if provided
+    const queryParams = new URLSearchParams();
+    if (viewType) {
+      queryParams.append('viewType', viewType);
+    }
+    if (pageName) {
+      queryParams.append('pageName', pageName);
+    }
+    
+    if (queryParams.toString()) {
+      url += `?${queryParams.toString()}`;
+    }
+
+    // Build request body
+    const requestBody = {};
+
+    // Add optional parameters if provided
+    if (content) {
+      requestBody.content = content;
+    }
+    if (pageInstructions) {
+      requestBody.pageInstructions = pageInstructions;
+    }
+    if (attachments) {
+      requestBody.attachments = attachments;
+    }
+
+    // Prepare headers
+    const headers = {
+      'x-origin-channel': 'Web'
+    };
+
+    // Add ETag header for optimistic locking if provided
+    if (eTag) {
+      headers['If-Match'] = eTag;
+    }
+
+    return await this.makeRequest(url, {
+      method: 'PATCH',
+      headers: headers,
+      body: JSON.stringify(requestBody)
+    });
+  }
+
+  /**
+   * Perform bulk action on multiple cases
+   * @param {string} actionID - ID of the case action to be performed on all specified cases
+   * @param {Object} options - Options containing cases and other parameters
+   * @param {Array} options.cases - Array of case objects with ID properties
+   * @param {string} options.runningMode - Execution mode for Launchpad ("async")
+   * @param {Object} options.content - Content to apply during action execution
+   * @param {Array} options.pageInstructions - Page-related operations
+   * @param {Array} options.attachments - Attachments to add
+   * @returns {Promise<Object>} API response with bulk operation results
+   */
+  async performBulkAction(actionID, options = {}) {
+    const { cases, runningMode, content, pageInstructions, attachments } = options;
+    
+    // URL encode the action ID to handle spaces and special characters
+    const encodedActionID = encodeURIComponent(actionID);
+    let url = `${this.baseUrl}/cases`;
+
+    // Add query parameters if provided
+    const queryParams = new URLSearchParams();
+    queryParams.append('actionID', encodedActionID);
+    
+    if (runningMode) {
+      queryParams.append('runningMode', runningMode);
+    }
+    
+    url += `?${queryParams.toString()}`;
+
+    // Build request body
+    const requestBody = {
+      cases
+    };
+
+    // Add optional parameters if provided
+    if (content) {
+      requestBody.content = content;
+    }
+    if (pageInstructions) {
+      requestBody.pageInstructions = pageInstructions;
+    }
+    if (attachments) {
+      requestBody.attachments = attachments;
+    }
+
+    return await this.makeRequest(url, {
+      method: 'PATCH',
+      headers: {
+        'x-origin-channel': 'Web'
+      },
+      body: JSON.stringify(requestBody)
+    });
+  }
+
+  /**
+   * Make HTTP request to Pega API with authentication
+   * @param {string} url - Full API URL
+   * @param {Object} options - HTTP request options
+   * @returns {Promise<Object>} Structured response with success/error information
    */
   async makeRequest(url, options = {}) {
     try {
-      // Get access token
-      const accessToken = await this.oauth2Client.getAccessToken();
-
+      // Get OAuth2 token
+      const token = await this.oauth2Client.getValidToken();
+      
       // Prepare headers
       const headers = {
-        'Authorization': `Bearer ${accessToken}`,
-        'Accept': 'application/json',
+        'Authorization': `Bearer ${token}`,
         'Content-Type': 'application/json',
+        'Accept': 'application/json',
         ...options.headers
       };
 
-      // Make the request
+      // Make request
       const response = await fetch(url, {
         ...options,
         headers,
-        timeout: 30000
+        timeout: config.pega.requestTimeout || 30000
       });
 
-      // Handle different response scenarios
-      if (response.ok) {
-        const data = await response.json();
-        const result = {
-          success: true,
-          data: data
-        };
-        
-        // Capture eTag header if present (needed for case updates)
-        const eTag = response.headers.get('etag');
-        if (eTag) {
-          result.eTag = eTag;
-        }
-        
-        return result;
-      } else {
-        // Handle error responses
+      // Handle non-2xx responses
+      if (!response.ok) {
         return await this.handleErrorResponse(response);
       }
-    } catch (error) {
-      if (error.name === 'TypeError' && error.message.includes('fetch')) {
-        return {
-          success: false,
-          error: {
-            type: 'CONNECTION_ERROR',
-            message: `Failed to connect to Pega API: ${url}`,
-            details: error.message
-          }
-        };
-      }
+
+      // Parse successful response
+      const data = await response.json();
+      const eTag = response.headers.get('etag');
       
+      return {
+        success: true,
+        data,
+        eTag,
+        status: response.status,
+        statusText: response.statusText
+      };
+
+    } catch (error) {
+      // Handle network and other errors
       return {
         success: false,
         error: {
-          type: 'UNKNOWN_ERROR',
-          message: 'An unexpected error occurred',
-          details: error.message
+          type: 'CONNECTION_ERROR',
+          message: 'Failed to connect to Pega API',
+          details: error.message,
+          originalError: error
         }
       };
     }
