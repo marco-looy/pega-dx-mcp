@@ -1,5 +1,5 @@
 {
-  "name": "@marco-looy/pega-dx-mcp",
+  "name": "@pega-enablement/pega-dx-mcp",
   "version": "0.1.0-alpha.2",
   "description": "MCP Server enabling conversational AI interaction with Pega Infinity applications. Bridge GenAI agents, IDEs, and AI assistants to Pega DX APIs for natural language case management, workflow automation, and business process operations.",
   "keywords": [
@@ -30,7 +30,6 @@
   "type": "module",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"TODO: no test specified\" && exit 0",
     "start": "node src/index.js",
     "update-config": "node tools/update-mcp-config.js",
     "test:oauth": "node tests/oauth-debug.js",
