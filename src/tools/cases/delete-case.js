@@ -17,7 +17,7 @@ export class DeleteCaseTool {
         properties: {
           caseID: {
             type: 'string',
-            description: 'Full case handle (e.g., METE-MYDEMOAPP-WORK T-3)'
+            description: 'Full case handle (e.g.,ON6E5R-DIYRECIPE-WORK-RECIPECOLLECTION R-1008)'
           }
         },
         required: ['caseID']

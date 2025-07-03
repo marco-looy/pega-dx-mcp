@@ -2,23 +2,29 @@
 
 **Priority:** HIGH (Core functionality)  
 **Complexity:** MODERATE  
-**Current Status:** 3/18 endpoints completed
+**Current Status:** 6/18 endpoints completed
 
 ## ✅ Completed Tools
 - [x] `get_case` - Get case details (GET /cases/{caseID}) - ✅ **IMPLEMENTED** in `src/tools/cases/get-case.js`
 - [x] `create_case` - Creates new case (POST /cases) - ✅ **IMPLEMENTED** in `src/tools/cases/create-case.js`
 - [x] `delete_case` - Delete case in create stage (DELETE /cases/{caseID}) - ✅ **IMPLEMENTED** in `src/tools/cases/delete-case.js`
+- [x] `get_case_view` - Get view details for a case (GET /cases/{caseID}/views/{viewID}) - ✅ **IMPLEMENTED** in `src/tools/cases/get-case-view.js`
+- [x] `get_case_stages` - Get case stages list (GET /cases/{caseID}/stages) - ✅ **IMPLEMENTED** in `src/tools/cases/get-case-stages.js`
 - [x] `ping_pega_service` - Test connectivity - ✅ **IMPLEMENTED** in `src/tools/ping-service.js`
 
+## ✅ Related Completed Tools (Case Types)
+- [x] `get_case_types` - List available case types (GET /casetypes) - ✅ **IMPLEMENTED** in `src/tools/casetypes/get-case-types.js`
+- [x] `get_case_type_bulk_action` - Get bulk action metadata (GET /casetypes/{caseTypeID}/actions/{actionID}) - ✅ **IMPLEMENTED** in `src/tools/casetypes/get-case-type-bulk-action.js`
+
+## ✅ Recently Completed
+- [x] `get_case_action` - Get case action details (GET /cases/{caseID}/actions/{actionID}) - ✅ **IMPLEMENTED** in `src/tools/cases/get-case-action.js`
+
 ## 🔄 High Priority (Core Operations)
-- [ ] `get_case_actions` - Get case actions details (GET /cases/{caseID}/actions/{actionID})  
 - [ ] `perform_case_action` - Perform case action (PATCH /cases/{caseID}/actions/{actionID})
-- [ ] `get_case_view` - Get view details for a case (GET /cases/{caseID}/views/{viewID})
 
 ## 🔄 Medium Priority (Advanced Operations)
 - [ ] `get_case_ancestors` - Get ancestor case hierarchy (GET /cases/{caseID}/ancestors)
 - [ ] `get_case_descendants` - Get descendant case hierarchy (GET /cases/{caseID}/descendants)
-- [ ] `get_case_stages` - Get case stages list (GET /cases/{caseID}/stages)
 - [ ] `change_to_next_stage` - Change to next stage (POST /cases/{caseID}/stages/next)
 - [ ] `change_to_stage` - Change to specified stage (PUT /cases/{caseID}/stages/{stageID})
 - [ ] `release_case_lock` - Release lock (DELETE /cases/{caseID}/updates)

@@ -177,6 +177,44 @@ export class PegaAPIClient {
   }
 
   /**
+   * Get case action details by case ID and action ID
+   * @param {string} caseID - Full case handle
+   * @param {string} actionID - Flow action name
+   * @param {Object} options - Optional parameters
+   * @param {string} options.viewType - Type of view data to return ("form" or "page")
+   * @param {boolean} options.excludeAdditionalActions - Whether to exclude additional action information
+   * @returns {Promise<Object>} API response with action metadata and UI resources
+   */
+  async getCaseAction(caseID, actionID, options = {}) {
+    const { viewType, excludeAdditionalActions } = options;
+    
+    // URL encode both the case ID and action ID to handle spaces and special characters
+    const encodedCaseID = encodeURIComponent(caseID);
+    const encodedActionID = encodeURIComponent(actionID);
+    let url = `${this.baseUrl}/cases/${encodedCaseID}/actions/${encodedActionID}`;
+
+    // Add query parameters if provided
+    const queryParams = new URLSearchParams();
+    if (viewType) {
+      queryParams.append('viewType', viewType);
+    }
+    if (excludeAdditionalActions !== undefined) {
+      queryParams.append('excludeAdditionalActions', excludeAdditionalActions.toString());
+    }
+    
+    if (queryParams.toString()) {
+      url += `?${queryParams.toString()}`;
+    }
+
+    return await this.makeRequest(url, {
+      method: 'GET',
+      headers: {
+        'x-origin-channel': 'Web'
+      }
+    });
+  }
+
+  /**
    * Make an authenticated HTTP request to Pega API
    */
   async makeRequest(url, options = {}) {

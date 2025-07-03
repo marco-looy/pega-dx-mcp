@@ -207,7 +207,7 @@ async function testCreateCaseTool() {
   
   console.log('\n🔧 Usage Example:');
   console.log('Once connected to your MCP client, you can ask:');
-  console.log('"Create a new case of type METE-MYDEMOAPP-WORK-TestCase with name John Doe"');
+  console.log('"Create a new case of type ON6E5R-DIYRECIPE-WORK-RECIPECOLLECTION"');
   console.log('or');
   console.log('"Create a case with these details: [case data]"');
 }

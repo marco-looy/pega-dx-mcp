@@ -252,7 +252,7 @@ async function testDeleteCaseTool() {
   
   console.log('\n🔧 Usage Example:');
   console.log('Once connected to your MCP client, you can ask:');
-  console.log('"Delete case METE-MYDEMOAPP-WORK T-123"');
+  console.log('"Delete case ON6E5R-DIYRECIPE-WORK-RECIPECOLLECTION R-1008"');
   console.log('or');
   console.log('"Remove the case with ID [case-id]"');
   
