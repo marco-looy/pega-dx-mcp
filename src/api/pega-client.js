@@ -440,6 +440,70 @@ export class PegaAPIClient {
   }
 
   /**
+   * Perform assignment action by assignment ID and action ID
+   * @param {string} assignmentID - Full handle of the assignment (e.g., "ASSIGN-WORKLIST O1UGTM-TESTAPP13-WORK T-35005!APPROVAL_FLOW")
+   * @param {string} actionID - Name of the assignment action to perform - ID of the flow action rule
+   * @param {string} eTag - Required eTag unique value representing the most recent save date time of the case
+   * @param {Object} options - Optional parameters
+   * @param {Object} options.content - Map of scalar and embedded page values to be set to fields in the assignment action's view
+   * @param {Array} options.pageInstructions - List of page-related operations to be performed on embedded pages, page lists, or page groups
+   * @param {Array} options.attachments - List of attachments to be added to or deleted from specific attachment fields
+   * @param {string} options.viewType - Type of view data to return ("none", "form", or "page", default: "none")
+   * @param {string} options.originChannel - Origin channel identifier (e.g., "Web", "Mobile", "WebChat")
+   * @returns {Promise<Object>} API response with case information, next assignment info or confirmation note, and optional UI resources
+   */
+  async performAssignmentAction(assignmentID, actionID, eTag, options = {}) {
+    const { content, pageInstructions, attachments, viewType, originChannel } = options;
+    
+    // URL encode both the assignment ID and action ID to handle spaces and special characters
+    const encodedAssignmentID = encodeURIComponent(assignmentID);
+    const encodedActionID = encodeURIComponent(actionID);
+    let url = `${this.baseUrl}/assignments/${encodedAssignmentID}/actions/${encodedActionID}`;
+
+    // Add query parameters if provided
+    const queryParams = new URLSearchParams();
+    if (viewType) {
+      queryParams.append('viewType', viewType);
+    }
+    
+    if (queryParams.toString()) {
+      url += `?${queryParams.toString()}`;
+    }
+
+    // Build request body
+    const requestBody = {};
+
+    // Add optional parameters if provided
+    if (content) {
+      requestBody.content = content;
+    }
+    if (pageInstructions) {
+      requestBody.pageInstructions = pageInstructions;
+    }
+    if (attachments) {
+      requestBody.attachments = attachments;
+    }
+
+    // Prepare headers
+    const headers = {
+      'if-match': eTag // Required eTag header for optimistic locking
+    };
+
+    // Add origin channel header if provided, otherwise default to Web
+    if (originChannel) {
+      headers['x-origin-channel'] = originChannel;
+    } else {
+      headers['x-origin-channel'] = 'Web';
+    }
+
+    return await this.makeRequest(url, {
+      method: 'PATCH',
+      headers: headers,
+      body: JSON.stringify(requestBody)
+    });
+  }
+
+  /**
    * Make HTTP request to Pega API with authentication
    * @param {string} url - Full API URL
    * @param {Object} options - HTTP request options
@@ -551,10 +615,46 @@ export class PegaAPIClient {
         }
         break;
 
+      case 409:
+        errorResponse.error.type = 'CONFLICT';
+        errorResponse.error.message = 'Conflict error';
+        errorResponse.error.details = errorData.localizedValue || 'The assignment state has changed since your last request';
+        if (errorData.errorDetails) {
+          errorResponse.error.errorDetails = errorData.errorDetails;
+        }
+        break;
+
+      case 412:
+        errorResponse.error.type = 'PRECONDITION_FAILED';
+        errorResponse.error.message = 'eTag mismatch';
+        errorResponse.error.details = errorData.localizedValue || 'The provided eTag value does not match the current case state';
+        if (errorData.errorDetails) {
+          errorResponse.error.errorDetails = errorData.errorDetails;
+        }
+        break;
+
       case 422:
-        errorResponse.error.type = 'UNPROCESSABLE_ENTITY';
-        errorResponse.error.message = 'Unprocessable entity';
-        errorResponse.error.details = errorData.localizedValue || 'The request content contains invalid values for the specified fields';
+        errorResponse.error.type = 'VALIDATION_FAIL';
+        errorResponse.error.message = 'Validation error';
+        errorResponse.error.details = errorData.localizedValue || 'The submitted data failed validation rules';
+        if (errorData.errorDetails) {
+          errorResponse.error.errorDetails = errorData.errorDetails;
+        }
+        break;
+
+      case 423:
+        errorResponse.error.type = 'LOCKED';
+        errorResponse.error.message = 'Assignment locked';
+        errorResponse.error.details = errorData.localizedValue || 'The assignment is currently locked by another user';
+        if (errorData.errorDetails) {
+          errorResponse.error.errorDetails = errorData.errorDetails;
+        }
+        break;
+
+      case 424:
+        errorResponse.error.type = 'FAILED_DEPENDENCY';
+        errorResponse.error.message = 'Dependency failure';
+        errorResponse.error.details = errorData.localizedValue || 'A required dependency or pre-condition failed';
         if (errorData.errorDetails) {
           errorResponse.error.errorDetails = errorData.errorDetails;
         }

@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 
-import { PingServiceTool } from '../src/tools/ping-service.js';
+import { PingServiceTool } from '../../src/tools/ping-service.js';
 
 async function testPingService() {
   console.log('Testing Ping Service Tool...\n');

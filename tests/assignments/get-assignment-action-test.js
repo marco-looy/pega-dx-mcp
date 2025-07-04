@@ -1,4 +1,4 @@
-import { GetAssignmentActionTool } from '../src/tools/assignments/get-assignment-action.js';
+import { GetAssignmentActionTool } from '../../src/tools/assignments/get-assignment-action.js';
 
 /**
  * Test script for GetAssignmentActionTool

@@ -1,4 +1,4 @@
-import { GetAssignmentTool } from '../src/tools/assignments/get-assignment.js';
+import { GetAssignmentTool } from '../../src/tools/assignments/get-assignment.js';
 
 /**
  * Test script for GetAssignmentTool

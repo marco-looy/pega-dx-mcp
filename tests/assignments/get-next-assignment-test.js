@@ -1,4 +1,4 @@
-import { GetNextAssignmentTool } from '../src/tools/assignments/get-next-assignment.js';
+import { GetNextAssignmentTool } from '../../src/tools/assignments/get-next-assignment.js';
 
 async function testGetNextAssignment() {
   console.log('🧪 Testing GetNextAssignmentTool...\n');

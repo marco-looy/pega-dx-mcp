@@ -1,4 +1,4 @@
-import { PerformBulkActionTool } from '../src/tools/cases/perform-bulk-action.js';
+import { PerformBulkActionTool } from '../../src/tools/cases/perform-bulk-action.js';
 
 async function testPerformBulkAction() {
   console.log('\n🔄 Testing Perform Bulk Action Tool...\n');

@@ -1,4 +1,4 @@
-import { GetCaseActionTool } from '../src/tools/cases/get-case-action.js';
+import { GetCaseActionTool } from '../../src/tools/cases/get-case-action.js';
 
 async function testGetCaseAction() {
   console.log('\n🔧 Testing Get Case Action Tool...\n');
