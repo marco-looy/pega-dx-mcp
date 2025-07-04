@@ -2,15 +2,16 @@
 
 **Priority:** HIGH (Core functionality)  
 **Complexity:** MODERATE  
-**Current Status:** 8/18 endpoints completed (44.4% complete)
+**Current Status:** 9/18 endpoints completed (50.0% complete)
 
-## ✅ Completed Tools (8/18)
+## ✅ Completed Tools (9/18)
 - [x] `get_case` - Get case details (GET /cases/{caseID}) - ✅ **IMPLEMENTED** in `src/tools/cases/get-case.js`
 - [x] `create_case` - Creates new case (POST /cases) - ✅ **IMPLEMENTED** in `src/tools/cases/create-case.js`
 - [x] `delete_case` - Delete case in create stage (DELETE /cases/{caseID}) - ✅ **IMPLEMENTED** in `src/tools/cases/delete-case.js`
 - [x] `get_case_view` - Get view details for a case (GET /cases/{caseID}/views/{viewID}) - ✅ **IMPLEMENTED** in `src/tools/cases/get-case-view.js`
 - [x] `get_case_stages` - Get case stages list (GET /cases/{caseID}/stages) - ✅ **IMPLEMENTED** in `src/tools/cases/get-case-stages.js`
 - [x] `get_case_action` - Get case action details (GET /cases/{caseID}/actions/{actionID}) - ✅ **IMPLEMENTED** in `src/tools/cases/get-case-action.js`
+- [x] `perform_case_action` - Perform case action (PATCH /cases/{caseID}/actions/{actionID}) - ✅ **IMPLEMENTED** in `src/tools/cases/perform-case-action.js`
 - [x] `perform_bulk_action` - Perform bulk action (PATCH /cases) - ✅ **IMPLEMENTED** in `src/tools/cases/perform-bulk-action.js`
 - [x] `bulk_cases_patch` - Alternative bulk cases implementation (PATCH /cases) - ✅ **IMPLEMENTED** in `src/tools/cases/bulk-cases-patch.js`
 
@@ -21,8 +22,8 @@
 ## ✅ Core Infrastructure
 - [x] `ping_pega_service` - Test OAuth2 connectivity - ✅ **IMPLEMENTED** in `src/tools/ping-service.js`
 
-## 🔄 High Priority (Core Operations)
-- [ ] `perform_case_action` - Perform case action (PATCH /cases/{caseID}/actions/{actionID})
+## ✅ High Priority (Core Operations) ✅ COMPLETE
+- [x] `perform_case_action` - Perform case action (PATCH /cases/{caseID}/actions/{actionID}) - ✅ **IMPLEMENTED** in `src/tools/cases/perform-case-action.js`
 
 ## 🔄 Medium Priority (Advanced Operations)
 - [ ] `get_case_ancestors` - Get ancestor case hierarchy (GET /cases/{caseID}/ancestors)
