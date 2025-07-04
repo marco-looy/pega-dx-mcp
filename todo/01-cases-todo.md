@@ -2,14 +2,15 @@
 
 **Priority:** HIGH (Core functionality)  
 **Complexity:** MODERATE  
-**Current Status:** 9/18 endpoints completed (50.0% complete)
+**Current Status:** 10/18 endpoints completed (55.6% complete)
 
-## ✅ Completed Tools (9/18)
+## ✅ Completed Tools (10/18)
 - [x] `get_case` - Get case details (GET /cases/{caseID}) - ✅ **IMPLEMENTED** in `src/tools/cases/get-case.js`
 - [x] `create_case` - Creates new case (POST /cases) - ✅ **IMPLEMENTED** in `src/tools/cases/create-case.js`
 - [x] `delete_case` - Delete case in create stage (DELETE /cases/{caseID}) - ✅ **IMPLEMENTED** in `src/tools/cases/delete-case.js`
 - [x] `get_case_view` - Get view details for a case (GET /cases/{caseID}/views/{viewID}) - ✅ **IMPLEMENTED** in `src/tools/cases/get-case-view.js`
 - [x] `get_case_stages` - Get case stages list (GET /cases/{caseID}/stages) - ✅ **IMPLEMENTED** in `src/tools/cases/get-case-stages.js`
+- [x] `get_case_descendants` - Get descendant case hierarchy (GET /cases/{caseID}/descendants) - ✅ **IMPLEMENTED** in `src/tools/cases/get-case-descendants.js`
 - [x] `get_case_action` - Get case action details (GET /cases/{caseID}/actions/{actionID}) - ✅ **IMPLEMENTED** in `src/tools/cases/get-case-action.js`
 - [x] `perform_case_action` - Perform case action (PATCH /cases/{caseID}/actions/{actionID}) - ✅ **IMPLEMENTED** in `src/tools/cases/perform-case-action.js`
 - [x] `perform_bulk_action` - Perform bulk action (PATCH /cases) - ✅ **IMPLEMENTED** in `src/tools/cases/perform-bulk-action.js`
@@ -27,7 +28,7 @@
 
 ## 🔄 Medium Priority (Advanced Operations)
 - [ ] `get_case_ancestors` - Get ancestor case hierarchy (GET /cases/{caseID}/ancestors)
-- [ ] `get_case_descendants` - Get descendant case hierarchy (GET /cases/{caseID}/descendants)
+- [x] `get_case_descendants` - Get descendant case hierarchy (GET /cases/{caseID}/descendants) - ✅ **IMPLEMENTED** in `src/tools/cases/get-case-descendants.js`
 - [ ] `change_to_next_stage` - Change to next stage (POST /cases/{caseID}/stages/next)
 - [ ] `change_to_stage` - Change to specified stage (PUT /cases/{caseID}/stages/{stageID})
 - [ ] `release_case_lock` - Release lock (DELETE /cases/{caseID}/updates)

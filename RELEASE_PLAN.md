@@ -13,6 +13,7 @@ This document tracks the development and release history of the Pega DX MCP Serv
 **Cases API:**
 - `bulk_cases_patch` - Alternative bulk cases implementation using PATCH /api/application/v2/cases endpoint with platform-specific response handling for Infinity vs Launchpad
 - `perform_case_action` - Perform case action with data updates and workflow progression (PATCH /cases/{caseID}/actions/{actionID})
+- `get_case_descendants` - Get descendants of a case instance with recursive child case hierarchy including assignments and actions for each (GET /cases/{caseID}/descendants)
 
 **Case Types API:**
 - `get_case_type_action` - Get detailed case type action metadata with rich UI resources (GET /casetypes/{caseTypeID}/actions/{actionID})

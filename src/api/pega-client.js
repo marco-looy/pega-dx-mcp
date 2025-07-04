@@ -198,6 +198,24 @@ export class PegaAPIClient {
   }
 
   /**
+   * Get case descendants - loops through all child cases recursively descending from the specific one
+   * @param {string} caseID - Full case handle to retrieve descendants from
+   * @returns {Promise<Object>} API response with child cases hierarchy including assignments and actions for each
+   */
+  async getCaseDescendants(caseID) {
+    // URL encode the case ID to handle spaces and special characters
+    const encodedCaseID = encodeURIComponent(caseID);
+    const url = `${this.baseUrl}/cases/${encodedCaseID}/descendants`;
+
+    return await this.makeRequest(url, {
+      method: 'GET',
+      headers: {
+        'x-origin-channel': 'Web'
+      }
+    });
+  }
+
+  /**
    * Get case action details by case ID and action ID
    * @param {string} caseID - Full case handle
    * @param {string} actionID - Flow action name
