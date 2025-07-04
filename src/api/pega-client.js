@@ -585,6 +585,31 @@ export class PegaAPIClient {
   }
 
   /**
+   * Add attachments to a case (POST /cases/{caseID}/attachments)
+   * @param {string} caseID - Full case handle to attach files/URLs to
+   * @param {Array} attachments - Array of attachment objects (files and/or URLs)
+   * @returns {Promise<Object>} API response with success/error information
+   */
+  async addCaseAttachments(caseID, attachments) {
+    // URL encode the case ID to handle spaces and special characters
+    const encodedCaseID = encodeURIComponent(caseID);
+    const url = `${this.baseUrl}/cases/${encodedCaseID}/attachments`;
+
+    // Build request body with attachments array
+    const requestBody = {
+      attachments
+    };
+
+    return await this.makeRequest(url, {
+      method: 'POST',
+      headers: {
+        'x-origin-channel': 'Web'
+      },
+      body: JSON.stringify(requestBody)
+    });
+  }
+
+  /**
    * Upload a file as temporary attachment to Pega
    * @param {Buffer} fileBuffer - File content as Buffer
    * @param {Object} options - Upload options
