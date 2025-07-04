@@ -1,8 +1,11 @@
-import { PegaAPIClient } from '../../api/pega-client.js';
+import { BaseTool } from '../../registry/base-tool.js';
 
-export class GetAttachmentTool {
-  constructor() {
-    this.pegaClient = new PegaAPIClient();
+export class GetAttachmentTool extends BaseTool {
+  /**
+   * Get the category this tool belongs to
+   */
+  static getCategory() {
+    return 'attachments';
   }
 
   /**
@@ -31,7 +34,13 @@ export class GetAttachmentTool {
   async execute(params) {
     const { attachmentID } = params;
 
-    // Comprehensive parameter validation
+    // Basic parameter validation using base class
+    const requiredValidation = this.validateRequiredParams(params, ['attachmentID']);
+    if (requiredValidation) {
+      return requiredValidation;
+    }
+
+    // Additional comprehensive parameter validation for complex logic
     const validationResult = this.validateParameters(attachmentID);
     if (!validationResult.valid) {
       return {
@@ -39,34 +48,12 @@ export class GetAttachmentTool {
       };
     }
 
-    try {
-      // Call Pega API to get attachment content
-      const result = await this.pegaClient.getAttachmentContent(attachmentID);
-
-      if (result.success) {
-        return {
-          content: [
-            {
-              type: 'text',
-              text: this.formatSuccessResponse(attachmentID, result.data, result.headers)
-            }
-          ]
-        };
-      } else {
-        return {
-          content: [
-            {
-              type: 'text',
-              text: this.formatErrorResponse(attachmentID, result.error)
-            }
-          ]
-        };
-      }
-    } catch (error) {
-      return {
-        error: `Unexpected error while retrieving attachment content: ${error.message}`
-      };
-    }
+    // Execute with standardized error handling
+    return await this.executeWithErrorHandling(
+      `Attachment Content: ${attachmentID}`,
+      async () => await this.pegaClient.getAttachmentContent(attachmentID),
+      { attachmentID }
+    );
   }
 
   /**
@@ -93,13 +80,16 @@ export class GetAttachmentTool {
   }
 
   /**
-   * Format successful response for display
+   * Override formatSuccessResponse to add attachment content specific formatting
    */
-  formatSuccessResponse(attachmentID, content, headers) {
-    let response = `## Attachment Content Retrieved Successfully\n\n`;
-
-    // Display attachment information
-    response += `### ✅ Attachment ID: ${attachmentID}\n\n`;
+  formatSuccessResponse(operation, data, options = {}) {
+    const { attachmentID } = options;
+    const content = data.data || data;
+    const headers = data.headers || {};
+    
+    let response = `## ${operation}\n\n`;
+    
+    response += `*Operation completed at: ${new Date().toISOString()}*\n\n`;
 
     // Determine content type from headers
     const contentType = headers['content-type'] || headers['Content-Type'] || 'unknown';
@@ -219,10 +209,7 @@ export class GetAttachmentTool {
     response += `- Use \`upload_attachment\` to prepare new files for attachment\n`;
     response += `- Use \`add_case_attachments\` to attach files to cases\n`;
     response += `- Check attachment category rules for available attachment types\n`;
-
-    response += `\n---\n`;
-    response += `*Content retrieved at: ${new Date().toISOString()}*`;
-
+    
     return response;
   }
 

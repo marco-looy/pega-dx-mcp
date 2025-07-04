@@ -1,8 +1,11 @@
-import { PegaAPIClient } from '../../api/pega-client.js';
+import { BaseTool } from '../../registry/base-tool.js';
 
-export class AddCaseAttachmentsTool {
-  constructor() {
-    this.pegaClient = new PegaAPIClient();
+export class AddCaseAttachmentsTool extends BaseTool {
+  /**
+   * Get the category this tool belongs to
+   */
+  static getCategory() {
+    return 'attachments';
   }
 
   /**
@@ -88,7 +91,13 @@ export class AddCaseAttachmentsTool {
   async execute(params) {
     const { caseID, attachments } = params;
 
-    // Comprehensive parameter validation
+    // Basic parameter validation using base class
+    const requiredValidation = this.validateRequiredParams(params, ['caseID', 'attachments']);
+    if (requiredValidation) {
+      return requiredValidation;
+    }
+
+    // Additional comprehensive parameter validation for complex logic
     const validationResult = this.validateParameters(caseID, attachments);
     if (!validationResult.valid) {
       return {
@@ -96,34 +105,12 @@ export class AddCaseAttachmentsTool {
       };
     }
 
-    try {
-      // Call Pega API to add attachments to case
-      const result = await this.pegaClient.addCaseAttachments(caseID, attachments);
-
-      if (result.success) {
-        return {
-          content: [
-            {
-              type: 'text',
-              text: this.formatSuccessResponse(caseID, attachments, result)
-            }
-          ]
-        };
-      } else {
-        return {
-          content: [
-            {
-              type: 'text',
-              text: this.formatErrorResponse(caseID, attachments, result.error)
-            }
-          ]
-        };
-      }
-    } catch (error) {
-      return {
-        error: `Unexpected error while adding attachments to case: ${error.message}`
-      };
-    }
+    // Execute with standardized error handling
+    return await this.executeWithErrorHandling(
+      `Add Attachments to Case: ${caseID}`,
+      async () => await this.pegaClient.addCaseAttachments(caseID, attachments),
+      { caseID, attachments }
+    );
   }
 
   /**
@@ -285,13 +272,15 @@ export class AddCaseAttachmentsTool {
   }
 
   /**
-   * Format successful response for display
+   * Override formatSuccessResponse to add case attachments specific formatting
    */
-  formatSuccessResponse(caseID, attachments, result) {
-    let response = `## Attachments Successfully Added to Case\n\n`;
-
-    // Display case information
-    response += `### ✅ Case: ${caseID}\n\n`;
+  formatSuccessResponse(operation, data, options = {}) {
+    const { caseID, attachments } = options;
+    
+    let response = `## ${operation}\n\n`;
+    
+    response += `*Operation completed at: ${new Date().toISOString()}*\n\n`;
+    
     response += `Successfully attached ${attachments.length} ${attachments.length === 1 ? 'item' : 'items'} to the case.\n\n`;
 
     // Display attachment summary
@@ -327,10 +316,7 @@ export class AddCaseAttachmentsTool {
     response += '- Use `get_case_attachments` tool to retrieve all attachments for this case\n';
     response += '- Use `get_case` tool to view the updated case with attachment information\n';
     response += '- Attachments are now available to all users with case access\n';
-
-    response += '\n---\n';
-    response += `*Attachments added at: ${new Date().toISOString()}*`;
-
+    
     return response;
   }
 

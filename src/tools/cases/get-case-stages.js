@@ -1,8 +1,11 @@
-import { PegaAPIClient } from '../../api/pega-client.js';
+import { BaseTool } from '../../registry/base-tool.js';
 
-export class GetCaseStagesTool {
-  constructor() {
-    this.pegaClient = new PegaAPIClient();
+export class GetCaseStagesTool extends BaseTool {
+  /**
+   * Get the category this tool belongs to
+   */
+  static getCategory() {
+    return 'cases';
   }
 
   /**
@@ -31,48 +34,29 @@ export class GetCaseStagesTool {
   async execute(params) {
     const { caseID } = params;
 
-    // Validate required parameters
-    if (!caseID || typeof caseID !== 'string' || caseID.trim() === '') {
-      return {
-        error: 'Invalid caseID parameter. Case ID is required and must be a non-empty string.'
-      };
+    // Validate required parameters using base class
+    const requiredValidation = this.validateRequiredParams(params, ['caseID']);
+    if (requiredValidation) {
+      return requiredValidation;
     }
 
-    try {
-      // Call Pega API to get case stages
-      const result = await this.pegaClient.getCaseStages(caseID.trim());
-
-      if (result.success) {
-        return {
-          content: [
-            {
-              type: 'text',
-              text: this.formatSuccessResponse(caseID, result.data)
-            }
-          ]
-        };
-      } else {
-        return {
-          content: [
-            {
-              type: 'text',
-              text: this.formatErrorResponse(caseID, result.error)
-            }
-          ]
-        };
-      }
-    } catch (error) {
-      return {
-        error: `Unexpected error while retrieving stages for case ${caseID}: ${error.message}`
-      };
-    }
+    // Execute with standardized error handling
+    return await this.executeWithErrorHandling(
+      `Case Stages: ${caseID}`,
+      async () => await this.pegaClient.getCaseStages(caseID.trim()),
+      { caseID }
+    );
   }
 
   /**
-   * Format successful response for display
+   * Override formatSuccessResponse to add case stages specific formatting
    */
-  formatSuccessResponse(caseID, data) {
-    let response = `## Case Stages: ${caseID}\n\n`;
+  formatSuccessResponse(operation, data, options = {}) {
+    const { caseID } = options;
+    
+    let response = `## ${operation}\n\n`;
+    
+    response += `*Operation completed at: ${new Date().toISOString()}*\n\n`;
 
     // Display case stages information
     if (data.stages && Array.isArray(data.stages)) {
@@ -174,65 +158,7 @@ export class GetCaseStagesTool {
       response += '### No Stages Information\n';
       response += '- No stages data found for this case\n';
     }
-
-    response += '\n---\n';
-    response += `*Retrieved at: ${new Date().toISOString()}*`;
-
-    return response;
-  }
-
-  /**
-   * Format error response for display
-   */
-  formatErrorResponse(caseID, error) {
-    let response = `## Error retrieving stages for case: ${caseID}\n\n`;
     
-    response += `**Error Type**: ${error.type}\n`;
-    response += `**Message**: ${error.message}\n`;
-    
-    if (error.details) {
-      response += `**Details**: ${error.details}\n`;
-    }
-    
-    if (error.status) {
-      response += `**HTTP Status**: ${error.status} ${error.statusText}\n`;
-    }
-
-    // Add specific guidance based on error type
-    switch (error.type) {
-      case 'NOT_FOUND':
-        response += '\n**Suggestions**:\n';
-        response += '- Verify the case ID is correct and the case exists\n';
-        response += '- Check that you have access permissions to this case\n';
-        response += '- Ensure the case ID format is correct (full case handle)\n';
-        break;
-      case 'FORBIDDEN':
-        response += '\n**Suggestion**: Check if you have the necessary permissions to access this case and its stages.\n';
-        break;
-      case 'UNAUTHORIZED':
-        response += '\n**Suggestion**: Authentication may have expired. The system will attempt to refresh the token on the next request.\n';
-        break;
-      case 'BAD_REQUEST':
-        response += '\n**Suggestions**:\n';
-        response += '- Check the case ID format (should be full case handle)\n';
-        response += '- Ensure the case ID is properly encoded\n';
-        response += '- Verify the case is in a valid state to retrieve stages\n';
-        break;
-      case 'CONNECTION_ERROR':
-        response += '\n**Suggestion**: Verify the Pega instance URL and network connectivity.\n';
-        break;
-    }
-
-    if (error.errorDetails && error.errorDetails.length > 0) {
-      response += '\n### Additional Error Details\n';
-      error.errorDetails.forEach((detail, index) => {
-        response += `${index + 1}. ${detail.localizedValue || detail.message}\n`;
-      });
-    }
-
-    response += '\n---\n';
-    response += `*Error occurred at: ${new Date().toISOString()}*`;
-
     return response;
   }
 }

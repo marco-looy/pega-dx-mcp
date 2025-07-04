@@ -1,8 +1,11 @@
-import { PegaAPIClient } from '../../api/pega-client.js';
+import { BaseTool } from '../../registry/base-tool.js';
 
-export class PerformAssignmentActionTool {
-  constructor() {
-    this.pegaClient = new PegaAPIClient();
+export class PerformAssignmentActionTool extends BaseTool {
+  /**
+   * Get the category this tool belongs to
+   */
+  static getCategory() {
+    return 'assignments';
   }
 
   /**
@@ -61,51 +64,56 @@ export class PerformAssignmentActionTool {
    * Execute the assignment action operation
    */
   async execute(params) {
+    const { assignmentID, actionID, eTag, content, pageInstructions, attachments, viewType, originChannel } = params;
+
+    // Basic parameter validation using base class
+    const requiredValidation = this.validateRequiredParams(params, ['assignmentID', 'actionID', 'eTag']);
+    if (requiredValidation) {
+      return requiredValidation;
+    }
+
+    // Validate enum parameters using base class
+    const enumValidation = this.validateEnumParams(params, {
+      viewType: ['none', 'form', 'page']
+    });
+    if (enumValidation) {
+      return enumValidation;
+    }
+
+    // Validate optional complex parameters
+    if (content && typeof content !== 'object') {
+      return {
+        error: 'content must be an object when provided'
+      };
+    }
+
+    if (pageInstructions && !Array.isArray(pageInstructions)) {
+      return {
+        error: 'pageInstructions must be an array when provided'
+      };
+    }
+
+    if (attachments && !Array.isArray(attachments)) {
+      return {
+        error: 'attachments must be an array when provided'
+      };
+    }
+
+    // Prepare request options
+    const options = {};
+    
+    if (content) options.content = content;
+    if (pageInstructions) options.pageInstructions = pageInstructions;
+    if (attachments) options.attachments = attachments;
+    if (viewType) options.viewType = viewType;
+    if (originChannel) options.originChannel = originChannel;
+
     try {
-      // Comprehensive parameter validation
-      if (!params.assignmentID || typeof params.assignmentID !== 'string') {
-        throw new Error('assignmentID is required and must be a non-empty string');
-      }
-
-      if (!params.actionID || typeof params.actionID !== 'string') {
-        throw new Error('actionID is required and must be a non-empty string');
-      }
-
-      if (!params.eTag || typeof params.eTag !== 'string') {
-        throw new Error('eTag is required and must be a non-empty string');
-      }
-
-      // Validate optional parameters
-      if (params.content && typeof params.content !== 'object') {
-        throw new Error('content must be an object when provided');
-      }
-
-      if (params.pageInstructions && !Array.isArray(params.pageInstructions)) {
-        throw new Error('pageInstructions must be an array when provided');
-      }
-
-      if (params.attachments && !Array.isArray(params.attachments)) {
-        throw new Error('attachments must be an array when provided');
-      }
-
-      if (params.viewType && !['none', 'form', 'page'].includes(params.viewType)) {
-        throw new Error('viewType must be one of: none, form, page');
-      }
-
-      // Prepare request options
-      const options = {};
-      
-      if (params.content) options.content = params.content;
-      if (params.pageInstructions) options.pageInstructions = params.pageInstructions;
-      if (params.attachments) options.attachments = params.attachments;
-      if (params.viewType) options.viewType = params.viewType;
-      if (params.originChannel) options.originChannel = params.originChannel;
-
       // Execute assignment action via API client
       const result = await this.pegaClient.performAssignmentAction(
-        params.assignmentID,
-        params.actionID,
-        params.eTag,
+        assignmentID,
+        actionID,
+        eTag,
         options
       );
 
@@ -128,12 +136,14 @@ export class PerformAssignmentActionTool {
    * Format successful response for display
    */
   formatSuccessResponse(data, params) {
-    const response = {
-      type: 'text',
-      text: this.buildSuccessMarkdown(data, params)
+    return {
+      content: [
+        {
+          type: 'text',
+          text: this.buildSuccessMarkdown(data, params)
+        }
+      ]
     };
-
-    return response;
   }
 
   /**
@@ -285,12 +295,14 @@ export class PerformAssignmentActionTool {
    * Format error response for display
    */
   formatErrorResponse(error) {
-    const response = {
-      type: 'text',
-      text: this.buildErrorMarkdown(error)
+    return {
+      content: [
+        {
+          type: 'text',
+          text: this.buildErrorMarkdown(error)
+        }
+      ]
     };
-
-    return response;
   }
 
   /**

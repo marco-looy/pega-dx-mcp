@@ -1,8 +1,11 @@
-import { PegaAPIClient } from '../../api/pega-client.js';
+import { BaseTool } from '../../registry/base-tool.js';
 
-export class GetAttachmentCategoriesTool {
-  constructor() {
-    this.pegaClient = new PegaAPIClient();
+export class GetAttachmentCategoriesTool extends BaseTool {
+  /**
+   * Get the category this tool belongs to
+   */
+  static getCategory() {
+    return 'attachments';
   }
 
   /**
@@ -37,7 +40,13 @@ export class GetAttachmentCategoriesTool {
   async execute(params) {
     const { caseID, type = 'File' } = params;
 
-    // Comprehensive parameter validation
+    // Basic parameter validation using base class
+    const requiredValidation = this.validateRequiredParams(params, ['caseID']);
+    if (requiredValidation) {
+      return requiredValidation;
+    }
+
+    // Additional comprehensive parameter validation for complex logic
     const validationResult = this.validateParameters(caseID, type);
     if (!validationResult.valid) {
       return {
@@ -45,37 +54,15 @@ export class GetAttachmentCategoriesTool {
       };
     }
 
-    try {
-      // Normalize type parameter to handle case insensitivity
-      const normalizedType = type.toLowerCase() === 'file' ? 'File' : 'URL';
+    // Normalize type parameter to handle case insensitivity
+    const normalizedType = type.toLowerCase() === 'file' ? 'File' : 'URL';
 
-      // Call Pega API to get case attachment categories
-      const result = await this.pegaClient.getCaseAttachmentCategories(caseID, { type: normalizedType });
-
-      if (result.success) {
-        return {
-          content: [
-            {
-              type: 'text',
-              text: this.formatSuccessResponse(caseID, result.data, normalizedType)
-            }
-          ]
-        };
-      } else {
-        return {
-          content: [
-            {
-              type: 'text',
-              text: this.formatErrorResponse(caseID, result.error, normalizedType)
-            }
-          ]
-        };
-      }
-    } catch (error) {
-      return {
-        error: `Unexpected error while retrieving attachment categories: ${error.message}`
-      };
-    }
+    // Execute with standardized error handling
+    return await this.executeWithErrorHandling(
+      `Attachment Categories: ${caseID} (${normalizedType})`,
+      async () => await this.pegaClient.getCaseAttachmentCategories(caseID, { type: normalizedType }),
+      { caseID, type: normalizedType }
+    );
   }
 
   /**
@@ -112,16 +99,15 @@ export class GetAttachmentCategoriesTool {
   }
 
   /**
-   * Format successful response for display
+   * Override formatSuccessResponse to add attachment categories specific formatting
    */
-  formatSuccessResponse(caseID, data, type) {
+  formatSuccessResponse(operation, data, options = {}) {
+    const { caseID, type } = options;
     const { attachment_categories = [] } = data;
     
-    let response = `## Attachment Categories Retrieved Successfully\n\n`;
-
-    // Display case and filter information
-    response += `### ✅ Case: ${caseID}\n`;
-    response += `### 🔍 Filter: ${type} attachment categories\n\n`;
+    let response = `## ${operation}\n\n`;
+    
+    response += `*Operation completed at: ${new Date().toISOString()}*\n\n`;
     
     if (attachment_categories.length === 0) {
       response += `No ${type.toLowerCase()} attachment categories found for this case.\n\n`;
@@ -191,37 +177,6 @@ export class GetAttachmentCategoriesTool {
     response += `- **Case Class**: Determined from case ID "${caseID}"\n`;
     response += `- **API Behavior**: Returns either File or URL categories per request, not both\n`;
 
-    // Add detailed guidance about Attachment Category rule configuration
-    response += `\n### 📖 Attachment Category Rule Configuration Guide\n`;
-    response += `**How attachment categories are configured in Pega:**\n\n`;
-    response += `1. **Attachment Category Rule Setup**:\n`;
-    response += `   - Navigate to **App Studio > Data > Attachment Categories** in Pega Platform\n`;
-    response += `   - Create or modify attachment category rules for your case type\n`;
-    response += `   - Each category defines which attachment types (File/URL) are allowed\n`;
-    response += `   - Categories must be explicitly associated with case types to appear in API results\n\n`;
-    response += `2. **Category Configuration Properties**:\n`;
-    response += `   - **Category Name**: Display name shown to users (e.g., "Documents", "Evidence")\n`;
-    response += `   - **Category ID**: Unique identifier used internally (e.g., "DOC", "EVID")\n`;
-    response += `   - **Attachment Type**: File or URL attachments allowed for this category\n`;
-    response += `   - **User Permissions**: Control who can view, create, edit, and delete attachments\n\n`;
-    response += `3. **Permission Configuration**:\n`;
-    response += `   - **View Permission**: Controls visibility of attachments in this category\n`;
-    response += `   - **Create Permission**: Allows users to add new attachments to this category\n`;
-    response += `   - **Edit Permission**: Enables modification of attachment names and categories\n`;
-    response += `   - **Delete Own**: Users can delete attachments they created\n`;
-    response += `   - **Delete All**: Users can delete any attachments in this category\n\n`;
-    response += `4. **Case Type Association**:\n`;
-    response += `   - Attachment categories must be linked to specific case types\n`;
-    response += `   - Only categories configured for the case type will appear in API results\n`;
-    response += `   - The API uses the class name from the caseID to determine applicable categories\n`;
-    response += `   - Categories not associated with the case type will not be returned\n\n`;
-    response += `5. **Best Practice Recommendations**:\n`;
-    response += `   - Create meaningful category names that reflect business purpose\n`;
-    response += `   - Set appropriate permissions based on user roles and security requirements\n`;
-    response += `   - Test category configuration with different user personas\n`;
-    response += `   - Document category usage guidelines for business users\n`;
-    response += `   - Consider separate categories for different attachment types (File vs URL)\n`;
-
     // Display related operations
     response += `\n### 🔗 Related Operations\n`;
     response += `- Use \`get_case_attachments\` to view actual attachments for this case\n`;
@@ -233,10 +188,7 @@ export class GetAttachmentCategoriesTool {
     } else {
       response += `- Run again with \`type: "File"\` to see File attachment categories\n`;
     }
-
-    response += `\n---\n`;
-    response += `*Attachment categories retrieved at: ${new Date().toISOString()}*`;
-
+    
     return response;
   }
 

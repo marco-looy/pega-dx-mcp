@@ -1,11 +1,14 @@
-import { PegaAPIClient } from '../../api/pega-client.js';
+import { BaseTool } from '../../registry/base-tool.js';
 import fs from 'fs';
 import path from 'path';
 import { lookup as lookupMimeType } from 'mime-types';
 
-export class UploadAttachmentTool {
-  constructor() {
-    this.pegaClient = new PegaAPIClient();
+export class UploadAttachmentTool extends BaseTool {
+  /**
+   * Get the category this tool belongs to
+   */
+  static getCategory() {
+    return 'attachments';
   }
 
   /**
@@ -112,37 +115,21 @@ export class UploadAttachmentTool {
         finalMimeType = result.mimeType;
       }
 
-      // Upload to Pega API
-      const uploadResult = await this.pegaClient.uploadAttachment(fileBuffer, {
-        fileName: finalFileName,
-        mimeType: finalMimeType,
-        appendUniqueIdToFileName
-      });
-
-      if (uploadResult.success) {
-        return {
-          content: [
-            {
-              type: 'text',
-              text: this.formatSuccessResponse(uploadResult.data, {
-                fileName: finalFileName,
-                mimeType: finalMimeType,
-                fileSize: fileBuffer.length,
-                appendUniqueIdToFileName
-              })
-            }
-          ]
-        };
-      } else {
-        return {
-          content: [
-            {
-              type: 'text',
-              text: this.formatErrorResponse(finalFileName, uploadResult.error)
-            }
-          ]
-        };
-      }
+      // Execute with standardized error handling
+      return await this.executeWithErrorHandling(
+        `Upload Attachment: ${finalFileName}`,
+        async () => await this.pegaClient.uploadAttachment(fileBuffer, {
+          fileName: finalFileName,
+          mimeType: finalMimeType,
+          appendUniqueIdToFileName
+        }),
+        { 
+          fileName: finalFileName,
+          mimeType: finalMimeType,
+          fileSize: fileBuffer.length,
+          appendUniqueIdToFileName
+        }
+      );
     } catch (error) {
       return {
         error: `Unexpected error while uploading attachment: ${error.message}`
@@ -317,12 +304,14 @@ export class UploadAttachmentTool {
   }
 
   /**
-   * Format successful response for display
+   * Override formatSuccessResponse to add upload attachment specific formatting
    */
-  formatSuccessResponse(data, options) {
+  formatSuccessResponse(operation, data, options = {}) {
     const { fileName, mimeType, fileSize, appendUniqueIdToFileName } = options;
     
-    let response = `## File Upload Successful\n\n`;
+    let response = `## ${operation}\n\n`;
+    
+    response += `*Operation completed at: ${new Date().toISOString()}*\n\n`;
     
     // Display temporary attachment ID prominently
     if (data.ID) {
@@ -347,13 +336,10 @@ export class UploadAttachmentTool {
     if (data.ID) {
       response += '\n### Usage Example\n';
       response += '```\n';
-      response += `add_case_attachments(caseID="YOUR-CASE-ID", attachments=[{"ID": "${data.ID}"}])\n`;
+      response += `add_case_attachments(caseID="YOUR-CASE-ID", attachments=[{"type": "File", "category": "File", "ID": "${data.ID}"}])\n`;
       response += '```\n';
     }
-
-    response += '\n---\n';
-    response += `*File uploaded at: ${new Date().toISOString()}*`;
-
+    
     return response;
   }
 

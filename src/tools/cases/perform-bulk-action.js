@@ -1,8 +1,11 @@
-import { PegaAPIClient } from '../../api/pega-client.js';
+import { BaseTool } from '../../registry/base-tool.js';
 
-export class PerformBulkActionTool {
-  constructor() {
-    this.pegaClient = new PegaAPIClient();
+export class PerformBulkActionTool extends BaseTool {
+  /**
+   * Get the category this tool belongs to
+   */
+  static getCategory() {
+    return 'cases';
   }
 
   /**
@@ -71,17 +74,14 @@ export class PerformBulkActionTool {
   async execute(params) {
     const { actionID, cases, runningMode, content, pageInstructions, attachments } = params;
 
-    // 1. COMPREHENSIVE Parameter validation - implement ALL rules
-    
-    // Validate actionID
-    if (!actionID || typeof actionID !== 'string' || actionID.trim() === '') {
-      return {
-        error: 'Invalid actionID parameter. Action ID is required and must be a non-empty string (e.g., "pyUpdateCaseDetails").'
-      };
+    // 1. Basic parameter validation using base class
+    const requiredValidation = this.validateRequiredParams(params, ['actionID', 'cases']);
+    if (requiredValidation) {
+      return requiredValidation;
     }
 
-    // Validate cases array
-    if (!cases || !Array.isArray(cases) || cases.length === 0) {
+    // 2. Validate cases array (complex custom validation)
+    if (!Array.isArray(cases) || cases.length === 0) {
       return {
         error: 'Invalid cases parameter. Cases must be a non-empty array of case objects.'
       };
@@ -102,79 +102,58 @@ export class PerformBulkActionTool {
       }
     }
 
-    // Validate runningMode if provided
-    if (runningMode && runningMode !== 'async') {
-      return {
-        error: 'Invalid runningMode parameter. Must be "async" for Launchpad asynchronous execution, or omit for default behavior.'
-      };
+    // 3. Validate enum parameters using base class
+    const enumValidation = this.validateEnumParams(params, {
+      runningMode: ['async']
+    });
+    if (enumValidation) {
+      return enumValidation;
     }
 
-    // Validate content if provided
+    // 4. Validate optional complex parameters
     if (content !== undefined && (typeof content !== 'object' || Array.isArray(content))) {
       return {
         error: 'Invalid content parameter. Must be an object containing scalar properties and embedded page properties.'
       };
     }
 
-    // Validate pageInstructions if provided
     if (pageInstructions !== undefined && !Array.isArray(pageInstructions)) {
       return {
         error: 'Invalid pageInstructions parameter. Must be an array of page-related operations.'
       };
     }
 
-    // Validate attachments if provided
     if (attachments !== undefined && !Array.isArray(attachments)) {
       return {
         error: 'Invalid attachments parameter. Must be an array of attachment objects.'
       };
     }
 
-    try {
-      // 2. API call via pegaClient with ALL user-specified options
-      const result = await this.pegaClient.performBulkAction(actionID.trim(), {
+    // 5. Execute with standardized error handling
+    return await this.executeWithErrorHandling(
+      `Bulk Action: ${actionID} on ${cases.length} cases`,
+      async () => await this.pegaClient.performBulkAction(actionID.trim(), {
         cases,
         runningMode,
         content,
         pageInstructions,
         attachments
-      });
-
-      if (result.success) {
-        return {
-          content: [
-            {
-              type: 'text',
-              text: this.formatSuccessResponse(actionID, cases, result.data, { runningMode, content, pageInstructions, attachments })
-            }
-          ]
-        };
-      } else {
-        return {
-          content: [
-            {
-              type: 'text',
-              text: this.formatErrorResponse(actionID, cases, result.error)
-            }
-          ]
-        };
-      }
-    } catch (error) {
-      return {
-        error: `Unexpected error while performing bulk action ${actionID} on ${cases.length} cases: ${error.message}`
-      };
-    }
+      }),
+      { actionID, cases, runningMode, content, pageInstructions, attachments }
+    );
   }
 
   /**
-   * Format successful response for display
+   * Override formatSuccessResponse to add bulk action specific formatting
    * IMPORTANT: Include ALL data fields and formatting specified by user
    */
-  formatSuccessResponse(actionID, cases, data, options) {
-    const { runningMode, content, pageInstructions, attachments } = options;
+  formatSuccessResponse(operation, data, options = {}) {
+    const { actionID, cases, runningMode, content, pageInstructions, attachments } = options;
     
-    let response = `## Bulk Action Executed: ${actionID}\n`;
-    response += `**Cases Processed**: ${cases.length}\n`;
+    let response = `## ${operation}\n\n`;
+    
+    response += `*Operation completed at: ${new Date().toISOString()}*\n\n`;
+    
     response += `**Execution Mode**: ${runningMode === 'async' ? 'Asynchronous (Launchpad)' : 'Synchronous (Infinity)'}\n\n`;
     
     // Display execution summary
@@ -244,102 +223,6 @@ export class PerformBulkActionTool {
         response += `- **Failed**: ${data.summary.failed || 'N/A'}\n`;
       }
     }
-
-    response += '\n---\n';
-    response += `*Bulk action executed at: ${new Date().toISOString()}*`;
-
-    return response;
-  }
-
-  /**
-   * Format error response for display  
-   * IMPORTANT: Include ALL error scenarios and guidance provided by user
-   */
-  formatErrorResponse(actionID, cases, error) {
-    let response = `## Error performing bulk action: ${actionID}\n`;
-    response += `**Target Cases**: ${cases.length} cases\n\n`;
-    
-    response += `**Error Type**: ${error.type}\n`;
-    response += `**Message**: ${error.message}\n`;
-    
-    if (error.details) {
-      response += `**Details**: ${error.details}\n`;
-    }
-    
-    if (error.status) {
-      response += `**HTTP Status**: ${error.status} ${error.statusText}\n`;
-    }
-
-    // Add specific guidance based on error type
-    switch (error.type) {
-      case 'NOT_FOUND':
-        response += '\n**Suggestion**: Verify the action ID and case IDs are correct. One or more cases or the action may not exist, or you may not have access.\n';
-        response += '- Check if all cases exist using the get_case tool\n';
-        response += '- Verify the action name is spelled correctly\n';
-        response += '- Ensure the action is available for bulk execution\n';
-        response += '- Confirm the action is case-wide (not assignment-level)\n';
-        break;
-      case 'FORBIDDEN':
-        response += '\n**Suggestion**: Check if you have the necessary permissions for bulk action execution.\n';
-        response += '- Verify you have access to all specified cases\n';
-        response += '- Check if the bulk action is allowed for your user role\n';
-        response += '- Ensure all cases are in the correct stage for this action\n';
-        response += '- Confirm bulk operations are enabled in your Pega instance\n';
-        break;
-      case 'UNAUTHORIZED':
-        response += '\n**Suggestion**: Authentication may have expired. The system will attempt to refresh the token on the next request.\n';
-        response += '- Token refresh will be attempted automatically\n';
-        response += '- If the issue persists, verify OAuth2 configuration\n';
-        break;
-      case 'BAD_REQUEST':
-        response += '\n**Suggestion**: Check the action ID, case IDs, and request parameters.\n';
-        response += '- Ensure actionID is a valid case action name\n';
-        response += '- Verify all case IDs are full case handles (e.g., "ON6E5R-DIYRecipe-Work-RecipeCollection R-1008")\n';
-        response += '- Check that content, pageInstructions, and attachments are properly formatted\n';
-        response += '- Ensure runningMode is "async" if specified (Launchpad only)\n';
-        break;
-      case 'UNPROCESSABLE_ENTITY':
-        response += '\n**Suggestion**: The bulk action request contains invalid values or violates business rules.\n';
-        response += '- Verify all cases are in the correct state for this action\n';
-        response += '- Check if required fields are missing or contain invalid values\n';
-        response += '- Ensure the action supports bulk execution mode\n';
-        response += '- Confirm the action is case-wide (not assignment-level)\n';
-        break;
-      case 'INTERNAL_SERVER_ERROR':
-        response += '\n**Suggestion**: A server error occurred during bulk processing.\n';
-        response += '- Try executing the action individually on each case\n';
-        response += '- Reduce the number of cases in the bulk operation\n';
-        response += '- Check with your Pega administrator for server-side issues\n';
-        response += '- Consider using smaller batch sizes for large bulk operations\n';
-        break;
-      case 'CONNECTION_ERROR':
-        response += '\n**Suggestion**: Verify the Pega instance URL and network connectivity.\n';
-        response += '- Check network connection to Pega instance\n';
-        response += '- Verify the API base URL is correct\n';
-        response += '- Ensure Pega instance is accessible and running\n';
-        break;
-    }
-
-    // Display case information for debugging
-    response += '\n### Case Information\n';
-    cases.forEach((caseObj, index) => {
-      response += `${index + 1}. **${caseObj.ID}**\n`;
-    });
-
-    if (error.errorDetails && error.errorDetails.length > 0) {
-      response += '\n### Additional Error Details\n';
-      error.errorDetails.forEach((detail, index) => {
-        response += `${index + 1}. ${detail.localizedValue || detail.message}\n`;
-      });
-    }
-
-    response += '\n### Bulk Action Limitations\n';
-    response += '- Only case-wide actions that update cases directly are supported\n';
-    response += '- Assignment-level actions (Transfer, Adjust Assignment SLA) require individual case processing\n';
-    response += '- Some actions may not be available for bulk execution due to business logic constraints\n';
-
-    response += '\n---\n';
-    response += `*Error occurred at: ${new Date().toISOString()}*`;
 
     return response;
   }

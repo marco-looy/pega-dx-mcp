@@ -1,8 +1,11 @@
-import { PegaAPIClient } from '../../api/pega-client.js';
+import { BaseTool } from '../../registry/base-tool.js';
 
-export class CreateCaseTool {
-  constructor() {
-    this.pegaClient = new PegaAPIClient();
+export class CreateCaseTool extends BaseTool {
+  /**
+   * Get the category this tool belongs to
+   */
+  static getCategory() {
+    return 'cases';
   }
 
   /**
@@ -57,18 +60,18 @@ export class CreateCaseTool {
   async execute(params) {
     const { caseTypeID, parentCaseID, content, pageInstructions, attachments, viewType, pageName } = params;
 
-    // Validate required parameters
-    if (!caseTypeID || typeof caseTypeID !== 'string' || caseTypeID.trim() === '') {
-      return {
-        error: 'Invalid caseTypeID parameter. Case type ID is required and must be a non-empty string.'
-      };
+    // Validate required parameters using base class
+    const requiredValidation = this.validateRequiredParams(params, ['caseTypeID']);
+    if (requiredValidation) {
+      return requiredValidation;
     }
 
-    // Validate viewType if provided
-    if (viewType && !['none', 'form', 'page'].includes(viewType)) {
-      return {
-        error: 'Invalid viewType parameter. Must be one of: "none", "form", or "page".'
-      };
+    // Validate enum parameters using base class
+    const enumValidation = this.validateEnumParams(params, {
+      viewType: ['none', 'form', 'page']
+    });
+    if (enumValidation) {
+      return enumValidation;
     }
 
     // Validate pageName usage
@@ -85,9 +88,10 @@ export class CreateCaseTool {
       };
     }
 
-    try {
-      // Call Pega API to create the case
-      const result = await this.pegaClient.createCase({
+    // Execute with standardized error handling
+    return await this.executeWithErrorHandling(
+      `Case Creation: ${caseTypeID}`,
+      async () => await this.pegaClient.createCase({
         caseTypeID: caseTypeID.trim(),
         parentCaseID: parentCaseID?.trim(),
         content,
@@ -95,50 +99,30 @@ export class CreateCaseTool {
         attachments,
         viewType,
         pageName
-      });
-
-      if (result.success) {
-        return {
-          content: [
-            {
-              type: 'text',
-              text: this.formatSuccessResponse(result.data, result.eTag, { viewType, pageName })
-            }
-          ]
-        };
-      } else {
-        return {
-          content: [
-            {
-              type: 'text',
-              text: this.formatErrorResponse(caseTypeID, result.error)
-            }
-          ]
-        };
-      }
-    } catch (error) {
-      return {
-        error: `Unexpected error while creating case of type ${caseTypeID}: ${error.message}`
-      };
-    }
+      }),
+      { caseTypeID, viewType, pageName }
+    );
   }
 
   /**
-   * Format successful response for display
+   * Override formatSuccessResponse to add case-specific formatting
    */
-  formatSuccessResponse(data, eTag, options) {
-    const { viewType } = options;
+  formatSuccessResponse(operation, data, options = {}) {
+    const { caseTypeID, viewType } = options;
     
-    let response = `## Case Created Successfully\n\n`;
+    let response = `## ${operation}\n\n`;
+    
+    // Add timestamp
+    response += `*Operation completed at: ${new Date().toISOString()}*\n\n`;
     
     // Display case ID prominently
     if (data.ID) {
       response += `### ✅ New Case ID: ${data.ID}\n\n`;
     }
 
-    // Display eTag for future updates
-    if (eTag) {
-      response += `**eTag**: ${eTag}\n`;
+    // Display eTag for future updates  
+    if (data.etag) {
+      response += `**eTag**: ${data.etag}\n`;
       response += `*Save this eTag for future case updates*\n\n`;
     }
     
@@ -179,74 +163,16 @@ export class CreateCaseTool {
       response += `${data.confirmationNote}\n`;
     }
 
-    // Display UI resources info if viewType is not 'none'
-    if (viewType !== 'none' && data.uiResources) {
+    // Add base class UI resources handling
+    if (data.uiResources) {
       response += '\n### UI Resources\n';
-      response += `- UI metadata loaded for ${viewType} view\n`;
+      response += '- UI metadata has been loaded\n';
       if (data.uiResources.root) {
         response += `- Root component: ${data.uiResources.root.type || 'Unknown'}\n`;
       }
-    }
-
-    response += '\n---\n';
-    response += `*Case created at: ${new Date().toISOString()}*`;
-
-    return response;
-  }
-
-  /**
-   * Format error response for display
-   */
-  formatErrorResponse(caseTypeID, error) {
-    let response = `## Error creating case of type: ${caseTypeID}\n\n`;
-    
-    response += `**Error Type**: ${error.type}\n`;
-    response += `**Message**: ${error.message}\n`;
-    
-    if (error.details) {
-      response += `**Details**: ${error.details}\n`;
+      response += '\n';
     }
     
-    if (error.status) {
-      response += `**HTTP Status**: ${error.status} ${error.statusText}\n`;
-    }
-
-    // Add specific guidance based on error type
-    switch (error.type) {
-      case 'BAD_REQUEST':
-        response += '\n**Suggestions**:\n';
-        response += '- Verify the caseTypeID is correct and exists in your Pega application\n';
-        response += '- Check if all required fields are included in the content object\n';
-        response += '- Ensure fields in content are defined in the AllowedStartingFields data transform\n';
-        response += '- Verify parentCaseID format if provided (use full case handle)\n';
-        break;
-      case 'FORBIDDEN':
-        response += '\n**Suggestion**: Check if you have the necessary permissions to create cases of this type.\n';
-        break;
-      case 'UNAUTHORIZED':
-        response += '\n**Suggestion**: Authentication may have expired. The system will attempt to refresh the token on the next request.\n';
-        break;
-      case 'UNPROCESSABLE_ENTITY':
-        response += '\n**Suggestions**:\n';
-        response += '- Check that all field values in content match their expected data types\n';
-        response += '- Verify picklist values are from the allowed list\n';
-        response += '- Ensure page/page list assignments are correctly structured\n';
-        break;
-      case 'CONNECTION_ERROR':
-        response += '\n**Suggestion**: Verify the Pega instance URL and network connectivity.\n';
-        break;
-    }
-
-    if (error.errorDetails && error.errorDetails.length > 0) {
-      response += '\n### Additional Error Details\n';
-      error.errorDetails.forEach((detail, index) => {
-        response += `${index + 1}. ${detail.localizedValue || detail.message}\n`;
-      });
-    }
-
-    response += '\n---\n';
-    response += `*Error occurred at: ${new Date().toISOString()}*`;
-
     return response;
   }
 }

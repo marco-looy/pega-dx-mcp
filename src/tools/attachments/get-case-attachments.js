@@ -1,8 +1,11 @@
-import { PegaAPIClient } from '../../api/pega-client.js';
+import { BaseTool } from '../../registry/base-tool.js';
 
-export class GetCaseAttachmentsTool {
-  constructor() {
-    this.pegaClient = new PegaAPIClient();
+export class GetCaseAttachmentsTool extends BaseTool {
+  /**
+   * Get the category this tool belongs to
+   */
+  static getCategory() {
+    return 'attachments';
   }
 
   /**
@@ -36,7 +39,13 @@ export class GetCaseAttachmentsTool {
   async execute(params) {
     const { caseID, includeThumbnails = false } = params;
 
-    // Comprehensive parameter validation
+    // Basic parameter validation using base class
+    const requiredValidation = this.validateRequiredParams(params, ['caseID']);
+    if (requiredValidation) {
+      return requiredValidation;
+    }
+
+    // Additional comprehensive parameter validation for complex logic
     const validationResult = this.validateParameters(caseID, includeThumbnails);
     if (!validationResult.valid) {
       return {
@@ -44,34 +53,12 @@ export class GetCaseAttachmentsTool {
       };
     }
 
-    try {
-      // Call Pega API to get case attachments
-      const result = await this.pegaClient.getCaseAttachments(caseID, { includeThumbnails });
-
-      if (result.success) {
-        return {
-          content: [
-            {
-              type: 'text',
-              text: this.formatSuccessResponse(caseID, result.data, includeThumbnails)
-            }
-          ]
-        };
-      } else {
-        return {
-          content: [
-            {
-              type: 'text',
-              text: this.formatErrorResponse(caseID, result.error, includeThumbnails)
-            }
-          ]
-        };
-      }
-    } catch (error) {
-      return {
-        error: `Unexpected error while retrieving case attachments: ${error.message}`
-      };
-    }
+    // Execute with standardized error handling
+    return await this.executeWithErrorHandling(
+      `Case Attachments: ${caseID}`,
+      async () => await this.pegaClient.getCaseAttachments(caseID, { includeThumbnails }),
+      { caseID, includeThumbnails }
+    );
   }
 
   /**
@@ -98,15 +85,15 @@ export class GetCaseAttachmentsTool {
   }
 
   /**
-   * Format successful response for display
+   * Override formatSuccessResponse to add case attachments specific formatting
    */
-  formatSuccessResponse(caseID, data, includeThumbnails) {
+  formatSuccessResponse(operation, data, options = {}) {
+    const { caseID, includeThumbnails } = options;
     const { attachments = [] } = data;
     
-    let response = `## Case Attachments Retrieved Successfully\n\n`;
-
-    // Display case information
-    response += `### ✅ Case: ${caseID}\n\n`;
+    let response = `## ${operation}\n\n`;
+    
+    response += `*Operation completed at: ${new Date().toISOString()}*\n\n`;
     
     if (attachments.length === 0) {
       response += `No attachments found for this case.\n\n`;
@@ -203,100 +190,7 @@ export class GetCaseAttachmentsTool {
     if (attachments.length > 0) {
       response += `- Individual attachment operations (download, edit, delete) available via attachment links\n`;
     }
-
-    response += `\n---\n`;
-    response += `*Attachments retrieved at: ${new Date().toISOString()}*`;
-
-    return response;
-  }
-
-  /**
-   * Format error response for display
-   */
-  formatErrorResponse(caseID, error, includeThumbnails) {
-    let response = `## Error Retrieving Case Attachments\n\n`;
     
-    response += `**Case ID**: ${caseID}\n`;
-    response += `**Thumbnails Requested**: ${includeThumbnails ? 'Yes' : 'No'}\n`;
-    response += `**Error Type**: ${error.type}\n`;
-    response += `**Message**: ${error.message}\n`;
-    
-    if (error.details) {
-      response += `**Details**: ${error.details}\n`;
-    }
-    
-    if (error.status) {
-      response += `**HTTP Status**: ${error.status} ${error.statusText}\n`;
-    }
-
-    // Add specific guidance based on error type
-    switch (error.type) {
-      case 'UNAUTHORIZED':
-        response += '\n**Solution**: Authentication token may have expired. The system will attempt to refresh the token on the next request.\n';
-        break;
-
-      case 'FORBIDDEN':
-        response += '\n**Solutions**:\n';
-        response += '- Verify you have permission to view this case and its attachments\n';
-        response += '- Check if your user role includes attachment viewing privileges\n';
-        response += '- Contact your system administrator for case access permissions\n';
-        response += '- Ensure the case is in a stage that allows attachment viewing\n';
-        break;
-
-      case 'NOT_FOUND':
-        response += '\n**Solutions**:\n';
-        response += '- Verify the case ID is correct and includes the full case handle\n';
-        response += `- Expected format: "ON6E5R-DIYRecipe-Work-RecipeCollection R-XXXX"\n`;
-        response += '- Check if you have access to view this case\n';
-        response += '- Ensure the case exists and is not deleted\n';
-        response += '- Use `get_case` tool to verify case accessibility\n';
-        break;
-
-      case 'INTERNAL_SERVER_ERROR':
-        response += '\n**Solutions**:\n';
-        response += '- This is a server-side error in the Pega system\n';
-        response += '- Try the operation again after a brief delay\n';
-        response += '- Contact your system administrator if the error persists\n';
-        response += '- Check Pega system logs for detailed error information\n';
-        response += '- Verify attachment category configuration is correct\n';
-        break;
-
-      case 'CONNECTION_ERROR':
-        response += '\n**Solution**: Verify the Pega instance URL and network connectivity.\n';
-        break;
-
-      default:
-        response += '\n**General Solutions**:\n';
-        response += '- Verify the case ID format matches your application structure\n';
-        response += '- Check network connectivity to the Pega instance\n';
-        response += '- Ensure proper authentication credentials are configured\n';
-        response += '- Contact your system administrator if the error persists\n';
-        break;
-    }
-
-    // Display detailed error information if available
-    if (error.errorDetails && error.errorDetails.length > 0) {
-      response += '\n### Detailed Error Information\n';
-      error.errorDetails.forEach((detail, index) => {
-        response += `${index + 1}. **${detail.message || 'Error'}**: ${detail.localizedValue || detail.message}\n`;
-        if (detail.messageParameters && detail.messageParameters.length > 0) {
-          response += `   - Parameters: ${detail.messageParameters.join(', ')}\n`;
-        }
-      });
-    }
-
-    // Display troubleshooting context
-    response += '\n### Troubleshooting Context\n';
-    response += `- **Case ID Format**: Ensure full case handle format (e.g., "ON6E5R-DIYRecipe-Work-RecipeCollection R-1008")\n`;
-    response += `- **Attachment Categories**: Only configured categories in Attachment Category rule are accessible\n`;
-    response += `- **User Permissions**: Attachment viewing requires appropriate case and attachment access rights\n`;
-    if (includeThumbnails) {
-      response += `- **Thumbnail Feature**: Thumbnails require additional processing and may impact performance\n`;
-    }
-
-    response += '\n---\n';
-    response += `*Error occurred at: ${new Date().toISOString()}*`;
-
     return response;
   }
 }

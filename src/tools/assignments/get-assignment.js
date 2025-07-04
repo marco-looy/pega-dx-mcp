@@ -1,8 +1,11 @@
-import { PegaAPIClient } from '../../api/pega-client.js';
+import { BaseTool } from '../../registry/base-tool.js';
 
-export class GetAssignmentTool {
-  constructor() {
-    this.pegaClient = new PegaAPIClient();
+export class GetAssignmentTool extends BaseTool {
+  /**
+   * Get the category this tool belongs to
+   */
+  static getCategory() {
+    return 'assignments';
   }
 
   /**
@@ -41,18 +44,18 @@ export class GetAssignmentTool {
   async execute(params) {
     const { assignmentID, viewType = 'page', pageName } = params;
 
-    // Validate required parameters
-    if (!assignmentID || typeof assignmentID !== 'string' || assignmentID.trim() === '') {
-      return {
-        error: 'Invalid assignmentID parameter. Assignment ID is required and must be a non-empty string.'
-      };
+    // Basic parameter validation using base class
+    const requiredValidation = this.validateRequiredParams(params, ['assignmentID']);
+    if (requiredValidation) {
+      return requiredValidation;
     }
 
-    // Validate viewType if provided
-    if (viewType && !['form', 'page'].includes(viewType)) {
-      return {
-        error: 'Invalid viewType parameter. Must be either "form" or "page".'
-      };
+    // Validate enum parameters using base class
+    const enumValidation = this.validateEnumParams(params, {
+      viewType: ['form', 'page']
+    });
+    if (enumValidation) {
+      return enumValidation;
     }
 
     // Validate pageName usage
@@ -62,46 +65,26 @@ export class GetAssignmentTool {
       };
     }
 
-    try {
-      // Call Pega API to get assignment details
-      const result = await this.pegaClient.getAssignment(assignmentID.trim(), {
+    // Execute with standardized error handling
+    return await this.executeWithErrorHandling(
+      `Assignment Details: ${assignmentID}`,
+      async () => await this.pegaClient.getAssignment(assignmentID.trim(), {
         viewType,
         pageName
-      });
-
-      if (result.success) {
-        return {
-          content: [
-            {
-              type: 'text',
-              text: this.formatSuccessResponse(assignmentID, result.data, { viewType, pageName })
-            }
-          ]
-        };
-      } else {
-        return {
-          content: [
-            {
-              type: 'text',
-              text: this.formatErrorResponse(assignmentID, result.error)
-            }
-          ]
-        };
-      }
-    } catch (error) {
-      return {
-        error: `Unexpected error while retrieving assignment ${assignmentID}: ${error.message}`
-      };
-    }
+      }),
+      { assignmentID, viewType, pageName }
+    );
   }
 
   /**
-   * Format successful response for display
+   * Override formatSuccessResponse to add assignment specific formatting
    */
-  formatSuccessResponse(assignmentID, data, options) {
-    const { viewType } = options;
+  formatSuccessResponse(operation, data, options = {}) {
+    const { assignmentID, viewType } = options;
     
-    let response = `## Assignment Details: ${assignmentID}\n\n`;
+    let response = `## ${operation}\n\n`;
+    
+    response += `*Operation completed at: ${new Date().toISOString()}*\n\n`;
     
     if (data.data) {
       // Display assignment information
@@ -194,65 +177,7 @@ export class GetAssignmentTool {
         response += '- **Status**: No locking applied\n';
       }
     }
-
-    response += '\n---\n';
-    response += `*Retrieved at: ${new Date().toISOString()}*`;
-
-    return response;
-  }
-
-  /**
-   * Format error response for display
-   */
-  formatErrorResponse(assignmentID, error) {
-    let response = `## Error retrieving assignment: ${assignmentID}\n\n`;
     
-    response += `**Error Type**: ${error.type}\n`;
-    response += `**Message**: ${error.message}\n`;
-    
-    if (error.details) {
-      response += `**Details**: ${error.details}\n`;
-    }
-    
-    if (error.status) {
-      response += `**HTTP Status**: ${error.status} ${error.statusText}\n`;
-    }
-
-    // Add specific guidance based on error type
-    switch (error.type) {
-      case 'NOT_FOUND':
-        response += '\n**Suggestion**: Verify the assignment ID is correct and the assignment exists in the system. Check if the assignment might have been completed or reassigned.\n';
-        break;
-      case 'FORBIDDEN':
-        response += '\n**Suggestion**: Check if you have the necessary permissions to access this assignment. The assignment might be restricted to specific users or roles.\n';
-        break;
-      case 'UNAUTHORIZED':
-        response += '\n**Suggestion**: Authentication may have expired. The system will attempt to refresh the token on the next request.\n';
-        break;
-      case 'BAD_REQUEST':
-        response += '\n**Suggestion**: Check the assignment ID format and any additional parameters. Assignment IDs should follow the pattern: ASSIGN-WORKLIST PBANK-LOAN-WORK V-76003!REVIEW_FLOW.\n';
-        break;
-      case 'LOCKED':
-        response += '\n**Suggestion**: This assignment or its associated case is currently locked by another user. Wait for the lock to be released or contact the user who has the lock.\n';
-        break;
-      case 'CONNECTION_ERROR':
-        response += '\n**Suggestion**: Verify the Pega instance URL and network connectivity.\n';
-        break;
-      case 'INTERNAL_SERVER_ERROR':
-        response += '\n**Suggestion**: The Pega Platform encountered an internal error. Please try again or contact support if the issue persists.\n';
-        break;
-    }
-
-    if (error.errorDetails && error.errorDetails.length > 0) {
-      response += '\n### Additional Error Details\n';
-      error.errorDetails.forEach((detail, index) => {
-        response += `${index + 1}. ${detail.localizedValue || detail.message}\n`;
-      });
-    }
-
-    response += '\n---\n';
-    response += `*Error occurred at: ${new Date().toISOString()}*`;
-
     return response;
   }
 }

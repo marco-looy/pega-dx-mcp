@@ -1,8 +1,11 @@
-import { PegaAPIClient } from '../../api/pega-client.js';
+import { BaseTool } from '../../registry/base-tool.js';
 
-export class RefreshAssignmentActionTool {
-  constructor() {
-    this.pegaClient = new PegaAPIClient();
+export class RefreshAssignmentActionTool extends BaseTool {
+  /**
+   * Get the category this tool belongs to
+   */
+  static getCategory() {
+    return 'assignments';
   }
 
   /**
@@ -77,20 +80,21 @@ export class RefreshAssignmentActionTool {
       pageInstructions 
     } = params;
 
-    // Validate required parameters
-    if (!assignmentID || typeof assignmentID !== 'string' || assignmentID.trim() === '') {
-      return {
-        error: 'Invalid assignmentID parameter. Assignment ID is required and must be a non-empty string. Example: ASSIGN-WORKLIST MYORG-SERVICES-WORK S-293001!APPROVAL_FLOW'
-      };
+    // Basic parameter validation using base class
+    const requiredValidation = this.validateRequiredParams(params, ['assignmentID', 'actionID']);
+    if (requiredValidation) {
+      return requiredValidation;
     }
 
-    if (!actionID || typeof actionID !== 'string' || actionID.trim() === '') {
-      return {
-        error: 'Invalid actionID parameter. Action ID is required and must be a non-empty string. This should match a Flow Action rule ID configured in your Pega application.'
-      };
+    // Validate enum parameters using base class
+    const enumValidation = this.validateEnumParams(params, {
+      operation: ['showRow', 'submitRow']
+    });
+    if (enumValidation) {
+      return enumValidation;
     }
 
-    // Validate optional parameters
+    // Additional custom validation for complex business rules
     if (refreshFor !== undefined && (typeof refreshFor !== 'string' || refreshFor.trim() === '')) {
       return {
         error: 'Invalid refreshFor parameter. When provided, it must be a non-empty string representing the property name that triggers the refresh.'
@@ -100,12 +104,6 @@ export class RefreshAssignmentActionTool {
     if (fillFormWithAI !== undefined && typeof fillFormWithAI !== 'boolean') {
       return {
         error: 'Invalid fillFormWithAI parameter. Must be a boolean value (true or false).'
-      };
-    }
-
-    if (operation !== undefined && !['showRow', 'submitRow'].includes(operation)) {
-      return {
-        error: 'Invalid operation parameter. Must be either "showRow" (for adding/editing rows) or "submitRow" (for submitting rows) when specified.'
       };
     }
 

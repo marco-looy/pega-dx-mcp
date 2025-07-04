@@ -1,8 +1,11 @@
-import { PegaAPIClient } from '../../api/pega-client.js';
+import { BaseTool } from '../../registry/base-tool.js';
 
-export class GetNextAssignmentTool {
-  constructor() {
-    this.pegaClient = new PegaAPIClient();
+export class GetNextAssignmentTool extends BaseTool {
+  /**
+   * Get the category this tool belongs to
+   */
+  static getCategory() {
+    return 'assignments';
   }
 
   /**
@@ -37,11 +40,12 @@ export class GetNextAssignmentTool {
   async execute(params) {
     const { viewType = 'page', pageName } = params;
 
-    // Validate viewType if provided
-    if (viewType && !['form', 'page'].includes(viewType)) {
-      return {
-        error: 'Invalid viewType parameter. Must be either "form" or "page".'
-      };
+    // Validate enum parameters using base class
+    const enumValidation = this.validateEnumParams(params, {
+      viewType: ['form', 'page']
+    });
+    if (enumValidation) {
+      return enumValidation;
     }
 
     // Validate pageName usage
@@ -51,46 +55,26 @@ export class GetNextAssignmentTool {
       };
     }
 
-    try {
-      // Call Pega API to get next assignment
-      const result = await this.pegaClient.getNextAssignment({
+    // Execute with standardized error handling
+    return await this.executeWithErrorHandling(
+      'Next Assignment',
+      async () => await this.pegaClient.getNextAssignment({
         viewType,
         pageName
-      });
-
-      if (result.success) {
-        return {
-          content: [
-            {
-              type: 'text',
-              text: this.formatSuccessResponse(result.data, { viewType, pageName })
-            }
-          ]
-        };
-      } else {
-        return {
-          content: [
-            {
-              type: 'text',
-              text: this.formatErrorResponse(result.error)
-            }
-          ]
-        };
-      }
-    } catch (error) {
-      return {
-        error: `Unexpected error while retrieving next assignment: ${error.message}`
-      };
-    }
+      }),
+      { viewType, pageName }
+    );
   }
 
   /**
-   * Format successful response for display
+   * Override formatSuccessResponse to add next assignment specific formatting
    */
-  formatSuccessResponse(data, options) {
+  formatSuccessResponse(operation, data, options = {}) {
     const { viewType } = options;
     
-    let response = `## Next Assignment Retrieved\n\n`;
+    let response = `## ${operation}\n\n`;
+    
+    response += `*Operation completed at: ${new Date().toISOString()}*\n\n`;
     
     if (data.data) {
       response += '### Assignment Information\n';
@@ -154,10 +138,7 @@ export class GetNextAssignmentTool {
       response += `- eTag captured: ${data.etag}\n`;
       response += '- Ready for assignment execution operations\n';
     }
-
-    response += '\n---\n';
-    response += `*Retrieved at: ${new Date().toISOString()}*`;
-
+    
     return response;
   }
 

@@ -1,8 +1,11 @@
-import { PegaAPIClient } from '../../api/pega-client.js';
+import { BaseTool } from '../../registry/base-tool.js';
 
-export class GetCaseTypesTool {
-  constructor() {
-    this.pegaClient = new PegaAPIClient();
+export class GetCaseTypesTool extends BaseTool {
+  /**
+   * Get the category this tool belongs to
+   */
+  static getCategory() {
+    return 'casetypes';
   }
 
   /**
@@ -24,41 +27,21 @@ export class GetCaseTypesTool {
    * Execute the get case types operation
    */
   async execute(params) {
-    try {
-      // Call Pega API to get case types list
-      const result = await this.pegaClient.getCaseTypes();
-
-      if (result.success) {
-        return {
-          content: [
-            {
-              type: 'text',
-              text: this.formatSuccessResponse(result.data)
-            }
-          ]
-        };
-      } else {
-        return {
-          content: [
-            {
-              type: 'text',
-              text: this.formatErrorResponse(result.error)
-            }
-          ]
-        };
-      }
-    } catch (error) {
-      return {
-        error: `Unexpected error while retrieving case types: ${error.message}`
-      };
-    }
+    // Execute with standardized error handling
+    return await this.executeWithErrorHandling(
+      'Available Case Types',
+      async () => await this.pegaClient.getCaseTypes(),
+      {}
+    );
   }
 
   /**
-   * Format successful response for display
+   * Override formatSuccessResponse to add case types specific formatting
    */
-  formatSuccessResponse(data) {
-    let response = `## Available Case Types\n\n`;
+  formatSuccessResponse(operation, data, options = {}) {
+    let response = `## ${operation}\n\n`;
+    
+    response += `*Operation completed at: ${new Date().toISOString()}*\n\n`;
     
     // Display application compatibility info
     if (data.applicationIsConstellationCompatible !== undefined) {
@@ -126,62 +109,7 @@ export class GetCaseTypesTool {
       response += '- Current user lacks permissions to create cases\n';
       response += '- All case types have `canCreate` set to false in the application definition\n';
     }
-
-    response += '\n---\n';
-    response += `*Retrieved at: ${new Date().toISOString()}*`;
-
-    return response;
-  }
-
-  /**
-   * Format error response for display
-   */
-  formatErrorResponse(error) {
-    let response = `## Error retrieving case types\n\n`;
     
-    response += `**Error Type**: ${error.type}\n`;
-    response += `**Message**: ${error.message}\n`;
-    
-    if (error.details) {
-      response += `**Details**: ${error.details}\n`;
-    }
-    
-    if (error.status) {
-      response += `**HTTP Status**: ${error.status} ${error.statusText}\n`;
-    }
-
-    // Add specific guidance based on error type
-    switch (error.type) {
-      case 'NOT_FOUND':
-        response += '\n**Suggestion**: The case types endpoint may not be available. Verify the Pega instance URL and API version.\n';
-        break;
-      case 'FORBIDDEN':
-        response += '\n**Suggestion**: Check if you have the necessary permissions to access case types in this application.\n';
-        break;
-      case 'UNAUTHORIZED':
-        response += '\n**Suggestion**: Authentication may have expired. The system will attempt to refresh the token on the next request.\n';
-        break;
-      case 'BAD_REQUEST':
-        response += '\n**Suggestion**: There may be an issue with the API request format. Check the Pega instance configuration.\n';
-        break;
-      case 'CONNECTION_ERROR':
-        response += '\n**Suggestion**: Verify the Pega instance URL and network connectivity.\n';
-        break;
-      case 'INTERNAL_SERVER_ERROR':
-        response += '\n**Suggestion**: There may be an issue with the Pega instance. Check the server logs or contact your administrator.\n';
-        break;
-    }
-
-    if (error.errorDetails && error.errorDetails.length > 0) {
-      response += '\n### Additional Error Details\n';
-      error.errorDetails.forEach((detail, index) => {
-        response += `${index + 1}. ${detail.localizedValue || detail.message}\n`;
-      });
-    }
-
-    response += '\n---\n';
-    response += `*Error occurred at: ${new Date().toISOString()}*`;
-
     return response;
   }
 }

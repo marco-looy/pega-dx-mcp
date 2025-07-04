@@ -1,8 +1,11 @@
-import { PegaAPIClient } from '../../api/pega-client.js';
+import { BaseTool } from '../../registry/base-tool.js';
 
-export class GetAssignmentActionTool {
-  constructor() {
-    this.pegaClient = new PegaAPIClient();
+export class GetAssignmentActionTool extends BaseTool {
+  /**
+   * Get the category this tool belongs to
+   */
+  static getCategory() {
+    return 'assignments';
   }
 
   /**
@@ -46,24 +49,18 @@ export class GetAssignmentActionTool {
   async execute(params) {
     const { assignmentID, actionID, viewType = 'page', excludeAdditionalActions = false } = params;
 
-    // Validate required parameters
-    if (!assignmentID || typeof assignmentID !== 'string' || assignmentID.trim() === '') {
-      return {
-        error: 'Invalid assignmentID parameter. Assignment ID is required and must be a non-empty string.'
-      };
+    // Basic parameter validation using base class
+    const requiredValidation = this.validateRequiredParams(params, ['assignmentID', 'actionID']);
+    if (requiredValidation) {
+      return requiredValidation;
     }
 
-    if (!actionID || typeof actionID !== 'string' || actionID.trim() === '') {
-      return {
-        error: 'Invalid actionID parameter. Action ID is required and must be a non-empty string.'
-      };
-    }
-
-    // Validate viewType if provided
-    if (viewType && !['form', 'page'].includes(viewType)) {
-      return {
-        error: 'Invalid viewType parameter. Must be either "form" or "page".'
-      };
+    // Validate enum parameters using base class
+    const enumValidation = this.validateEnumParams(params, {
+      viewType: ['form', 'page']
+    });
+    if (enumValidation) {
+      return enumValidation;
     }
 
     // Validate excludeAdditionalActions if provided
@@ -73,50 +70,32 @@ export class GetAssignmentActionTool {
       };
     }
 
-    try {
-      // Call Pega API to get assignment action details
-      const result = await this.pegaClient.getAssignmentAction(
+    // Execute with standardized error handling
+    return await this.executeWithErrorHandling(
+      `Assignment Action: ${actionID} for ${assignmentID}`,
+      async () => await this.pegaClient.getAssignmentAction(
         assignmentID.trim(), 
         actionID.trim(), 
         {
           viewType,
           excludeAdditionalActions
         }
-      );
-
-      if (result.success) {
-        return {
-          content: [
-            {
-              type: 'text',
-              text: this.formatSuccessResponse(assignmentID, actionID, result.data, result.eTag, { viewType, excludeAdditionalActions })
-            }
-          ]
-        };
-      } else {
-        return {
-          content: [
-            {
-              type: 'text',
-              text: this.formatErrorResponse(assignmentID, actionID, result.error)
-            }
-          ]
-        };
-      }
-    } catch (error) {
-      return {
-        error: `Unexpected error while retrieving assignment action ${actionID} for assignment ${assignmentID}: ${error.message}`
-      };
-    }
+      ),
+      { assignmentID, actionID, viewType, excludeAdditionalActions }
+    );
   }
 
   /**
-   * Format successful response for display
+   * Override formatSuccessResponse to add assignment action specific formatting
    */
-  formatSuccessResponse(assignmentID, actionID, data, eTag, options) {
-    const { viewType, excludeAdditionalActions } = options;
+  formatSuccessResponse(operation, data, options = {}) {
+    const { assignmentID, actionID, viewType, excludeAdditionalActions } = options;
+    const eTag = data.eTag || data.etag;
     
-    let response = `## Assignment Action Details: ${actionID}\n\n`;
+    let response = `## ${operation}\n\n`;
+    
+    response += `*Operation completed at: ${new Date().toISOString()}*\n\n`;
+    
     response += `**Assignment ID**: ${assignmentID}\n`;
     response += `**Action ID**: ${actionID}\n`;
     response += `**View Type**: ${viewType}\n\n`;

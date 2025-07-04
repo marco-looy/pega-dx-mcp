@@ -1,8 +1,11 @@
-import { PegaAPIClient } from '../../api/pega-client.js';
+import { BaseTool } from '../../registry/base-tool.js';
 
-export class GetCaseTypeBulkActionTool {
-  constructor() {
-    this.pegaClient = new PegaAPIClient();
+export class GetCaseTypeBulkActionTool extends BaseTool {
+  /**
+   * Get the category this tool belongs to
+   */
+  static getCategory() {
+    return 'casetypes';
   }
 
   /**
@@ -35,54 +38,29 @@ export class GetCaseTypeBulkActionTool {
   async execute(params) {
     const { caseTypeID, actionID } = params;
 
-    // Validate required parameters
-    if (!caseTypeID || typeof caseTypeID !== 'string' || caseTypeID.trim() === '') {
-      return {
-        error: 'Invalid caseTypeID parameter. Case type ID is required and must be a non-empty string.'
-      };
+    // Validate required parameters using base class
+    const requiredValidation = this.validateRequiredParams(params, ['caseTypeID', 'actionID']);
+    if (requiredValidation) {
+      return requiredValidation;
     }
 
-    if (!actionID || typeof actionID !== 'string' || actionID.trim() === '') {
-      return {
-        error: 'Invalid actionID parameter. Action ID is required and must be a non-empty string.'
-      };
-    }
-
-    try {
-      // Call Pega API to get case type bulk action metadata
-      const result = await this.pegaClient.getCaseTypeBulkAction(caseTypeID.trim(), actionID.trim());
-
-      if (result.success) {
-        return {
-          content: [
-            {
-              type: 'text',
-              text: this.formatSuccessResponse(caseTypeID, actionID, result.data)
-            }
-          ]
-        };
-      } else {
-        return {
-          content: [
-            {
-              type: 'text',
-              text: this.formatErrorResponse(caseTypeID, actionID, result.error)
-            }
-          ]
-        };
-      }
-    } catch (error) {
-      return {
-        error: `Unexpected error while retrieving bulk action metadata for case type ${caseTypeID}, action ${actionID}: ${error.message}`
-      };
-    }
+    // Execute with standardized error handling
+    return await this.executeWithErrorHandling(
+      `Case Type Bulk Action: ${caseTypeID} - ${actionID}`,
+      async () => await this.pegaClient.getCaseTypeBulkAction(caseTypeID.trim(), actionID.trim()),
+      { caseTypeID, actionID }
+    );
   }
 
   /**
-   * Format successful response for display
+   * Override formatSuccessResponse to add case type bulk action specific formatting
    */
-  formatSuccessResponse(caseTypeID, actionID, data) {
-    let response = `## Case Type Bulk Action: ${caseTypeID} - ${actionID}\n\n`;
+  formatSuccessResponse(operation, data, options = {}) {
+    const { caseTypeID, actionID } = options;
+    
+    let response = `## ${operation}\n\n`;
+    
+    response += `*Operation completed at: ${new Date().toISOString()}*\n\n`;
     
     if (data.data) {
       response += '### Action Metadata\n';
@@ -156,59 +134,7 @@ export class GetCaseTypeBulkActionTool {
         response += `- **Enabled**: ${data.actionMetadata.enabled}\n`;
       }
     }
-
-    response += '\n---\n';
-    response += `*Retrieved at: ${new Date().toISOString()}*`;
-
-    return response;
-  }
-
-  /**
-   * Format error response for display
-   */
-  formatErrorResponse(caseTypeID, actionID, error) {
-    let response = `## Error retrieving bulk action: ${caseTypeID} - ${actionID}\n\n`;
     
-    response += `**Error Type**: ${error.type}\n`;
-    response += `**Message**: ${error.message}\n`;
-    
-    if (error.details) {
-      response += `**Details**: ${error.details}\n`;
-    }
-    
-    if (error.status) {
-      response += `**HTTP Status**: ${error.status} ${error.statusText}\n`;
-    }
-
-    // Add specific guidance based on error type
-    switch (error.type) {
-      case 'NOT_FOUND':
-        response += '\n**Suggestion**: Verify the case type ID and action ID are correct and exist in the system. Check if the action is available for this case type.\n';
-        break;
-      case 'FORBIDDEN':
-        response += '\n**Suggestion**: Check if you have the necessary permissions to access this case type or action metadata.\n';
-        break;
-      case 'UNAUTHORIZED':
-        response += '\n**Suggestion**: Authentication may have expired. The system will attempt to refresh the token on the next request.\n';
-        break;
-      case 'BAD_REQUEST':
-        response += '\n**Suggestion**: Check the case type ID and action ID format. Ensure they are valid identifiers.\n';
-        break;
-      case 'CONNECTION_ERROR':
-        response += '\n**Suggestion**: Verify the Pega instance URL and network connectivity.\n';
-        break;
-    }
-
-    if (error.errorDetails && error.errorDetails.length > 0) {
-      response += '\n### Additional Error Details\n';
-      error.errorDetails.forEach((detail, index) => {
-        response += `${index + 1}. ${detail.localizedValue || detail.message}\n`;
-      });
-    }
-
-    response += '\n---\n';
-    response += `*Error occurred at: ${new Date().toISOString()}*`;
-
     return response;
   }
 }
