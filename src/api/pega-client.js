@@ -1213,6 +1213,34 @@ export class PegaAPIClient {
   }
 
   /**
+   * Get data view count with advanced querying capabilities
+   * @param {string} dataViewID - ID of the data view to count results for
+   * @param {Object} requestBody - Request body containing query parameters, paging, etc.
+   * @param {Object} requestBody.dataViewParameters - Optional parameters for the data view
+   * @param {Object} requestBody.query - Optional query object for filtering, aggregation, and field selection
+   * @param {Array} requestBody.query.select - Array of field, aggregation, or calculation objects
+   * @param {Object} requestBody.query.filter - Complex filtering conditions
+   * @param {Object} requestBody.query.aggregations - Aggregation definitions
+   * @param {Object} requestBody.query.calculations - Calculation definitions
+   * @param {boolean} requestBody.query.distinctResultsOnly - Count only distinct results
+   * @param {Object} requestBody.paging - Pagination configuration that affects count calculation
+   * @returns {Promise<Object>} API response with count results (resultCount, totalCount, hasMoreResults, fetchDateTime)
+   */
+  async getDataViewCount(dataViewID, requestBody = {}) {
+    // URL encode the data view ID to handle spaces and special characters
+    const encodedDataViewID = encodeURIComponent(dataViewID);
+    const url = `${this.baseUrl}/data_views/${encodedDataViewID}/count`;
+
+    return await this.makeRequest(url, {
+      method: 'POST',
+      headers: {
+        'x-origin-channel': 'Web'
+      },
+      body: JSON.stringify(requestBody)
+    });
+  }
+
+  /**
    * Make HTTP request to Pega API with authentication
    * @param {string} url - Full API URL
    * @param {Object} options - HTTP request options
