@@ -1,6 +1,6 @@
 # Pega DX MCP Server - Master Todo List
 
-**Project Status:** 25/55 endpoints implemented (45.5% complete)
+**Project Status:** 26/56 endpoints implemented (46.4% complete)
 **Last Updated:** January 7, 2025
 
 ## 📊 Progress Summary
@@ -12,12 +12,13 @@
 | Attachments | HIGH | MODERATE-HIGH | ✅ Complete | 7 | 7 | 100% |
 | Participants | MEDIUM-HIGH | MODERATE | ⭕ Not Started | 0 | 7 | 0% |
 | Case Types | MEDIUM | SIMPLE | ✅ Complete | 3 | 3 | 100% |
+| Data Views | MEDIUM | SIMPLE | ✅ Complete | 1 | 1 | 100% |
 | Related Cases | MEDIUM | SIMPLE | ⭕ Not Started | 0 | 3 | 0% |
 | Documents | MEDIUM | SIMPLE | ⭕ Not Started | 0 | 2 | 0% |
 | Followers | LOW-MEDIUM | SIMPLE | ⭕ Not Started | 0 | 3 | 0% |
 | Tags | LOW-MEDIUM | SIMPLE | ⭕ Not Started | 0 | 3 | 0% |
 
-## ✅ Completed Tools (25/55)
+## ✅ Completed Tools (26/56)
 
 ### Core Infrastructure
 - [x] `ping_pega_service` - Test OAuth2 connectivity and verify authentication - ✅ **IMPLEMENTED** in `src/tools/ping-service.js`
@@ -54,6 +55,9 @@
 - [x] `get_case_type_bulk_action` - Get bulk action metadata (GET /casetypes/{caseTypeID}/actions/{actionID}) - ✅ **IMPLEMENTED** in `src/tools/casetypes/get-case-type-bulk-action.js`
 - [x] `get_case_type_action` - Get detailed case type action metadata with rich UI resources (GET /casetypes/{caseTypeID}/actions/{actionID}) - ✅ **IMPLEMENTED** in `src/tools/casetypes/get-case-type-action.js`
 
+### Data Views API (1/1) ✅ COMPLETE
+- [x] `get_data_view_metadata` - Retrieve data view metadata including parameters and queryable fields (GET /data_views/{data_view_ID}/metadata) - ✅ **IMPLEMENTED** in `src/tools/dataviews/get-data-view-metadata.js`
+
 ## 🎯 Development Roadmap
 
 ### Phase 1: Core Operations (HIGH Priority)
@@ -84,10 +88,11 @@
 3. **[Attachments API](./03-attachments-todo.md)** - File management (HIGH priority)
 4. **[Participants API](./07-participants-todo.md)** - User management (MEDIUM-HIGH priority)
 5. **[Case Types API](./04-casetypes-todo.md)** - Metadata operations (MEDIUM priority)
-6. **[Related Cases API](./08-related-cases-todo.md)** - Case relationships (MEDIUM priority)
-7. **[Documents API](./05-documents-todo.md)** - Document operations (MEDIUM priority)
-8. **[Followers API](./06-followers-todo.md)** - Social features (LOW-MEDIUM priority)
-9. **[Tags API](./09-tags-todo.md)** - Organization features (LOW-MEDIUM priority)
+6. **[Data Views API](./10-dataviews-todo.md)** - Data view metadata operations (MEDIUM priority)
+7. **[Related Cases API](./08-related-cases-todo.md)** - Case relationships (MEDIUM priority)
+8. **[Documents API](./05-documents-todo.md)** - Document operations (MEDIUM priority)
+9. **[Followers API](./06-followers-todo.md)** - Social features (LOW-MEDIUM priority)
+10. **[Tags API](./09-tags-todo.md)** - Organization features (LOW-MEDIUM priority)
 
 ## 🏗️ Implementation Guidelines
 

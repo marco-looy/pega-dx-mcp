@@ -1052,6 +1052,76 @@ export class PegaAPIClient {
   }
 
   /**
+   * Get data view metadata by data view ID
+   * @param {string} dataViewID - ID of the data view to retrieve metadata for
+   * @returns {Promise<Object>} API response with data view metadata including parameters and queryable fields
+   */
+  async getDataViewMetadata(dataViewID) {
+    // URL encode the data view ID to handle spaces and special characters
+    const encodedDataViewID = encodeURIComponent(dataViewID);
+    const url = `${this.baseUrl}/data_views/${encodedDataViewID}/metadata`;
+
+    return await this.makeRequest(url, {
+      method: 'GET',
+      headers: {
+        'x-origin-channel': 'Web'
+      }
+    });
+  }
+
+  /**
+   * Get list of available data objects
+   * @param {Object} options - Optional parameters
+   * @param {string} options.type - Data object type filter ("data" or "case")
+   * @returns {Promise<Object>} API response with data objects list
+   */
+  async getDataObjects(options = {}) {
+    const { type } = options;
+    
+    let url = `${this.baseUrl}/data_objects`;
+
+    // Add query parameter if provided
+    const queryParams = new URLSearchParams();
+    if (type) {
+      queryParams.append('type', type);
+    }
+    
+    if (queryParams.toString()) {
+      url += `?${queryParams.toString()}`;
+    }
+
+    return await this.makeRequest(url, {
+      method: 'GET',
+      headers: {
+        'x-origin-channel': 'Web'
+      }
+    });
+  }
+
+  /**
+   * Fully update an existing data record
+   * @param {string} dataViewID - ID of savable Data Page
+   * @param {Object} data - Data object containing properties to update
+   * @returns {Promise<Object>} API response with updated data record
+   */
+  async updateDataRecordFull(dataViewID, data) {
+    // URL encode the data view ID to handle spaces and special characters
+    const encodedDataViewID = encodeURIComponent(dataViewID);
+    const url = `${this.baseUrl}/data/${encodedDataViewID}`;
+
+    // Build request body
+    const requestBody = { data };
+
+    return await this.makeRequest(url, {
+      method: 'PUT',
+      headers: {
+        'x-origin-channel': 'Web'
+      },
+      body: JSON.stringify(requestBody)
+    });
+  }
+
+  /**
    * Make HTTP request to Pega API with authentication
    * @param {string} url - Full API URL
    * @param {Object} options - HTTP request options
