@@ -13,10 +13,16 @@ This document tracks the development and release history of the Pega DX MCP Serv
 **Cases API:**
 - `bulk_cases_patch` - Alternative bulk cases implementation using PATCH /api/application/v2/cases endpoint with platform-specific response handling for Infinity vs Launchpad
 
+**Case Types API:**
+- `get_case_type_action` - Get detailed case type action metadata with rich UI resources (GET /casetypes/{caseTypeID}/actions/{actionID})
+
 **Assignments API (1/9 tools complete):**
 - `get_next_assignment` - Get next assignment details using Get Next Work functionality (GET /assignments/next)
 
 ### Changes
+- Implemented `get_case_type_action` tool for rich case type action metadata retrieval
+- Added comprehensive UI resources handling for form rendering and dynamic interfaces  
+- Enhanced case type action metadata with detailed view, field, and component information
 - Implemented alternative bulk cases tool with enhanced platform detection (Infinity vs Launchpad)
 - Added comprehensive error handling for bulk operations (400, 401, 500, 501 status codes)
 - Enhanced API client with specialized bulk cases error handling and response formatting
@@ -24,19 +30,19 @@ This document tracks the development and release history of the Pega DX MCP Serv
 - Implemented first Assignments API tool to begin high-priority workflow functionality
 - Added comprehensive parameter validation for viewType and pageName parameters
 - Created new assignments tool directory structure following established patterns
-- Enhanced PegaAPIClient with getNextAssignment method
-- Added comprehensive test coverage for assignment functionality
+- Enhanced PegaAPIClient with getCaseTypeAction method
+- Added comprehensive test coverage for case type action functionality
 - Updated documentation to reflect API progress
 
 ### Breaking Changes
 - None
 
 ### Implementation Notes
-- Total tools implemented: 23/54 (42.6% complete)
+- Total tools implemented: 24/55 (43.6% complete)
 - Cases API progress: 8/18 tools (44.4% complete)
 - Assignments API progress: 5/9 tools (55.6% complete)
 - Attachments API: Complete (7/7 tools, 100%)
-- Case Types API: Complete (2/2 tools, 100%)
+- Case Types API: Complete (3/3 tools, 100%)
 - Auto-discovered via modular registry (no manual registration required)
 - Next priority: Continue with core assignment and case operations
 

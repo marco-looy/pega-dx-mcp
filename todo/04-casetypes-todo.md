@@ -2,11 +2,12 @@
 
 **Priority:** MEDIUM (Metadata functionality)  
 **Complexity:** SIMPLE  
-**Current Status:** 2/2 endpoints completed ✅ COMPLETE
+**Current Status:** 3/3 endpoints completed ✅ COMPLETE
 
 ## 🔄 Medium Priority (Metadata Operations)
 - [x] `get_case_types` - Get list of case types for your application (GET /casetypes) ✅
 - [x] `get_case_type_bulk_action` - Get bulk action details for this case type (GET /casetypes/{caseTypeID}/actions/{actionID}) ✅
+- [x] `get_case_type_action` - Get detailed case type action metadata with rich UI resources (GET /casetypes/{caseTypeID}/actions/{actionID}) ✅ **IMPLEMENTED**
 
 ## Implementation Notes
 - **Dependencies:** PegaAPIClient, OAuth2Client

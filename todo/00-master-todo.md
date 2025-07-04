@@ -1,6 +1,6 @@
 # Pega DX MCP Server - Master Todo List
 
-**Project Status:** 23/54 endpoints implemented (42.6% complete)
+**Project Status:** 24/55 endpoints implemented (43.6% complete)
 **Last Updated:** January 7, 2025
 
 ## 📊 Progress Summary
@@ -11,13 +11,13 @@
 | Assignments | HIGH | MODERATE | 🔄 Active | 5 | 9 | 55.6% |
 | Attachments | HIGH | MODERATE-HIGH | ✅ Complete | 7 | 7 | 100% |
 | Participants | MEDIUM-HIGH | MODERATE | ⭕ Not Started | 0 | 7 | 0% |
-| Case Types | MEDIUM | SIMPLE | ✅ Complete | 2 | 2 | 100% |
+| Case Types | MEDIUM | SIMPLE | ✅ Complete | 3 | 3 | 100% |
 | Related Cases | MEDIUM | SIMPLE | ⭕ Not Started | 0 | 3 | 0% |
 | Documents | MEDIUM | SIMPLE | ⭕ Not Started | 0 | 2 | 0% |
 | Followers | LOW-MEDIUM | SIMPLE | ⭕ Not Started | 0 | 3 | 0% |
 | Tags | LOW-MEDIUM | SIMPLE | ⭕ Not Started | 0 | 3 | 0% |
 
-## ✅ Completed Tools (23/54)
+## ✅ Completed Tools (24/55)
 
 ### Core Infrastructure
 - [x] `ping_pega_service` - Test OAuth2 connectivity and verify authentication - ✅ **IMPLEMENTED** in `src/tools/ping-service.js`
@@ -48,9 +48,10 @@
 - [x] `delete_attachment` - Delete attachment from case (DELETE /attachments/{attachmentID}) - ✅ **IMPLEMENTED** in `src/tools/attachments/delete-attachment.js`
 - [x] `update_attachment` - Update attachment name and category (PATCH /attachments/{attachmentID}) - ✅ **IMPLEMENTED** in `src/tools/attachments/update-attachment.js`
 
-### Case Types API (2/2) ✅ COMPLETE
+### Case Types API (3/3) ✅ COMPLETE
 - [x] `get_case_types` - Get list of case types (GET /casetypes) - ✅ **IMPLEMENTED** in `src/tools/casetypes/get-case-types.js`
 - [x] `get_case_type_bulk_action` - Get bulk action metadata (GET /casetypes/{caseTypeID}/actions/{actionID}) - ✅ **IMPLEMENTED** in `src/tools/casetypes/get-case-type-bulk-action.js`
+- [x] `get_case_type_action` - Get detailed case type action metadata with rich UI resources (GET /casetypes/{caseTypeID}/actions/{actionID}) - ✅ **IMPLEMENTED** in `src/tools/casetypes/get-case-type-action.js`
 
 ## 🎯 Development Roadmap
 

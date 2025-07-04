@@ -105,6 +105,26 @@ export class PegaAPIClient {
   }
 
   /**
+   * Get case type action metadata with rich UI resources
+   * @param {string} caseTypeID - ID of the case type for which the case action metadata is being retrieved
+   * @param {string} actionID - Flow action name of a case/stage action that the client requests
+   * @returns {Promise<Object>} API response with detailed action metadata, UI resources, and form configuration
+   */
+  async getCaseTypeAction(caseTypeID, actionID) {
+    // URL encode both IDs to handle spaces and special characters
+    const encodedCaseTypeID = encodeURIComponent(caseTypeID);
+    const encodedActionID = encodeURIComponent(actionID);
+    const url = `${this.baseUrl}/casetypes/${encodedCaseTypeID}/actions/${encodedActionID}`;
+
+    return await this.makeRequest(url, {
+      method: 'GET',
+      headers: {
+        'x-origin-channel': 'Web'
+      }
+    });
+  }
+
+  /**
    * Get case type bulk action metadata
    * @param {string} caseTypeID - ID of the case type
    * @param {string} actionID - ID of the action
