@@ -280,6 +280,39 @@ export class PegaAPIClient {
   }
 
   /**
+   * Get next assignment details using Get Next Work functionality
+   * @param {Object} options - Optional parameters
+   * @param {string} options.viewType - Type of view data to return ("form" or "page", default: "page")
+   * @param {string} options.pageName - If provided, view metadata for specific page name will be returned (only used when viewType is "page")
+   * @returns {Promise<Object>} API response with next assignment details or 404 if no assignments available
+   */
+  async getNextAssignment(options = {}) {
+    const { viewType, pageName } = options;
+    
+    let url = `${this.baseUrl}/assignments/next`;
+
+    // Add query parameters if provided
+    const queryParams = new URLSearchParams();
+    if (viewType) {
+      queryParams.append('viewType', viewType);
+    }
+    if (pageName) {
+      queryParams.append('pageName', pageName);
+    }
+    
+    if (queryParams.toString()) {
+      url += `?${queryParams.toString()}`;
+    }
+
+    return await this.makeRequest(url, {
+      method: 'GET',
+      headers: {
+        'x-origin-channel': 'Web'
+      }
+    });
+  }
+
+  /**
    * Perform bulk action on multiple cases
    * @param {string} actionID - ID of the case action to be performed on all specified cases
    * @param {Object} options - Options containing cases and other parameters

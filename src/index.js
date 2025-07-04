@@ -10,8 +10,9 @@ import { GetCaseViewTool } from './tools/cases/get-case-view.js';
 import { GetCaseStages } from './tools/cases/get-case-stages.js';
 import { GetCaseActionTool } from './tools/cases/get-case-action.js';
 import { PerformBulkActionTool } from './tools/cases/perform-bulk-action.js';
-import { GetCaseTypeBulkActionTool } from './tools/casetypes/get-case-type-bulk-action.js';
 import { GetCaseTypesTool } from './tools/casetypes/get-case-types.js';
+import { GetCaseTypeBulkActionTool } from './tools/casetypes/get-case-type-bulk-action.js';
+import { GetNextAssignmentTool } from './tools/assignments/get-next-assignment.js';
 import { PingServiceTool } from './tools/ping-service.js';
 
 class PegaDXMCPServer {
@@ -43,6 +44,7 @@ class PegaDXMCPServer {
     this.performBulkActionTool = new PerformBulkActionTool();
     this.getCaseTypeBulkActionTool = new GetCaseTypeBulkActionTool();
     this.getCaseTypesTool = new GetCaseTypesTool();
+    this.getNextAssignmentTool = new GetNextAssignmentTool();
     this.pingServiceTool = new PingServiceTool();
   }
 
@@ -60,6 +62,7 @@ class PegaDXMCPServer {
           PerformBulkActionTool.getDefinition(),
           GetCaseTypeBulkActionTool.getDefinition(),
           GetCaseTypesTool.getDefinition(),
+          GetNextAssignmentTool.getDefinition(),
           PingServiceTool.getDefinition()
         ]
       };
@@ -97,6 +100,9 @@ class PegaDXMCPServer {
 
           case 'get_case_types':
             return await this.getCaseTypesTool.execute(args);
+
+          case 'get_next_assignment':
+            return await this.getNextAssignmentTool.execute(args);
 
           case 'ping_pega_service':
             return await this.pingServiceTool.execute(args);

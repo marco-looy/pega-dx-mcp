@@ -2,10 +2,10 @@
 
 **Priority:** HIGH (Core workflow functionality)  
 **Complexity:** MODERATE  
-**Current Status:** 0/9 endpoints completed
+**Current Status:** 1/9 endpoints completed
 
 ## 🔄 High Priority (Core Operations)
-- [ ] `get_next_assignment` - Get next assignment details (GET /assignments/next)
+- [x] `get_next_assignment` - Get next assignment details (GET /assignments/next) ✅
 - [ ] `get_assignment` - Get assignment details (GET /assignments/{assignmentID})
 - [ ] `get_assignment_action` - Get action details of an assignment (GET /assignments/{assignmentID}/actions/{actionID})
 - [ ] `perform_assignment_action` - Perform assignment action (PATCH /assignments/{assignmentID}/actions/{actionID})

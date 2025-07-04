@@ -10,18 +10,27 @@ This document tracks the development and release history of the Pega DX MCP Serv
 **Package Version:** TBD
 
 ### New Tools Added
-- *Tools will be documented here as they are implemented*
+**Assignments API (1/9 tools complete):**
+- `get_next_assignment` - Get next assignment details using Get Next Work functionality (GET /assignments/next)
 
 ### Changes
-- *Changes will be documented here as development progresses*
+- Implemented first Assignments API tool to begin high-priority workflow functionality
+- Added comprehensive parameter validation for viewType and pageName parameters
+- Created new assignments tool directory structure following established patterns
+- Enhanced PegaAPIClient with getNextAssignment method
+- Added comprehensive test coverage for assignment functionality
+- Updated documentation to reflect Assignments API progress
 
 ### Breaking Changes
-- None planned
+- None
 
 ### Implementation Notes
-- Current tools implemented: 9/54 (16.7% complete)
-- Focus: Completing Cases API and beginning Assignments API
-- Next priority: Assignments API (9 tools, HIGH priority)
+- Total tools implemented: 11/54 (20.4% complete)
+- Assignments API progress: 1/9 tools (11.1% complete)
+- Cases API progress: 7/18 tools (38.9% complete)
+- Case Types API: Complete (2/2 tools, 100%)
+- Next priority: Continue with core assignment operations
+- Foundation established for remaining 8 assignment tools
 
 ---
 
