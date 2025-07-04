@@ -504,6 +504,86 @@ export class PegaAPIClient {
   }
 
   /**
+   * Refresh assignment action form data and execute Data Transforms
+   * @param {string} assignmentID - Full handle of the assignment (e.g., "ASSIGN-WORKLIST MYORG-SERVICES-WORK S-293001!APPROVAL_FLOW")
+   * @param {string} actionID - Name of the assignment action - ID of the flow action rule
+   * @param {Object} options - Optional parameters
+   * @param {string} [options.refreshFor] - Property name that triggers refresh after executing Data Transform
+   * @param {boolean} [options.fillFormWithAI=false] - Boolean to enable generative AI form filling
+   * @param {string} [options.operation] - Table row operation type ("showRow" or "submitRow")
+   * @param {string} [options.interestPage] - Target page for table row operations (e.g., ".OrderItems(1)")
+   * @param {string} [options.interestPageActionID] - Action ID for embedded list operations
+   * @param {Object} [options.content] - Property values to merge into case during refresh
+   * @param {Array} [options.pageInstructions] - Page-related operations for embedded pages
+   * @param {string} [options.eTag] - ETag value for optimistic locking (recommended to get from previous assignment action call)
+   * @returns {Promise<Object>} API response with refreshed form data, updated field states, and UI resources
+   */
+  async refreshAssignmentAction(assignmentID, actionID, options = {}) {
+    const { 
+      refreshFor, 
+      fillFormWithAI, 
+      operation, 
+      interestPage, 
+      interestPageActionID, 
+      content, 
+      pageInstructions,
+      eTag 
+    } = options;
+    
+    // URL encode both the assignment ID and action ID to handle spaces and special characters
+    const encodedAssignmentID = encodeURIComponent(assignmentID);
+    const encodedActionID = encodeURIComponent(actionID);
+    let url = `${this.baseUrl}/assignments/${encodedAssignmentID}/actions/${encodedActionID}/refresh`;
+
+    // Add query parameters if provided
+    const queryParams = new URLSearchParams();
+    if (refreshFor) {
+      queryParams.append('refreshFor', refreshFor);
+    }
+    if (fillFormWithAI !== undefined) {
+      queryParams.append('fillFormWithAI', fillFormWithAI.toString());
+    }
+    if (operation) {
+      queryParams.append('operation', operation);
+    }
+    
+    if (queryParams.toString()) {
+      url += `?${queryParams.toString()}`;
+    }
+
+    // Build request body
+    const requestBody = {};
+
+    // Add optional parameters if provided
+    if (content && Object.keys(content).length > 0) {
+      requestBody.content = content;
+    }
+    if (pageInstructions && pageInstructions.length > 0) {
+      requestBody.pageInstructions = pageInstructions;
+    }
+    
+    // Add table row operation parameters for Pega Infinity '25 features
+    if (operation && interestPage) {
+      requestBody.interestPage = interestPage;
+    }
+    if (operation && interestPageActionID) {
+      requestBody.interestPageActionID = interestPageActionID;
+    }
+
+    // Prepare headers - Note: This endpoint typically requires if-match header with eTag
+    // However, for refresh operations, eTag might not always be required depending on configuration
+    const headers = {
+      'x-origin-channel': 'Web'
+    };
+
+    return await this.makeRequest(url, {
+      method: 'PATCH',
+      headers: headers,
+      body: Object.keys(requestBody).length > 0 ? JSON.stringify(requestBody) : undefined
+    });
+  }
+
+  /**
    * Make HTTP request to Pega API with authentication
    * @param {string} url - Full API URL
    * @param {Object} options - HTTP request options

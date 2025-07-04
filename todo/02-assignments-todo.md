@@ -2,7 +2,7 @@
 
 **Priority:** HIGH (Core workflow functionality)  
 **Complexity:** MODERATE  
-**Current Status:** 4/9 endpoints completed
+**Current Status:** 5/9 endpoints completed
 
 ## 🔄 High Priority (Core Operations)
 - [x] `get_next_assignment` - Get next assignment details (GET /assignments/next) ✅
@@ -12,7 +12,7 @@
 
 ## 🔄 Medium Priority (Form Operations)
 - [ ] `recalculate_assignment_fields` - Recalculate calculated fields & whens (PATCH /assignments/{assignmentID}/actions/{actionID}/recalculate)
-- [ ] `refresh_assignment_action` - Refresh assignment action (PATCH /assignments/{assignmentID}/actions/{actionID}/refresh)
+- [x] `refresh_assignment_action` - Refresh assignment action (PATCH /assignments/{assignmentID}/actions/{actionID}/refresh) ✅
 - [ ] `save_assignment_action` - Save assignment action (PATCH /assignments/{assignmentID}/actions/{actionID}/save)
 
 ## 🔄 Medium Priority (Navigation)

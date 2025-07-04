@@ -1,6 +1,6 @@
 # Pega DX MCP Server - Master Todo List
 
-**Project Status:** 14/54 endpoints implemented (25.9% complete)
+**Project Status:** 15/54 endpoints implemented (27.8% complete)
 **Last Updated:** January 7, 2025
 
 ## 📊 Progress Summary
@@ -8,7 +8,7 @@
 | API Category | Priority | Complexity | Status | Complete | Total | Percentage |
 |-------------|----------|------------|--------|----------|-------|-----------|
 | Cases | HIGH | MODERATE | 🔄 Active | 7 | 18 | 38.9% |
-| Assignments | HIGH | MODERATE | 🔄 Active | 4 | 9 | 44.4% |
+| Assignments | HIGH | MODERATE | 🔄 Active | 5 | 9 | 55.6% |
 | Attachments | HIGH | MODERATE-HIGH | ⭕ Not Started | 0 | 7 | 0% |
 | Participants | MEDIUM-HIGH | MODERATE | ⭕ Not Started | 0 | 7 | 0% |
 | Case Types | MEDIUM | SIMPLE | ✅ Complete | 2 | 2 | 100% |
@@ -17,7 +17,7 @@
 | Followers | LOW-MEDIUM | SIMPLE | ⭕ Not Started | 0 | 3 | 0% |
 | Tags | LOW-MEDIUM | SIMPLE | ⭕ Not Started | 0 | 3 | 0% |
 
-## ✅ Completed Tools (14/54)
+## ✅ Completed Tools (15/54)
 
 ### Core Infrastructure
 - [x] `ping_pega_service` - Test OAuth2 connectivity and verify authentication - ✅ **IMPLEMENTED** in `src/tools/ping-service.js`
@@ -31,11 +31,12 @@
 - [x] `get_case_action` - Get case action details (GET /cases/{caseID}/actions/{actionID}) - ✅ **IMPLEMENTED** in `src/tools/cases/get-case-action.js`
 - [x] `perform_bulk_action` - Perform bulk action on multiple cases (PATCH /cases) - ✅ **IMPLEMENTED** in `src/tools/cases/perform-bulk-action.js`
 
-### Assignments API (4/9)
+### Assignments API (5/9)
 - [x] `get_next_assignment` - Get next assignment details (GET /assignments/next) - ✅ **IMPLEMENTED** in `src/tools/assignments/get-next-assignment.js`
 - [x] `get_assignment` - Get assignment details (GET /assignments/{assignmentID}) - ✅ **IMPLEMENTED** in `src/tools/assignments/get-assignment.js`
 - [x] `get_assignment_action` - Get assignment action details (GET /assignments/{assignmentID}/actions/{actionID}) - ✅ **IMPLEMENTED** in `src/tools/assignments/get-assignment-action.js`
 - [x] `perform_assignment_action` - Perform assignment action (PATCH /assignments/{assignmentID}/actions/{actionID}) - ✅ **IMPLEMENTED** in `src/tools/assignments/perform-assignment-action.js`
+- [x] `refresh_assignment_action` - Refresh assignment action form data and execute Data Transforms (PATCH /assignments/{assignmentID}/actions/{actionID}/refresh) - ✅ **IMPLEMENTED** in `src/tools/assignments/refresh-assignment-action.js`
 
 ### Case Types API (2/2) ✅ COMPLETE
 - [x] `get_case_types` - Get list of case types (GET /casetypes) - ✅ **IMPLEMENTED** in `src/tools/casetypes/get-case-types.js`
