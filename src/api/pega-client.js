@@ -738,6 +738,61 @@ export class PegaAPIClient {
   }
 
   /**
+   * Delete an attachment by attachment ID
+   * @param {string} attachmentID - Link-Attachment instance pzInsKey (attachment ID)
+   * @returns {Promise<Object>} API response with success/error information
+   */
+  async deleteAttachment(attachmentID) {
+    // URL encode the attachment ID to handle spaces and special characters
+    const encodedAttachmentID = encodeURIComponent(attachmentID);
+    const url = `${this.baseUrl}/attachments/${encodedAttachmentID}`;
+
+    try {
+      // Get OAuth2 token
+      const token = await this.oauth2Client.getAccessToken();
+      
+      // Prepare headers
+      const headers = {
+        'Authorization': `Bearer ${token}`,
+        'Accept': 'application/json',
+        'x-origin-channel': 'Web'
+      };
+
+      // Make DELETE request
+      const response = await fetch(url, {
+        method: 'DELETE',
+        headers,
+        timeout: config.pega.requestTimeout || 30000
+      });
+
+      // Handle non-2xx responses
+      if (!response.ok) {
+        return await this.handleAttachmentDeleteErrorResponse(response);
+      }
+
+      // Successful deletion - API returns no content (200 with empty body)
+      return {
+        success: true,
+        data: {}, // Empty response body for successful deletion
+        status: response.status,
+        statusText: response.statusText
+      };
+
+    } catch (error) {
+      // Handle network and other errors
+      return {
+        success: false,
+        error: {
+          type: 'CONNECTION_ERROR',
+          message: 'Failed to delete attachment from Pega API',
+          details: error.message,
+          originalError: error
+        }
+      };
+    }
+  }
+
+  /**
    * Upload a file as temporary attachment to Pega
    * @param {Buffer} fileBuffer - File content as Buffer
    * @param {Object} options - Upload options
@@ -1048,6 +1103,73 @@ export class PegaAPIClient {
       default:
         errorResponse.error.type = 'HTTP_ERROR';
         errorResponse.error.message = `HTTP ${response.status} error retrieving attachment content`;
+        errorResponse.error.details = errorData.message || errorData.localizedValue || response.statusText;
+        break;
+    }
+
+    return errorResponse;
+  }
+
+  /**
+   * Handle error responses from attachment delete API
+   * @param {Response} response - HTTP response object
+   * @returns {Promise<Object>} Structured error response for attachment deletion
+   */
+  async handleAttachmentDeleteErrorResponse(response) {
+    let errorData;
+    try {
+      errorData = await response.json();
+    } catch (e) {
+      errorData = { message: await response.text() };
+    }
+
+    const errorResponse = {
+      success: false,
+      error: {
+        status: response.status,
+        statusText: response.statusText
+      }
+    };
+
+    switch (response.status) {
+      case 401:
+        errorResponse.error.type = 'UNAUTHORIZED';
+        errorResponse.error.message = 'Authentication failed';
+        errorResponse.error.details = errorData.errors?.[0]?.message || 'Invalid or expired token';
+        // Clear token cache on 401 to force refresh on next request
+        this.oauth2Client.clearTokenCache();
+        break;
+
+      case 403:
+        errorResponse.error.type = 'FORBIDDEN';
+        errorResponse.error.message = 'Insufficient delete permissions';
+        errorResponse.error.details = errorData.localizedValue || 'User is not allowed to delete this attachment';
+        if (errorData.errorDetails) {
+          errorResponse.error.errorDetails = errorData.errorDetails;
+        }
+        break;
+
+      case 404:
+        errorResponse.error.type = 'NOT_FOUND';
+        errorResponse.error.message = 'Attachment not found';
+        errorResponse.error.details = errorData.localizedValue || 'The attachment cannot be found or has already been deleted';
+        if (errorData.errorDetails) {
+          errorResponse.error.errorDetails = errorData.errorDetails;
+        }
+        break;
+
+      case 500:
+        errorResponse.error.type = 'INTERNAL_SERVER_ERROR';
+        errorResponse.error.message = 'Internal server error during attachment deletion';
+        errorResponse.error.details = errorData.localizedValue || 'An error occurred on the server while deleting the attachment';
+        if (errorData.errorDetails) {
+          errorResponse.error.errorDetails = errorData.errorDetails;
+        }
+        break;
+
+      default:
+        errorResponse.error.type = 'HTTP_ERROR';
+        errorResponse.error.message = `HTTP ${response.status} error deleting attachment`;
         errorResponse.error.details = errorData.message || errorData.localizedValue || response.statusText;
         break;
     }
