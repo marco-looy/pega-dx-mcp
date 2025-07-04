@@ -7,7 +7,7 @@ import { GetCaseTool } from './tools/cases/get-case.js';
 import { CreateCaseTool } from './tools/cases/create-case.js';
 import { DeleteCaseTool } from './tools/cases/delete-case.js';
 import { GetCaseViewTool } from './tools/cases/get-case-view.js';
-import { GetCaseStages } from './tools/cases/get-case-stages.js';
+import { GetCaseStagesTool } from './tools/cases/get-case-stages.js';
 import { GetCaseActionTool } from './tools/cases/get-case-action.js';
 import { PerformBulkActionTool } from './tools/cases/perform-bulk-action.js';
 import { GetCaseTypesTool } from './tools/casetypes/get-case-types.js';
@@ -39,7 +39,7 @@ class PegaDXMCPServer {
     this.createCaseTool = new CreateCaseTool();
     this.deleteCaseTool = new DeleteCaseTool();
     this.getCaseViewTool = new GetCaseViewTool();
-    this.getCaseStagesTool = new GetCaseStages();
+    this.getCaseStagesTool = new GetCaseStagesTool();
     this.getCaseActionTool = new GetCaseActionTool();
     this.performBulkActionTool = new PerformBulkActionTool();
     this.getCaseTypeBulkActionTool = new GetCaseTypeBulkActionTool();
