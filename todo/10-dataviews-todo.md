@@ -1,6 +1,6 @@
 # Data Views & Data Objects TODO
 
-**Category Status**: 🟡 **IN PROGRESS** (4/16 tools implemented)
+**Category Status**: 🟡 **IN PROGRESS** (5/16 tools implemented)
 
 ## Overview
 
@@ -75,11 +75,22 @@ Comprehensive data view and data object operations for working with Pega data AP
 - **Auto-registered**: ✅ Discovered by registry system
 
 ### Partially Update Data Record
-- **Status**: ❌ **TODO**
+- **Status**: ✅ **IMPLEMENTED**
 - **Tool Name**: `update_data_record_partial`
 - **API Endpoint**: `PATCH /data/{data_view_ID}`
-- **Description**: Partially update an existing data record
+- **Description**: Partially update an existing data record based on conditional save plan configured for a savable Data Page. Only updates the provided fields, leaving other fields unchanged. Note: Not supported for PEGA System of records.
 - **Priority**: High
+- **Features**:
+  - Partial data record updates with provided fields only
+  - Optional eTag header support for optimistic locking
+  - Optional pageInstructions for complex embedded page operations
+  - URL encoding for data view IDs with special characters
+  - Comprehensive parameter validation (dataViewID and data object required)
+  - Structured error handling for all documented error scenarios (400, 403, 404, 409, 422, 500)
+  - Follows BaseTool patterns for consistent response formatting
+- **Implementation**: `src/tools/dataviews/update-data-record-partial.js`
+- **Test File**: `tests/dataviews/update-data-record-partial-test.js`
+- **Auto-registered**: ✅ Discovered by registry system
 
 ### Delete Data Record
 - **Status**: ✅ **IMPLEMENTED**
@@ -160,7 +171,7 @@ Comprehensive data view and data object operations for working with Pega data AP
 - ❌ `getDataObjectActionDetails(dataViewID, actionID)` - Get action details
 - ❌ `updateDataObjectActionDetails(dataViewID, actionID, data)` - Update action details
 - ❌ `createDataRecord(dataViewID, data)` - Create data record
-- ❌ `updateDataRecordPartial(dataViewID, data)` - Partially update data record
+- ✅ `updateDataRecordPartial(dataViewID, data, options)` - Partially update data record
 - ✅ `deleteDataRecord(dataViewID, dataViewParameters)` - Delete data record
 - ❌ `getSinglePageDataView(dataViewID, params)` - Get single page data view
 - ❌ `getListDataView(dataViewID, params)` - Get list data view
@@ -221,10 +232,10 @@ Comprehensive data view and data object operations for working with Pega data AP
 ## Status Summary
 
 **Category**: 🟡 IN PROGRESS  
-**Tools Implemented**: 4/16  
-**API Methods**: 4/16  
-**High Priority Remaining**: 4 tools  
-**Test Coverage**: 4/16 complete  
+**Tools Implemented**: 5/16  
+**API Methods**: 5/16  
+**High Priority Remaining**: 3 tools  
+**Test Coverage**: 5/16 complete
 **Documentation**: Needs expansion
 
 The data views category requires significant expansion to support comprehensive data operations in Pega DX API.

@@ -17,10 +17,11 @@ This document tracks the development and release history of the Pega DX MCP Serv
 **Case Types API:**
 - `get_case_type_action` - Get detailed case type action metadata with rich UI resources (GET /casetypes/{caseTypeID}/actions/{actionID})
 
-**Data Views API (4/4 tools complete):**
+**Data Views API (5/5 tools complete):**
 - `get_data_view_metadata` - Retrieve data view metadata including parameters and queryable fields (GET /data_views/{data_view_ID}/metadata)
 - `get_data_objects` - Retrieve list of available data objects with metadata and HATEOAS links (GET /data_objects)
 - `update_data_record_full` - Fully update existing data records based on conditional save plan (PUT /data/{data_view_ID})
+- `update_data_record_partial` - Partially update existing data records with selective field updates (PATCH /data/{data_view_ID})
 - `delete_data_record` - Delete data records based on conditional save plan configured for savable Data Pages (DELETE /data/{data_view_ID})
 
 **Assignments API (1/9 tools complete):**
@@ -51,6 +52,12 @@ This document tracks the development and release history of the Pega DX MCP Serv
 - Enhanced data views category with full CRUD capabilities for data manipulation
 - Added comprehensive parameter validation for dataViewID and data object requirements
 - Implemented structured error handling for all documented scenarios (400, 403, 404, 422, 500)
+- **Implemented `update_data_record_partial` tool** - Complete data record partial update functionality
+- Added comprehensive partial data record updates with selective field modification
+- Implemented PATCH endpoint with optional eTag header support for optimistic locking
+- Enhanced data views category with advanced update capabilities supporting pageInstructions for complex embedded operations
+- Added comprehensive parameter validation for dataViewID and data object requirements
+- Implemented specialized error handling for partial update scenarios including conflict detection (400, 403, 404, 409, 422, 500)
 - **Implemented `delete_data_record` tool** - Complete data record deletion functionality
 - Added comprehensive data record deletion with conditional save plan execution
 - Implemented DELETE endpoint with proper URL encoding for data view IDs and parameters
@@ -72,15 +79,15 @@ This document tracks the development and release history of the Pega DX MCP Serv
 - None
 
 ### Implementation Notes
-- Total tools implemented: 29/56 (51.8% complete) - **Major milestone: Over 50% complete**
+- Total tools implemented: 30/56 (53.6% complete) - **Major milestone: Over 50% complete**
 - Cases API progress: 9/18 tools (50.0% complete) - **Major milestone: 50% complete**
 - Assignments API progress: 5/9 tools (55.6% complete)
 - Attachments API: Complete (7/7 tools, 100%)
 - Case Types API: Complete (3/3 tools, 100%)
-- Data Views API: Complete (4/4 tools, 100%)
+- Data Views API: Complete (5/5 tools, 100%)
 - Auto-discovered via modular registry (no manual registration required)
 - **High Priority Core Operations completed**: Case action execution now available for workflow progression
-- **New category completed**: Data views functionality now complete with full CRUD operations
+- **New category completed**: Data views functionality now complete with full CRUD operations including partial updates
 - Next priority: Continue with remaining case operations and assignment tools
 
 ---

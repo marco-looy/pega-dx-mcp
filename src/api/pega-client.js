@@ -1122,6 +1122,47 @@ export class PegaAPIClient {
   }
 
   /**
+   * Partially update an existing data record
+   * @param {string} dataViewID - ID of savable Data Page
+   * @param {Object} data - Data object containing properties to update
+   * @param {Object} options - Optional parameters
+   * @param {string} options.eTag - eTag unique value for optimistic locking
+   * @param {Array} options.pageInstructions - Page-related operations for embedded pages
+   * @returns {Promise<Object>} API response with updated data record
+   */
+  async updateDataRecordPartial(dataViewID, data, options = {}) {
+    const { eTag, pageInstructions } = options;
+    
+    // URL encode the data view ID to handle spaces and special characters
+    const encodedDataViewID = encodeURIComponent(dataViewID);
+    const url = `${this.baseUrl}/data/${encodedDataViewID}`;
+
+    // Build request body
+    const requestBody = { data };
+    
+    // Add optional pageInstructions if provided
+    if (pageInstructions) {
+      requestBody.pageInstructions = pageInstructions;
+    }
+
+    // Prepare headers
+    const headers = {
+      'x-origin-channel': 'Web'
+    };
+
+    // Add eTag header for optimistic locking if provided
+    if (eTag) {
+      headers['if-match'] = eTag;
+    }
+
+    return await this.makeRequest(url, {
+      method: 'PATCH',
+      headers: headers,
+      body: JSON.stringify(requestBody)
+    });
+  }
+
+  /**
    * Delete a data record
    * @param {string} dataViewID - ID of savable Data Page
    * @param {string} dataViewParameters - Primary key(s) as input to uniquely identify the data record to delete
