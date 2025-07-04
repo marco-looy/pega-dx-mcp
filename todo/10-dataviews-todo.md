@@ -1,6 +1,6 @@
 # Data Views & Data Objects TODO
 
-**Category Status**: 🟡 **IN PROGRESS** (3/16 tools implemented)
+**Category Status**: 🟡 **IN PROGRESS** (4/16 tools implemented)
 
 ## Overview
 
@@ -17,7 +17,7 @@ Comprehensive data view and data object operations for working with Pega data AP
 - **Features**:
   - Supports optional type parameter for filtering ("data" or "case")
   - Returns comprehensive data object metadata including classID, dataObjectID, defaultListDataView
-  - Includes HATEOAS links for related operations
+  - Includes HATEOAS links for redalated operations
   - Provides isDefaultListDataViewQueryable flag for each data object
 - **Implementation**: `src/tools/dataviews/get-data-objects.js`
 - **Test File**: `tests/dataviews/get-data-objects-test.js`
@@ -82,11 +82,20 @@ Comprehensive data view and data object operations for working with Pega data AP
 - **Priority**: High
 
 ### Delete Data Record
-- **Status**: ❌ **TODO**
+- **Status**: ✅ **IMPLEMENTED**
 - **Tool Name**: `delete_data_record`
 - **API Endpoint**: `DELETE /data/{data_view_ID}`
-- **Description**: Delete a data record
+- **Description**: Delete a data record based on conditional save plan configured for a savable Data Page. Only supported on data object classes.
 - **Priority**: High
+- **Features**:
+  - Requires primary key(s) to uniquely identify the record to delete
+  - Supports URL encoding for data view IDs with special characters
+  - Comprehensive parameter validation (dataViewID and dataViewParameters required)
+  - Structured error handling for all documented error scenarios (400, 403, 404, 422, 500)
+  - Follows BaseTool patterns for consistent response formatting
+- **Implementation**: `src/tools/dataviews/delete-data-record.js`
+- **Test File**: `tests/dataviews/delete-data-record-test.js`
+- **Auto-registered**: ✅ Discovered by registry system
 
 ## Data View Tools
 
@@ -152,7 +161,7 @@ Comprehensive data view and data object operations for working with Pega data AP
 - ❌ `updateDataObjectActionDetails(dataViewID, actionID, data)` - Update action details
 - ❌ `createDataRecord(dataViewID, data)` - Create data record
 - ❌ `updateDataRecordPartial(dataViewID, data)` - Partially update data record
-- ❌ `deleteDataRecord(dataViewID)` - Delete data record
+- ✅ `deleteDataRecord(dataViewID, dataViewParameters)` - Delete data record
 - ❌ `getSinglePageDataView(dataViewID, params)` - Get single page data view
 - ❌ `getListDataView(dataViewID, params)` - Get list data view
 - ❌ `getDataViewCount(dataViewID, params)` - Get total result count
@@ -212,10 +221,10 @@ Comprehensive data view and data object operations for working with Pega data AP
 ## Status Summary
 
 **Category**: 🟡 IN PROGRESS  
-**Tools Implemented**: 3/16  
-**API Methods**: 3/16  
-**High Priority Remaining**: 5 tools  
-**Test Coverage**: 3/16 complete  
+**Tools Implemented**: 4/16  
+**API Methods**: 4/16  
+**High Priority Remaining**: 4 tools  
+**Test Coverage**: 4/16 complete  
 **Documentation**: Needs expansion
 
 The data views category requires significant expansion to support comprehensive data operations in Pega DX API.

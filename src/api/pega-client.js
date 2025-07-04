@@ -1122,6 +1122,27 @@ export class PegaAPIClient {
   }
 
   /**
+   * Delete a data record
+   * @param {string} dataViewID - ID of savable Data Page
+   * @param {string} dataViewParameters - Primary key(s) as input to uniquely identify the data record to delete
+   * @returns {Promise<Object>} API response with deletion result
+   */
+  async deleteDataRecord(dataViewID, dataViewParameters) {
+    // URL encode the data view ID to handle spaces and special characters
+    const encodedDataViewID = encodeURIComponent(dataViewID);
+    // URL encode the data view parameters to handle special characters
+    const encodedDataViewParameters = encodeURIComponent(dataViewParameters);
+    const url = `${this.baseUrl}/data/${encodedDataViewID}?dataViewParameters=${encodedDataViewParameters}`;
+
+    return await this.makeRequest(url, {
+      method: 'DELETE',
+      headers: {
+        'x-origin-channel': 'Web'
+      }
+    });
+  }
+
+  /**
    * Make HTTP request to Pega API with authentication
    * @param {string} url - Full API URL
    * @param {Object} options - HTTP request options
