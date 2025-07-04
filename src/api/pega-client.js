@@ -585,6 +585,38 @@ export class PegaAPIClient {
   }
 
   /**
+   * Get case attachments by case ID
+   * @param {string} caseID - Full case handle to retrieve attachments from
+   * @param {Object} options - Optional parameters
+   * @param {boolean} options.includeThumbnails - When set to true, thumbnails are added as base64 encoded strings
+   * @returns {Promise<Object>} API response with attachments list and metadata
+   */
+  async getCaseAttachments(caseID, options = {}) {
+    const { includeThumbnails } = options;
+    
+    // URL encode the case ID to handle spaces and special characters
+    const encodedCaseID = encodeURIComponent(caseID);
+    let url = `${this.baseUrl}/cases/${encodedCaseID}/attachments`;
+
+    // Add query parameters if provided
+    const queryParams = new URLSearchParams();
+    if (includeThumbnails !== undefined) {
+      queryParams.append('includeThumbnails', includeThumbnails.toString());
+    }
+    
+    if (queryParams.toString()) {
+      url += `?${queryParams.toString()}`;
+    }
+
+    return await this.makeRequest(url, {
+      method: 'GET',
+      headers: {
+        'x-origin-channel': 'Web'
+      }
+    });
+  }
+
+  /**
    * Add attachments to a case (POST /cases/{caseID}/attachments)
    * @param {string} caseID - Full case handle to attach files/URLs to
    * @param {Array} attachments - Array of attachment objects (files and/or URLs)

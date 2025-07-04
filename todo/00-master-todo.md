@@ -1,6 +1,6 @@
 # Pega DX MCP Server - Master Todo List
 
-**Project Status:** 17/54 endpoints implemented (31.5% complete)
+**Project Status:** 18/54 endpoints implemented (33.3% complete)
 **Last Updated:** January 7, 2025
 
 ## 📊 Progress Summary
@@ -9,7 +9,7 @@
 |-------------|----------|------------|--------|----------|-------|-----------|
 | Cases | HIGH | MODERATE | 🔄 Active | 7 | 18 | 38.9% |
 | Assignments | HIGH | MODERATE | 🔄 Active | 5 | 9 | 55.6% |
-| Attachments | HIGH | MODERATE-HIGH | 🔄 Active | 2 | 7 | 28.6% |
+| Attachments | HIGH | MODERATE-HIGH | 🔄 Active | 3 | 7 | 42.9% |
 | Participants | MEDIUM-HIGH | MODERATE | ⭕ Not Started | 0 | 7 | 0% |
 | Case Types | MEDIUM | SIMPLE | ✅ Complete | 2 | 2 | 100% |
 | Related Cases | MEDIUM | SIMPLE | ⭕ Not Started | 0 | 3 | 0% |
@@ -17,7 +17,7 @@
 | Followers | LOW-MEDIUM | SIMPLE | ⭕ Not Started | 0 | 3 | 0% |
 | Tags | LOW-MEDIUM | SIMPLE | ⭕ Not Started | 0 | 3 | 0% |
 
-## ✅ Completed Tools (17/54)
+## ✅ Completed Tools (18/54)
 
 ### Core Infrastructure
 - [x] `ping_pega_service` - Test OAuth2 connectivity and verify authentication - ✅ **IMPLEMENTED** in `src/tools/ping-service.js`
@@ -38,9 +38,10 @@
 - [x] `perform_assignment_action` - Perform assignment action (PATCH /assignments/{assignmentID}/actions/{actionID}) - ✅ **IMPLEMENTED** in `src/tools/assignments/perform-assignment-action.js`
 - [x] `refresh_assignment_action` - Refresh assignment action form data and execute Data Transforms (PATCH /assignments/{assignmentID}/actions/{actionID}/refresh) - ✅ **IMPLEMENTED** in `src/tools/assignments/refresh-assignment-action.js`
 
-### Attachments API (2/7)
+### Attachments API (3/7)
 - [x] `upload_attachment` - Upload a file as temporary attachment (POST /attachments/upload) - ✅ **IMPLEMENTED** in `src/tools/attachments/upload-attachment.js`
 - [x] `add_case_attachments` - Add attachments to case (POST /cases/{caseID}/attachments) - ✅ **IMPLEMENTED** in `src/tools/attachments/add-case-attachments.js`
+- [x] `get_case_attachments` - Get attachments for a case (GET /cases/{caseID}/attachments) - ✅ **IMPLEMENTED** in `src/tools/attachments/get-case-attachments.js`
 
 ### Case Types API (2/2) ✅ COMPLETE
 - [x] `get_case_types` - Get list of case types (GET /casetypes) - ✅ **IMPLEMENTED** in `src/tools/casetypes/get-case-types.js`
