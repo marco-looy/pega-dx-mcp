@@ -642,6 +642,102 @@ export class PegaAPIClient {
   }
 
   /**
+   * Get attachment categories for a case by case ID
+   * @param {string} caseID - Full case handle to retrieve attachment categories for
+   * @param {Object} options - Optional parameters
+   * @param {string} options.type - Filter for attachment type: "File" or "URL" (case insensitive, default: "File")
+   * @returns {Promise<Object>} API response with attachment categories list and permissions
+   */
+  async getCaseAttachmentCategories(caseID, options = {}) {
+    const { type } = options;
+    
+    // URL encode the case ID to handle spaces and special characters
+    const encodedCaseID = encodeURIComponent(caseID);
+    let url = `${this.baseUrl}/cases/${encodedCaseID}/attachment_categories`;
+
+    // Add query parameters if provided
+    const queryParams = new URLSearchParams();
+    if (type) {
+      queryParams.append('type', type);
+    }
+    
+    if (queryParams.toString()) {
+      url += `?${queryParams.toString()}`;
+    }
+
+    return await this.makeRequest(url, {
+      method: 'GET',
+      headers: {
+        'x-origin-channel': 'Web'
+      }
+    });
+  }
+
+  /**
+   * Get attachment content by attachment ID
+   * @param {string} attachmentID - Link-Attachment instance pzInsKey (attachment ID)
+   * @returns {Promise<Object>} API response with attachment content and headers
+   */
+  async getAttachmentContent(attachmentID) {
+    // URL encode the attachment ID to handle spaces and special characters
+    const encodedAttachmentID = encodeURIComponent(attachmentID);
+    const url = `${this.baseUrl}/attachments/${encodedAttachmentID}`;
+
+    try {
+      // Get OAuth2 token
+      const token = await this.oauth2Client.getAccessToken();
+      
+      // Prepare headers
+      const headers = {
+        'Authorization': `Bearer ${token}`,
+        'Accept': '*/*', // Accept any content type since we get different types (base64, URL, HTML)
+        'x-origin-channel': 'Web'
+      };
+
+      // Make request
+      const response = await fetch(url, {
+        method: 'GET',
+        headers,
+        timeout: config.pega.requestTimeout || 30000
+      });
+
+      // Handle non-2xx responses
+      if (!response.ok) {
+        return await this.handleAttachmentContentErrorResponse(response);
+      }
+
+      // Get response headers for content type detection
+      const responseHeaders = {};
+      response.headers.forEach((value, key) => {
+        responseHeaders[key] = value;
+      });
+
+      // Get content as text (works for base64, URL, and HTML)
+      const content = await response.text();
+      
+      return {
+        success: true,
+        data: content,
+        headers: responseHeaders,
+        status: response.status,
+        statusText: response.statusText
+      };
+
+    } catch (error) {
+      // Handle network and other errors
+      return {
+        success: false,
+        error: {
+          type: 'CONNECTION_ERROR',
+          message: 'Failed to retrieve attachment content from Pega API',
+          details: error.message,
+          originalError: error
+        }
+      };
+    }
+  }
+
+  /**
    * Upload a file as temporary attachment to Pega
    * @param {Buffer} fileBuffer - File content as Buffer
    * @param {Object} options - Upload options
@@ -886,6 +982,73 @@ export class PegaAPIClient {
         errorResponse.error.type = 'HTTP_ERROR';
         errorResponse.error.message = `HTTP ${response.status} error`;
         errorResponse.error.details = errorData.message || response.statusText;
+        break;
+    }
+
+    return errorResponse;
+  }
+
+  /**
+   * Handle error responses from attachment content retrieval API
+   * @param {Response} response - HTTP response object  
+   * @returns {Promise<Object>} Structured error response for attachment content
+   */
+  async handleAttachmentContentErrorResponse(response) {
+    let errorData;
+    try {
+      errorData = await response.json();
+    } catch (e) {
+      errorData = { message: await response.text() };
+    }
+
+    const errorResponse = {
+      success: false,
+      error: {
+        status: response.status,
+        statusText: response.statusText
+      }
+    };
+
+    switch (response.status) {
+      case 401:
+        errorResponse.error.type = 'UNAUTHORIZED';
+        errorResponse.error.message = 'Authentication failed';
+        errorResponse.error.details = errorData.errors?.[0]?.message || 'Invalid or expired token';
+        // Clear token cache on 401 to force refresh on next request
+        this.oauth2Client.clearTokenCache();
+        break;
+
+      case 403:
+        errorResponse.error.type = 'FORBIDDEN';
+        errorResponse.error.message = 'Access denied to attachment';
+        errorResponse.error.details = errorData.localizedValue || 'User is not allowed to access this attachment';
+        if (errorData.errorDetails) {
+          errorResponse.error.errorDetails = errorData.errorDetails;
+        }
+        break;
+
+      case 404:
+        errorResponse.error.type = 'NOT_FOUND';
+        errorResponse.error.message = 'Attachment not found';
+        errorResponse.error.details = errorData.localizedValue || 'The attachment cannot be found or is not available';
+        if (errorData.errorDetails) {
+          errorResponse.error.errorDetails = errorData.errorDetails;
+        }
+        break;
+
+      case 500:
+        errorResponse.error.type = 'INTERNAL_SERVER_ERROR';
+        errorResponse.error.message = 'Internal server error retrieving attachment';
+        errorResponse.error.details = errorData.localizedValue || 'An error occurred on the server while retrieving attachment content';
+        if (errorData.errorDetails) {
+          errorResponse.error.errorDetails = errorData.errorDetails;
+        }
+        break;
+
+      default:
+        errorResponse.error.type = 'HTTP_ERROR';
+        errorResponse.error.message = `HTTP ${response.status} error retrieving attachment content`;
+        errorResponse.error.details = errorData.message || errorData.localizedValue || response.statusText;
         break;
     }
 

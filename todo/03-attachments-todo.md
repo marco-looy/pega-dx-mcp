@@ -2,18 +2,18 @@
 
 **Priority:** HIGH (File handling is common requirement)  
 **Complexity:** MODERATE-HIGH (File operations)  
-**Current Status:** 3/7 endpoints completed
+**Current Status:** 5/7 endpoints completed
 
 ## 🔄 High Priority (Core File Operations)
 - [x] `upload_attachment` - Upload a file to be used as an attachment (POST /attachments/upload) ✅ **COMPLETED**
-- [ ] `get_attachment` - Get attachment content (GET /attachments/{attachmentID})
+- [x] `get_attachment` - Get attachment content (GET /attachments/{attachmentID}) ✅ **COMPLETED**
 - [x] `get_case_attachments` - Get attachments for a case (GET /cases/{caseID}/attachments) ✅ **COMPLETED**
 - [x] `add_case_attachments` - Add attachments to case (POST /cases/{caseID}/attachments) ✅ **COMPLETED**
 
 ## 🔄 Medium Priority (Attachment Management)
 - [ ] `delete_attachment` - Delete attachment (DELETE /attachments/{attachmentID})
 - [ ] `edit_attachment` - Edit the attachment name and category (PATCH /attachments/{attachmentID})
-- [ ] `get_attachment_categories` - Get attachment categories (GET /cases/{caseID}/attachment_categories)
+- [x] `get_attachment_categories` - Get attachment categories (GET /cases/{caseID}/attachment_categories) ✅ **COMPLETED**
 
 ## Implementation Notes
 - **Dependencies:** PegaAPIClient, OAuth2Client, file handling utilities
