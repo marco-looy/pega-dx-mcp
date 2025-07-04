@@ -1,5 +1,6 @@
 import { config } from '../config.js';
 import { OAuth2Client } from '../auth/oauth2-client.js';
+import FormData from 'form-data';
 
 export class PegaAPIClient {
   constructor() {
@@ -584,6 +585,81 @@ export class PegaAPIClient {
   }
 
   /**
+   * Upload a file as temporary attachment to Pega
+   * @param {Buffer} fileBuffer - File content as Buffer
+   * @param {Object} options - Upload options
+   * @param {string} options.fileName - Original filename with extension
+   * @param {string} options.mimeType - MIME type of the file
+   * @param {boolean} options.appendUniqueIdToFileName - Whether to append unique ID to filename
+   * @returns {Promise<Object>} API response with temporary attachment ID
+   */
+  async uploadAttachment(fileBuffer, options = {}) {
+    const { fileName, mimeType, appendUniqueIdToFileName = true } = options;
+    
+    try {
+      // Create FormData for multipart upload
+      const formData = new FormData();
+      
+      // Add form fields as specified in Pega API documentation
+      formData.append('appendUniqueIdToFileName', appendUniqueIdToFileName.toString());
+      formData.append('file', fileBuffer, {
+        filename: fileName,
+        contentType: mimeType,
+        knownLength: fileBuffer.length
+      });
+
+      const url = `${this.baseUrl}/attachments/upload`;
+
+      // Get OAuth2 token
+      const token = await this.oauth2Client.getAccessToken();
+      
+      // Prepare headers for multipart form data
+      // Note: Do not set Content-Type header manually - FormData will set it with boundary
+      const headers = {
+        'Authorization': `Bearer ${token}`,
+        'Accept': 'application/json',
+        'x-origin-channel': 'Web',
+        ...formData.getHeaders() // This adds the correct Content-Type with boundary
+      };
+
+      // Make the multipart form data request
+      const response = await fetch(url, {
+        method: 'POST',
+        headers: headers,
+        body: formData,
+        timeout: config.pega.requestTimeout || 30000
+      });
+
+      // Handle non-2xx responses
+      if (!response.ok) {
+        return await this.handleAttachmentErrorResponse(response);
+      }
+
+      // Parse successful response
+      const data = await response.json();
+      
+      return {
+        success: true,
+        data,
+        status: response.status,
+        statusText: response.statusText
+      };
+
+    } catch (error) {
+      // Handle network and other errors
+      return {
+        success: false,
+        error: {
+          type: 'CONNECTION_ERROR',
+          message: 'Failed to upload attachment to Pega API',
+          details: error.message,
+          originalError: error
+        }
+      };
+    }
+  }
+
+  /**
    * Make HTTP request to Pega API with authentication
    * @param {string} url - Full API URL
    * @param {Object} options - HTTP request options
@@ -753,6 +829,105 @@ export class PegaAPIClient {
         errorResponse.error.type = 'HTTP_ERROR';
         errorResponse.error.message = `HTTP ${response.status} error`;
         errorResponse.error.details = errorData.message || response.statusText;
+        break;
+    }
+
+    return errorResponse;
+  }
+
+  /**
+   * Handle error responses from attachment upload API
+   * @param {Response} response - HTTP response object
+   * @returns {Promise<Object>} Structured error response
+   */
+  async handleAttachmentErrorResponse(response) {
+    let errorData;
+    try {
+      errorData = await response.json();
+    } catch (e) {
+      errorData = { message: await response.text() };
+    }
+
+    const errorResponse = {
+      success: false,
+      error: {
+        status: response.status,
+        statusText: response.statusText
+      }
+    };
+
+    switch (response.status) {
+      case 400:
+        // Check for specific attachment error types based on error message
+        if (errorData.errorDetails && errorData.errorDetails.length > 0) {
+          const errorDetail = errorData.errorDetails[0];
+          
+          if (errorDetail.message === 'Error_Virus_Scan_Fail') {
+            errorResponse.error.type = 'VIRUS_SCAN_FAIL';
+            errorResponse.error.message = 'File failed virus scan';
+            errorResponse.error.details = errorDetail.localizedValue || 'Malicious file encountered';
+          } else if (errorDetail.message === 'Error_Too_Large_To_Upload') {
+            errorResponse.error.type = 'FILE_TOO_LARGE';
+            errorResponse.error.message = 'File size exceeds limit';
+            errorResponse.error.details = errorDetail.localizedValue || 'File size should not exceed the configured limit';
+          } else {
+            errorResponse.error.type = 'BAD_REQUEST';
+            errorResponse.error.message = 'Invalid file upload request';
+            errorResponse.error.details = errorDetail.localizedValue || errorData.localizedValue || 'One or more inputs are invalid';
+          }
+        } else {
+          errorResponse.error.type = 'BAD_REQUEST';
+          errorResponse.error.message = 'Invalid file upload request';
+          errorResponse.error.details = errorData.localizedValue || 'One or more inputs are invalid';
+        }
+        
+        if (errorData.errorDetails) {
+          errorResponse.error.errorDetails = errorData.errorDetails;
+        }
+        break;
+
+      case 401:
+        errorResponse.error.type = 'UNAUTHORIZED';
+        errorResponse.error.message = 'Authentication failed';
+        errorResponse.error.details = errorData.errors?.[0]?.message || 'Invalid or expired token';
+        // Clear token cache on 401 to force refresh on next request
+        this.oauth2Client.clearTokenCache();
+        break;
+
+      case 500:
+        // Check for specific storage/database error types
+        if (errorData.errorDetails && errorData.errorDetails.length > 0) {
+          const errorDetail = errorData.errorDetails[0];
+          
+          if (errorDetail.localizedValue && errorDetail.localizedValue.includes('storage configuration')) {
+            errorResponse.error.type = 'STORAGE_ERROR';
+            errorResponse.error.message = 'External storage system error';
+            errorResponse.error.details = errorDetail.localizedValue || "Couldn't upload file. Check storage configuration.";
+          } else if (errorDetail.localizedValue && errorDetail.localizedValue.includes('DB configuration')) {
+            errorResponse.error.type = 'DATABASE_ERROR';
+            errorResponse.error.message = 'Database connection error';
+            errorResponse.error.details = errorDetail.localizedValue || "Couldn't upload file. Check DB configuration.";
+          } else {
+            errorResponse.error.type = 'INTERNAL_SERVER_ERROR';
+            errorResponse.error.message = 'Internal server error during file upload';
+            errorResponse.error.details = errorDetail.localizedValue || 'An error occurred while processing the file upload';
+          }
+        } else {
+          errorResponse.error.type = 'INTERNAL_SERVER_ERROR';
+          errorResponse.error.message = 'Internal server error during file upload';
+          errorResponse.error.details = errorData.localizedValue || 'An error occurred on the server during file upload';
+        }
+        
+        if (errorData.errorDetails) {
+          errorResponse.error.errorDetails = errorData.errorDetails;
+        }
+        break;
+
+      default:
+        // For other status codes, fall back to generic error handling
+        errorResponse.error.type = 'HTTP_ERROR';
+        errorResponse.error.message = `HTTP ${response.status} error during file upload`;
+        errorResponse.error.details = errorData.message || errorData.localizedValue || response.statusText;
         break;
     }
 

@@ -17,6 +17,7 @@ import { GetAssignmentTool } from './tools/assignments/get-assignment.js';
 import { GetAssignmentActionTool } from './tools/assignments/get-assignment-action.js';
 import { PerformAssignmentActionTool } from './tools/assignments/perform-assignment-action.js';
 import { RefreshAssignmentActionTool } from './tools/assignments/refresh-assignment-action.js';
+import { UploadAttachmentTool } from './tools/attachments/upload-attachment.js';
 import { PingServiceTool } from './tools/ping-service.js';
 
 class PegaDXMCPServer {
@@ -53,6 +54,7 @@ class PegaDXMCPServer {
     this.getAssignmentActionTool = new GetAssignmentActionTool();
     this.performAssignmentActionTool = new PerformAssignmentActionTool();
     this.refreshAssignmentActionTool = new RefreshAssignmentActionTool();
+    this.uploadAttachmentTool = new UploadAttachmentTool();
     this.pingServiceTool = new PingServiceTool();
   }
 
@@ -75,6 +77,7 @@ class PegaDXMCPServer {
           GetAssignmentActionTool.getDefinition(),
           PerformAssignmentActionTool.getDefinition(),
           RefreshAssignmentActionTool.getDefinition(),
+          UploadAttachmentTool.getDefinition(),
           PingServiceTool.getDefinition()
         ]
       };
@@ -127,6 +130,9 @@ class PegaDXMCPServer {
 
           case 'refresh_assignment_action':
             return await this.refreshAssignmentActionTool.execute(args);
+
+          case 'upload_attachment':
+            return await this.uploadAttachmentTool.execute(args);
 
           case 'ping_pega_service':
             return await this.pingServiceTool.execute(args);

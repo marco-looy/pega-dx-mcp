@@ -1,6 +1,6 @@
 # Pega DX MCP Server - Master Todo List
 
-**Project Status:** 15/54 endpoints implemented (27.8% complete)
+**Project Status:** 16/54 endpoints implemented (29.6% complete)
 **Last Updated:** January 7, 2025
 
 ## 📊 Progress Summary
@@ -9,7 +9,7 @@
 |-------------|----------|------------|--------|----------|-------|-----------|
 | Cases | HIGH | MODERATE | 🔄 Active | 7 | 18 | 38.9% |
 | Assignments | HIGH | MODERATE | 🔄 Active | 5 | 9 | 55.6% |
-| Attachments | HIGH | MODERATE-HIGH | ⭕ Not Started | 0 | 7 | 0% |
+| Attachments | HIGH | MODERATE-HIGH | 🔄 Active | 1 | 7 | 14.3% |
 | Participants | MEDIUM-HIGH | MODERATE | ⭕ Not Started | 0 | 7 | 0% |
 | Case Types | MEDIUM | SIMPLE | ✅ Complete | 2 | 2 | 100% |
 | Related Cases | MEDIUM | SIMPLE | ⭕ Not Started | 0 | 3 | 0% |
@@ -17,7 +17,7 @@
 | Followers | LOW-MEDIUM | SIMPLE | ⭕ Not Started | 0 | 3 | 0% |
 | Tags | LOW-MEDIUM | SIMPLE | ⭕ Not Started | 0 | 3 | 0% |
 
-## ✅ Completed Tools (15/54)
+## ✅ Completed Tools (16/54)
 
 ### Core Infrastructure
 - [x] `ping_pega_service` - Test OAuth2 connectivity and verify authentication - ✅ **IMPLEMENTED** in `src/tools/ping-service.js`
@@ -37,6 +37,9 @@
 - [x] `get_assignment_action` - Get assignment action details (GET /assignments/{assignmentID}/actions/{actionID}) - ✅ **IMPLEMENTED** in `src/tools/assignments/get-assignment-action.js`
 - [x] `perform_assignment_action` - Perform assignment action (PATCH /assignments/{assignmentID}/actions/{actionID}) - ✅ **IMPLEMENTED** in `src/tools/assignments/perform-assignment-action.js`
 - [x] `refresh_assignment_action` - Refresh assignment action form data and execute Data Transforms (PATCH /assignments/{assignmentID}/actions/{actionID}/refresh) - ✅ **IMPLEMENTED** in `src/tools/assignments/refresh-assignment-action.js`
+
+### Attachments API (1/7)
+- [x] `upload_attachment` - Upload a file as temporary attachment (POST /attachments/upload) - ✅ **IMPLEMENTED** in `src/tools/attachments/upload-attachment.js`
 
 ### Case Types API (2/2) ✅ COMPLETE
 - [x] `get_case_types` - Get list of case types (GET /casetypes) - ✅ **IMPLEMENTED** in `src/tools/casetypes/get-case-types.js`

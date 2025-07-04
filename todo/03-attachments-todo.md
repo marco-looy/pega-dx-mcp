@@ -2,10 +2,10 @@
 
 **Priority:** HIGH (File handling is common requirement)  
 **Complexity:** MODERATE-HIGH (File operations)  
-**Current Status:** 0/7 endpoints completed
+**Current Status:** 1/7 endpoints completed
 
 ## 🔄 High Priority (Core File Operations)
-- [ ] `upload_attachment` - Upload a file to be used as an attachment (POST /attachments/upload)
+- [x] `upload_attachment` - Upload a file to be used as an attachment (POST /attachments/upload) ✅ **COMPLETED**
 - [ ] `get_attachment` - Get attachment content (GET /attachments/{attachmentID})
 - [ ] `get_case_attachments` - Get attachments for a case (GET /cases/{caseID}/attachments)
 - [ ] `add_case_attachments` - Add attachments to case (POST /cases/{caseID}/attachments)
