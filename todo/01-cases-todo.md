@@ -2,9 +2,9 @@
 
 **Priority:** HIGH (Core functionality)  
 **Complexity:** MODERATE  
-**Current Status:** 11/18 endpoints completed (61.1% complete)
+**Current Status:** 12/18 endpoints completed (66.7% complete)
 
-## ✅ Completed Tools (11/18)
+## ✅ Completed Tools (12/18)
 - [x] `get_case` - Get case details (GET /cases/{caseID}) - ✅ **IMPLEMENTED** in `src/tools/cases/get-case.js`
 - [x] `create_case` - Creates new case (POST /cases) - ✅ **IMPLEMENTED** in `src/tools/cases/create-case.js`
 - [x] `delete_case` - Delete case in create stage (DELETE /cases/{caseID}) - ✅ **IMPLEMENTED** in `src/tools/cases/delete-case.js`
@@ -16,6 +16,7 @@
 - [x] `perform_case_action` - Perform case action (PATCH /cases/{caseID}/actions/{actionID}) - ✅ **IMPLEMENTED** in `src/tools/cases/perform-case-action.js`
 - [x] `perform_bulk_action` - Perform bulk action (PATCH /cases) - ✅ **IMPLEMENTED** in `src/tools/cases/perform-bulk-action.js`
 - [x] `bulk_cases_patch` - Alternative bulk cases implementation (PATCH /cases) - ✅ **IMPLEMENTED** in `src/tools/cases/bulk-cases-patch.js`
+- [x] `change_to_next_stage` - Change to next stage (POST /cases/{caseID}/stages/next) - ✅ **IMPLEMENTED** in `src/tools/cases/change-to-next-stage.js`
 
 ## ✅ Related Completed Tools (Case Types - 2/2) ✅ COMPLETE
 - [x] `get_case_types` - List available case types (GET /casetypes) - ✅ **IMPLEMENTED** in `src/tools/casetypes/get-case-types.js`
@@ -30,7 +31,7 @@
 ## 🔄 Medium Priority (Advanced Operations)
 - [x] `get_case_ancestors` - Get ancestor case hierarchy (GET /cases/{caseID}/ancestors) - ✅ **IMPLEMENTED** in `src/tools/cases/get-case-ancestors.js`
 - [x] `get_case_descendants` - Get descendant case hierarchy (GET /cases/{caseID}/descendants) - ✅ **IMPLEMENTED** in `src/tools/cases/get-case-descendants.js`
-- [ ] `change_to_next_stage` - Change to next stage (POST /cases/{caseID}/stages/next)
+- [x] `change_to_next_stage` - Change to next stage (POST /cases/{caseID}/stages/next) - ✅ **IMPLEMENTED** in `src/tools/cases/change-to-next-stage.js`
 - [ ] `change_to_stage` - Change to specified stage (PUT /cases/{caseID}/stages/{stageID})
 - [ ] `release_case_lock` - Release lock (DELETE /cases/{caseID}/updates)
 

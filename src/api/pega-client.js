@@ -1277,6 +1277,48 @@ export class PegaAPIClient {
   }
 
   /**
+   * Change case to next stage in primary stage sequence
+   * @param {string} caseID - Full case handle
+   * @param {string} eTag - eTag unique value for optimistic locking (required)
+   * @param {Object} options - Optional parameters
+   * @param {string} options.viewType - Type of view data to return ("none", "form", "page")
+   * @param {boolean} options.cleanupProcesses - Whether to cleanup processes of previous stage
+   * @returns {Promise<Object>} API response with stage navigation results
+   */
+  async changeToNextStage(caseID, eTag, options = {}) {
+    const { viewType, cleanupProcesses } = options;
+    
+    // URL encode the case ID to handle spaces and special characters
+    const encodedCaseID = encodeURIComponent(caseID);
+    let url = `${this.baseUrl}/cases/${encodedCaseID}/stages/next`;
+
+    // Add query parameters if provided
+    const queryParams = new URLSearchParams();
+    if (viewType) {
+      queryParams.append('viewType', viewType);
+    }
+    if (cleanupProcesses !== undefined) {
+      queryParams.append('cleanupProcesses', cleanupProcesses.toString());
+    }
+    
+    if (queryParams.toString()) {
+      url += `?${queryParams.toString()}`;
+    }
+
+    // Prepare headers - if-match is required for this operation
+    const headers = {
+      'if-match': eTag, // Required eTag header for optimistic locking
+      'x-origin-channel': 'Web'
+    };
+
+    return await this.makeRequest(url, {
+      method: 'POST',
+      headers: headers
+      // No request body for this endpoint
+    });
+  }
+
+  /**
    * Make HTTP request to Pega API with authentication
    * @param {string} url - Full API URL
    * @param {Object} options - HTTP request options
