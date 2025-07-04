@@ -441,6 +441,100 @@ export class PegaAPIClient {
   }
 
   /**
+   * PATCH bulk cases operation - alternative implementation for bulk_cases_patch tool
+   * @param {string} actionID - ID of the case action to be performed on all specified cases
+   * @param {Object} options - Options containing cases and other parameters
+   * @param {Array} options.cases - Array of case objects with ID properties (required)
+   * @param {string} options.runningMode - Execution mode for Launchpad ("async" only)
+   * @param {Object} options.content - Content to apply during action execution
+   * @param {Array} options.pageInstructions - Page-related operations
+   * @param {Array} options.attachments - Attachments to add
+   * @returns {Promise<Object>} API response with platform-specific results (207 Multistatus for Infinity, 202 Accepted for Launchpad)
+   */
+  async patchCasesBulk(actionID, options = {}) {
+    const { cases, runningMode, content, pageInstructions, attachments } = options;
+    
+    // URL encode the action ID to handle spaces and special characters
+    const encodedActionID = encodeURIComponent(actionID);
+    let url = `${this.baseUrl}/cases`;
+
+    // Add query parameters - actionID is required
+    const queryParams = new URLSearchParams();
+    queryParams.append('actionID', encodedActionID);
+    
+    // Add runningMode if provided (Launchpad only)
+    if (runningMode) {
+      queryParams.append('runningMode', runningMode);
+    }
+    
+    url += `?${queryParams.toString()}`;
+
+    // Build request body - cases is required
+    const requestBody = {
+      cases
+    };
+
+    // Add optional parameters if provided
+    if (content) {
+      requestBody.content = content;
+    }
+    if (pageInstructions) {
+      requestBody.pageInstructions = pageInstructions;
+    }
+    if (attachments) {
+      requestBody.attachments = attachments;
+    }
+
+    try {
+      // Get OAuth2 token
+      const token = await this.oauth2Client.getAccessToken();
+      
+      // Prepare headers
+      const headers = {
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json',
+        'Accept': 'application/json',
+        'x-origin-channel': 'Web'
+      };
+
+      // Make PATCH request
+      const response = await fetch(url, {
+        method: 'PATCH',
+        headers,
+        body: JSON.stringify(requestBody),
+        timeout: config.pega.requestTimeout || 30000
+      });
+
+      // Handle non-2xx responses with specific error handling for bulk operations
+      if (!response.ok) {
+        return await this.handleBulkCasesErrorResponse(response);
+      }
+
+      // Parse successful response
+      const data = await response.json();
+      
+      return {
+        success: true,
+        data,
+        status: response.status,
+        statusText: response.statusText
+      };
+
+    } catch (error) {
+      // Handle network and other errors
+      return {
+        success: false,
+        error: {
+          type: 'CONNECTION_ERROR',
+          message: 'Failed to connect to Pega API for bulk cases operation',
+          details: error.message,
+          originalError: error
+        }
+      };
+    }
+  }
+
+  /**
    * Perform assignment action by assignment ID and action ID
    * @param {string} assignmentID - Full handle of the assignment (e.g., "ASSIGN-WORKLIST O1UGTM-TESTAPP13-WORK T-35005!APPROVAL_FLOW")
    * @param {string} actionID - Name of the assignment action to perform - ID of the flow action rule
@@ -785,6 +879,76 @@ export class PegaAPIClient {
         error: {
           type: 'CONNECTION_ERROR',
           message: 'Failed to delete attachment from Pega API',
+          details: error.message,
+          originalError: error
+        }
+      };
+    }
+  }
+
+  /**
+   * Update attachment name and category by attachment ID
+   * @param {string} attachmentID - Link-Attachment instance pzInsKey (attachment ID)
+   * @param {Object} updateData - Update data
+   * @param {string} updateData.name - New name of the attachment
+   * @param {string} updateData.category - New attachment category
+   * @returns {Promise<Object>} API response with success/error information
+   */
+  async updateAttachment(attachmentID, updateData) {
+    const { name, category } = updateData;
+    
+    // URL encode the attachment ID to handle spaces and special characters
+    const encodedAttachmentID = encodeURIComponent(attachmentID);
+    const url = `${this.baseUrl}/attachments/${encodedAttachmentID}`;
+
+    try {
+      // Get OAuth2 token
+      const token = await this.oauth2Client.getAccessToken();
+      
+      // Prepare headers
+      const headers = {
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json',
+        'Accept': 'application/json',
+        'x-origin-channel': 'Web'
+      };
+
+      // Build request body
+      const requestBody = {
+        name,
+        category
+      };
+
+      // Make PATCH request
+      const response = await fetch(url, {
+        method: 'PATCH',
+        headers,
+        body: JSON.stringify(requestBody),
+        timeout: config.pega.requestTimeout || 30000
+      });
+
+      // Handle non-2xx responses
+      if (!response.ok) {
+        return await this.handleAttachmentUpdateErrorResponse(response);
+      }
+
+      // Successful update - API returns success message
+      const responseText = await response.text();
+      
+      return {
+        success: true,
+        data: { message: responseText }, // Wrap the success message
+        status: response.status,
+        statusText: response.statusText
+      };
+
+    } catch (error) {
+      // Handle network and other errors
+      return {
+        success: false,
+        error: {
+          type: 'CONNECTION_ERROR',
+          message: 'Failed to update attachment in Pega API',
           details: error.message,
           originalError: error
         }
@@ -1269,6 +1433,150 @@ export class PegaAPIClient {
         // For other status codes, fall back to generic error handling
         errorResponse.error.type = 'HTTP_ERROR';
         errorResponse.error.message = `HTTP ${response.status} error during file upload`;
+        errorResponse.error.details = errorData.message || errorData.localizedValue || response.statusText;
+        break;
+    }
+
+    return errorResponse;
+  }
+
+  /**
+   * Handle error responses from attachment update API
+   * @param {Response} response - HTTP response object
+   * @returns {Promise<Object>} Structured error response for attachment update
+   */
+  async handleAttachmentUpdateErrorResponse(response) {
+    let errorData;
+    try {
+      errorData = await response.json();
+    } catch (e) {
+      errorData = { message: await response.text() };
+    }
+
+    const errorResponse = {
+      success: false,
+      error: {
+        status: response.status,
+        statusText: response.statusText
+      }
+    };
+
+    switch (response.status) {
+      case 400:
+        errorResponse.error.type = 'BAD_REQUEST';
+        errorResponse.error.message = 'Invalid attachment update request';
+        errorResponse.error.details = errorData.localizedValue || 'One or more inputs are invalid';
+        if (errorData.errorDetails) {
+          errorResponse.error.errorDetails = errorData.errorDetails;
+        }
+        break;
+
+      case 401:
+        errorResponse.error.type = 'UNAUTHORIZED';
+        errorResponse.error.message = 'Authentication failed';
+        errorResponse.error.details = errorData.errors?.[0]?.message || 'Invalid or expired token';
+        // Clear token cache on 401 to force refresh on next request
+        this.oauth2Client.clearTokenCache();
+        break;
+
+      case 403:
+        errorResponse.error.type = 'FORBIDDEN';
+        errorResponse.error.message = 'Insufficient edit permissions';
+        errorResponse.error.details = errorData.localizedValue || 'User is not allowed to edit this attachment or attachment category';
+        if (errorData.errorDetails) {
+          errorResponse.error.errorDetails = errorData.errorDetails;
+        }
+        break;
+
+      case 404:
+        errorResponse.error.type = 'NOT_FOUND';
+        errorResponse.error.message = 'Attachment not found';
+        errorResponse.error.details = errorData.localizedValue || 'The attachment cannot be found or the case is not accessible';
+        if (errorData.errorDetails) {
+          errorResponse.error.errorDetails = errorData.errorDetails;
+        }
+        break;
+
+      case 500:
+        errorResponse.error.type = 'INTERNAL_SERVER_ERROR';
+        errorResponse.error.message = 'Internal server error during attachment update';
+        errorResponse.error.details = errorData.localizedValue || 'An error occurred on the server while updating the attachment';
+        if (errorData.errorDetails) {
+          errorResponse.error.errorDetails = errorData.errorDetails;
+        }
+        break;
+
+      default:
+        errorResponse.error.type = 'HTTP_ERROR';
+        errorResponse.error.message = `HTTP ${response.status} error updating attachment`;
+        errorResponse.error.details = errorData.message || errorData.localizedValue || response.statusText;
+        break;
+    }
+
+    return errorResponse;
+  }
+
+  /**
+   * Handle error responses specific to bulk cases PATCH operations
+   * @param {Response} response - HTTP response object
+   * @returns {Promise<Object>} Structured error response for bulk cases operations
+   */
+  async handleBulkCasesErrorResponse(response) {
+    let errorData;
+    try {
+      errorData = await response.json();
+    } catch (e) {
+      errorData = { message: await response.text() };
+    }
+
+    const errorResponse = {
+      success: false,
+      error: {
+        status: response.status,
+        statusText: response.statusText
+      }
+    };
+
+    switch (response.status) {
+      case 400:
+        errorResponse.error.type = 'BAD_REQUEST';
+        errorResponse.error.message = 'Cases missing from the request body or empty';
+        errorResponse.error.details = errorData.localizedValue || 'The request body does not contain any cases to process - there is no cases property, the cases property is an empty list, or one or more elements of the cases list does not contain the ID property.';
+        if (errorData.errorDetails) {
+          errorResponse.error.errorDetails = errorData.errorDetails;
+        }
+        break;
+
+      case 401:
+        errorResponse.error.type = 'UNAUTHORIZED';
+        errorResponse.error.message = 'Authentication failed';
+        errorResponse.error.details = errorData.errors?.[0]?.message || 'Invalid token or expired';
+        // Clear token cache on 401 to force refresh on next request
+        this.oauth2Client.clearTokenCache();
+        break;
+
+      case 500:
+        errorResponse.error.type = 'INTERNAL_SERVER_ERROR';
+        errorResponse.error.message = 'Implementation resulted in an exception';
+        errorResponse.error.details = errorData.localizedValue || 'An unhandled server exception occurs, for example, when unexpectedly failed to publish an event to asynchronously process in Launchpad.';
+        if (errorData.errorDetails) {
+          errorResponse.error.errorDetails = errorData.errorDetails;
+        }
+        break;
+
+      case 501:
+        errorResponse.error.type = 'NOT_IMPLEMENTED';
+        errorResponse.error.message = 'No implementation for the sync runningMode currently present';
+        errorResponse.error.details = errorData.localizedValue || 'The requestor does not specify the runningMode query parameter as async, or if they don\'t specify the runningMode query parameter at all. Currently, only the async runningMode is implemented. This response only applies to Pega Launchpad.';
+        if (errorData.errorDetails) {
+          errorResponse.error.errorDetails = errorData.errorDetails;
+        }
+        break;
+
+      default:
+        // Fall back to generic error handling for other status codes
+        errorResponse.error.type = 'HTTP_ERROR';
+        errorResponse.error.message = `HTTP ${response.status} error during bulk cases operation`;
         errorResponse.error.details = errorData.message || errorData.localizedValue || response.statusText;
         break;
     }

@@ -2,9 +2,9 @@
 
 **Priority:** HIGH (Core functionality)  
 **Complexity:** MODERATE  
-**Current Status:** 7/18 endpoints completed (38.9% complete)
+**Current Status:** 8/18 endpoints completed (44.4% complete)
 
-## ✅ Completed Tools (7/18)
+## ✅ Completed Tools (8/18)
 - [x] `get_case` - Get case details (GET /cases/{caseID}) - ✅ **IMPLEMENTED** in `src/tools/cases/get-case.js`
 - [x] `create_case` - Creates new case (POST /cases) - ✅ **IMPLEMENTED** in `src/tools/cases/create-case.js`
 - [x] `delete_case` - Delete case in create stage (DELETE /cases/{caseID}) - ✅ **IMPLEMENTED** in `src/tools/cases/delete-case.js`
@@ -12,6 +12,7 @@
 - [x] `get_case_stages` - Get case stages list (GET /cases/{caseID}/stages) - ✅ **IMPLEMENTED** in `src/tools/cases/get-case-stages.js`
 - [x] `get_case_action` - Get case action details (GET /cases/{caseID}/actions/{actionID}) - ✅ **IMPLEMENTED** in `src/tools/cases/get-case-action.js`
 - [x] `perform_bulk_action` - Perform bulk action (PATCH /cases) - ✅ **IMPLEMENTED** in `src/tools/cases/perform-bulk-action.js`
+- [x] `bulk_cases_patch` - Alternative bulk cases implementation (PATCH /cases) - ✅ **IMPLEMENTED** in `src/tools/cases/bulk-cases-patch.js`
 
 ## ✅ Related Completed Tools (Case Types - 2/2) ✅ COMPLETE
 - [x] `get_case_types` - List available case types (GET /casetypes) - ✅ **IMPLEMENTED** in `src/tools/casetypes/get-case-types.js`
