@@ -56,7 +56,7 @@ async function testMCPTool() {
     params: {
       name: 'get_case',
       arguments: {
-        caseID: 'METE-MYDEMOAPP-WORK T-3'
+        caseID: 'ON6E5R-DIYRecipe-Work-RecipeCollection R-1008'
       }
     }
   };

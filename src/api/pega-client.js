@@ -313,6 +313,80 @@ export class PegaAPIClient {
   }
 
   /**
+   * Get assignment details by assignment ID
+   * @param {string} assignmentID - Full handle of an assignment (e.g., "ASSIGN-WORKLIST PBANK-LOAN-WORK V-76003!REVIEW_FLOW")
+   * @param {Object} options - Optional parameters
+   * @param {string} options.viewType - Type of view data to return ("form" or "page", default: "page")
+   * @param {string} options.pageName - If provided, view metadata for specific page name will be returned (only used when viewType is "page")
+   * @returns {Promise<Object>} API response with assignment details, instructions, and available actions
+   */
+  async getAssignment(assignmentID, options = {}) {
+    const { viewType, pageName } = options;
+    
+    // URL encode the assignment ID to handle spaces and special characters
+    const encodedAssignmentID = encodeURIComponent(assignmentID);
+    let url = `${this.baseUrl}/assignments/${encodedAssignmentID}`;
+
+    // Add query parameters if provided
+    const queryParams = new URLSearchParams();
+    if (viewType) {
+      queryParams.append('viewType', viewType);
+    }
+    if (pageName) {
+      queryParams.append('pageName', pageName);
+    }
+    
+    if (queryParams.toString()) {
+      url += `?${queryParams.toString()}`;
+    }
+
+    return await this.makeRequest(url, {
+      method: 'GET',
+      headers: {
+        'x-origin-channel': 'Web'
+      }
+    });
+  }
+
+  /**
+   * Get assignment action details by assignment ID and action ID
+   * @param {string} assignmentID - Full handle of an assignment (e.g., "ASSIGN-WORKLIST O1UGTM-TESTAPP13-WORK T-36004!APPROVAL_FLOW")
+   * @param {string} actionID - Name of the action to retrieve - ID of the flow action rule (e.g., "Verify", "Approve")
+   * @param {Object} options - Optional parameters
+   * @param {string} options.viewType - Type of view data to return ("form" or "page", default: "page")
+   * @param {boolean} options.excludeAdditionalActions - When true, excludes information on all actions performable on the case (default: false)
+   * @returns {Promise<Object>} API response with assignment action details, UI metadata, and case context
+   */
+  async getAssignmentAction(assignmentID, actionID, options = {}) {
+    const { viewType, excludeAdditionalActions } = options;
+    
+    // URL encode both the assignment ID and action ID to handle spaces and special characters
+    const encodedAssignmentID = encodeURIComponent(assignmentID);
+    const encodedActionID = encodeURIComponent(actionID);
+    let url = `${this.baseUrl}/assignments/${encodedAssignmentID}/actions/${encodedActionID}`;
+
+    // Add query parameters if provided
+    const queryParams = new URLSearchParams();
+    if (viewType) {
+      queryParams.append('viewType', viewType);
+    }
+    if (excludeAdditionalActions !== undefined) {
+      queryParams.append('excludeAdditionalActions', excludeAdditionalActions.toString());
+    }
+    
+    if (queryParams.toString()) {
+      url += `?${queryParams.toString()}`;
+    }
+
+    return await this.makeRequest(url, {
+      method: 'GET',
+      headers: {
+        'x-origin-channel': 'Web'
+      }
+    });
+  }
+
+  /**
    * Perform bulk action on multiple cases
    * @param {string} actionID - ID of the case action to be performed on all specified cases
    * @param {Object} options - Options containing cases and other parameters
@@ -374,7 +448,7 @@ export class PegaAPIClient {
   async makeRequest(url, options = {}) {
     try {
       // Get OAuth2 token
-      const token = await this.oauth2Client.getValidToken();
+      const token = await this.oauth2Client.getAccessToken();
       
       // Prepare headers
       const headers = {

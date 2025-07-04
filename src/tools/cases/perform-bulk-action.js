@@ -294,7 +294,7 @@ export class PerformBulkActionTool {
       case 'BAD_REQUEST':
         response += '\n**Suggestion**: Check the action ID, case IDs, and request parameters.\n';
         response += '- Ensure actionID is a valid case action name\n';
-        response += '- Verify all case IDs are full case handles (e.g., "METE-MYDEMOAPP-WORK T-3")\n';
+        response += '- Verify all case IDs are full case handles (e.g., "ON6E5R-DIYRecipe-Work-RecipeCollection R-1008")\n';
         response += '- Check that content, pageInstructions, and attachments are properly formatted\n';
         response += '- Ensure runningMode is "async" if specified (Launchpad only)\n';
         break;

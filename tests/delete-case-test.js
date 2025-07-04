@@ -54,7 +54,7 @@ async function testDeleteCaseTool() {
     params: {
       name: 'delete_case',
       arguments: {
-        caseID: 'METE-MYDEMOAPP-WORK T-123'
+        caseID: 'ON6E5R-DIYRecipe-Work-RecipeCollection R-1009'
       }
     }
   };
@@ -71,7 +71,7 @@ async function testDeleteCaseTool() {
     params: {
       name: 'delete_case',
       arguments: {
-        caseID: 'METE-MYDEMOAPP-WORK T-NONEXISTENT'
+        caseID: 'ON6E5R-DIYRecipe-Work-RecipeCollection R-9999'
       }
     }
   };
@@ -120,7 +120,7 @@ async function testDeleteCaseTool() {
     params: {
       name: 'delete_case',
       arguments: {
-        caseID: 'METE-MYDEMOAPP-WORK T-456 (SPECIAL)'
+        caseID: 'ON6E5R-DIYRecipe-Work-RecipeCollection R-1010 (SPECIAL)'
       }
     }
   };

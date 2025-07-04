@@ -229,7 +229,7 @@ export class GetCaseActionTool {
         break;
       case 'BAD_REQUEST':
         response += '\n**Suggestion**: Check the case ID and action ID format and any additional parameters.\n';
-        response += '- Ensure case ID is the full case handle (e.g., "METE-MYDEMOAPP-WORK T-3")\n';
+        response += '- Ensure case ID is the full case handle (e.g., "ON6E5R-DIYRecipe-Work-RecipeCollection R-1008")\n';
         response += '- Verify action ID matches an available case action name\n';
         response += '- Check viewType parameter is either "form" or "page"\n';
         break;

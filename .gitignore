@@ -142,3 +142,6 @@ vite.config.ts.timestamp-*
 memory-bank/
 .clinerules/default-rules.md
 .clinerules/workflows/workflow-new-tools.md
+Prompt.md
+.gitignore
+WIP.md

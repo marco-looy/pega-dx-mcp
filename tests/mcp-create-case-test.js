@@ -54,7 +54,7 @@ async function testCreateCaseTool() {
     params: {
       name: 'create_case',
       arguments: {
-        caseTypeID: 'METE-MYDEMOAPP-WORK-TestCase',
+        caseTypeID: 'ON6E5R-DIYRecipe-Work-RecipeCollection',
         content: {
           Name: 'Test User',
           Description: 'Test case created via MCP',
@@ -77,7 +77,7 @@ async function testCreateCaseTool() {
     params: {
       name: 'create_case',
       arguments: {
-        caseTypeID: 'METE-MYDEMOAPP-WORK-TestCase',
+        caseTypeID: 'ON6E5R-DIYRecipe-Work-RecipeCollection',
         content: {
           Name: 'Test User 2',
           Description: 'Test case with form view'
