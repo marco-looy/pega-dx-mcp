@@ -216,6 +216,24 @@ export class PegaAPIClient {
   }
 
   /**
+   * Get case ancestors - retrieves ancestor hierarchy case list for the case ID passed in
+   * @param {string} caseID - Full case handle to retrieve ancestors from
+   * @returns {Promise<Object>} API response with ancestor cases hierarchy including ID, name, and HATEOAS links
+   */
+  async getCaseAncestors(caseID) {
+    // URL encode the case ID to handle spaces and special characters
+    const encodedCaseID = encodeURIComponent(caseID);
+    const url = `${this.baseUrl}/cases/${encodedCaseID}/ancestors`;
+
+    return await this.makeRequest(url, {
+      method: 'GET',
+      headers: {
+        'x-origin-channel': 'Web'
+      }
+    });
+  }
+
+  /**
    * Get case action details by case ID and action ID
    * @param {string} caseID - Full case handle
    * @param {string} actionID - Flow action name
