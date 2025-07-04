@@ -1184,6 +1184,35 @@ export class PegaAPIClient {
   }
 
   /**
+   * Get list data view with advanced querying capabilities
+   * @param {string} dataViewID - ID of the data view to retrieve data from
+   * @param {Object} requestBody - Request body containing query parameters, paging, etc.
+   * @param {Object} requestBody.dataViewParameters - Optional parameters for the data view
+   * @param {Object} requestBody.query - Optional query object for filtering, sorting, aggregation
+   * @param {Array} requestBody.query.select - Array of field objects to select
+   * @param {Array} requestBody.query.sortBy - Array of sorting configurations
+   * @param {Object} requestBody.query.filter - Complex filtering conditions
+   * @param {Object} requestBody.query.aggregations - Aggregation definitions
+   * @param {boolean} requestBody.query.distinctResultsOnly - Return only distinct results
+   * @param {Object} requestBody.paging - Pagination configuration
+   * @param {boolean} requestBody.useExtendedTimeout - Use extended 45-second timeout
+   * @returns {Promise<Object>} API response with data view results
+   */
+  async getListDataView(dataViewID, requestBody = {}) {
+    // URL encode the data view ID to handle spaces and special characters
+    const encodedDataViewID = encodeURIComponent(dataViewID);
+    const url = `${this.baseUrl}/data_views/${encodedDataViewID}`;
+
+    return await this.makeRequest(url, {
+      method: 'POST',
+      headers: {
+        'x-origin-channel': 'Web'
+      },
+      body: JSON.stringify(requestBody)
+    });
+  }
+
+  /**
    * Make HTTP request to Pega API with authentication
    * @param {string} url - Full API URL
    * @param {Object} options - HTTP request options

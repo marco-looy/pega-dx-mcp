@@ -1,6 +1,6 @@
 # Data Views & Data Objects TODO
 
-**Category Status**: 🟡 **IN PROGRESS** (5/16 tools implemented)
+**Category Status**: 🟡 **IN PROGRESS** (6/16 tools implemented)
 
 ## Overview
 
@@ -118,11 +118,24 @@ Comprehensive data view and data object operations for working with Pega data AP
 - **Priority**: High
 
 ### Get List Data View
-- **Status**: ❌ **TODO**
+- **Status**: ✅ **IMPLEMENTED**
 - **Tool Name**: `get_list_data_view`
 - **API Endpoint**: `POST /data_views/{data_view_ID}`
-- **Description**: Get list data view with filtering and pagination
+- **Description**: Get list data view with advanced querying capabilities. Supports 4 distinct use cases: standard data retrieval with pagination/filtering/sorting, aggregated data with grouping, distinct values from filtered lists, and non-queryable data views.
 - **Priority**: High
+- **Features**:
+  - Supports all 4 use cases in one unified tool
+  - Complex query structure with select, sortBy, filter, aggregations, distinctResultsOnly
+  - Multiple pagination modes (maxResultsToFetch vs pageNumber/pageSize)
+  - Advanced filtering with multiple comparators and logical operators
+  - Aggregation functions (COUNT, MAX, MIN, SUM, AVG, DISTINCT_COUNT)
+  - Extended timeout option for report definition-sourced data views
+  - Comprehensive parameter validation and documentation
+  - Filter comparators: boolean, string, number/date operations
+  - URL encoding for data view IDs with special characters
+- **Implementation**: `src/tools/dataviews/get-list-data-view.js`
+- **Test File**: `tests/dataviews/get-list-data-view-test.js`
+- **Auto-registered**: ✅ Discovered by registry system
 
 ### Get Total Result Count
 - **Status**: ❌ **TODO**
@@ -174,7 +187,7 @@ Comprehensive data view and data object operations for working with Pega data AP
 - ✅ `updateDataRecordPartial(dataViewID, data, options)` - Partially update data record
 - ✅ `deleteDataRecord(dataViewID, dataViewParameters)` - Delete data record
 - ❌ `getSinglePageDataView(dataViewID, params)` - Get single page data view
-- ❌ `getListDataView(dataViewID, params)` - Get list data view
+- ✅ `getListDataView(dataViewID, requestBody)` - Get list data view with advanced querying
 - ❌ `getDataViewCount(dataViewID, params)` - Get total result count
 - ❌ `getDataViewMetadataPost(dataViewID, params)` - Get metadata via POST
 - ❌ `getDataWithViewMetadata(dataViewID, viewID, params)` - Get data with view metadata
@@ -232,10 +245,10 @@ Comprehensive data view and data object operations for working with Pega data AP
 ## Status Summary
 
 **Category**: 🟡 IN PROGRESS  
-**Tools Implemented**: 5/16  
-**API Methods**: 5/16  
-**High Priority Remaining**: 3 tools  
-**Test Coverage**: 5/16 complete
+**Tools Implemented**: 6/16  
+**API Methods**: 6/16  
+**High Priority Remaining**: 2 tools  
+**Test Coverage**: 6/16 complete
 **Documentation**: Needs expansion
 
 The data views category requires significant expansion to support comprehensive data operations in Pega DX API.

@@ -17,9 +17,10 @@ This document tracks the development and release history of the Pega DX MCP Serv
 **Case Types API:**
 - `get_case_type_action` - Get detailed case type action metadata with rich UI resources (GET /casetypes/{caseTypeID}/actions/{actionID})
 
-**Data Views API (5/5 tools complete):**
+**Data Views API (6/6 tools complete):**
 - `get_data_view_metadata` - Retrieve data view metadata including parameters and queryable fields (GET /data_views/{data_view_ID}/metadata)
 - `get_data_objects` - Retrieve list of available data objects with metadata and HATEOAS links (GET /data_objects)
+- `get_list_data_view` - Retrieve list type data view with advanced querying capabilities supporting 4 use cases: standard data retrieval, aggregated data, distinct values, and non-queryable data views (POST /data_views/{data_view_ID})
 - `update_data_record_full` - Fully update existing data records based on conditional save plan (PUT /data/{data_view_ID})
 - `update_data_record_partial` - Partially update existing data records with selective field updates (PATCH /data/{data_view_ID})
 - `delete_data_record` - Delete data records based on conditional save plan configured for savable Data Pages (DELETE /data/{data_view_ID})
@@ -64,6 +65,15 @@ This document tracks the development and release history of the Pega DX MCP Serv
 - Enhanced data views category with complete CRUD capabilities for data management
 - Added primary key parameter validation for unique record identification
 - Implemented specialized error handling for deletion scenarios (400, 403, 404, 422, 500)
+- **Implemented `get_list_data_view` tool** - Most sophisticated data querying tool with advanced capabilities
+- Added comprehensive list data view retrieval supporting 4 distinct use cases in one unified tool
+- Implemented complex query structure with select, sortBy, filter, aggregations, and distinctResultsOnly
+- Added multiple pagination modes (maxResultsToFetch vs pageNumber/pageSize) with comprehensive validation
+- Enhanced filtering with multiple comparators for boolean, string, number/date operations and logical operators (AND/OR)
+- Implemented aggregation functions (COUNT, MAX, MIN, SUM, AVG, DISTINCT_COUNT) with optional grouping
+- Added extended timeout option (45 seconds) for report definition-sourced data views
+- Created comprehensive parameter documentation with detailed examples for all 4 use cases
+- Enhanced PegaAPIClient with getListDataView method supporting complex request body structures
 - Implemented alternative bulk cases tool with enhanced platform detection (Infinity vs Launchpad)
 - Added comprehensive error handling for bulk operations (400, 401, 500, 501 status codes)
 - Enhanced API client with specialized bulk cases error handling and response formatting
@@ -79,15 +89,16 @@ This document tracks the development and release history of the Pega DX MCP Serv
 - None
 
 ### Implementation Notes
-- Total tools implemented: 30/56 (53.6% complete) - **Major milestone: Over 50% complete**
+- Total tools implemented: 31/56 (55.4% complete) - **Major milestone: Over 55% complete**
 - Cases API progress: 9/18 tools (50.0% complete) - **Major milestone: 50% complete**
 - Assignments API progress: 5/9 tools (55.6% complete)
 - Attachments API: Complete (7/7 tools, 100%)
 - Case Types API: Complete (3/3 tools, 100%)
-- Data Views API: Complete (5/5 tools, 100%)
+- Data Views API: Complete (6/6 tools, 100%) - **Most sophisticated data querying tool implemented**
 - Auto-discovered via modular registry (no manual registration required)
 - **High Priority Core Operations completed**: Case action execution now available for workflow progression
-- **New category completed**: Data views functionality now complete with full CRUD operations including partial updates
+- **New category completed**: Data views functionality now complete with advanced querying capabilities
+- **Implementation milestone**: Most complex tool in the project successfully implemented with 4 use cases
 - Next priority: Continue with remaining case operations and assignment tools
 
 ---
