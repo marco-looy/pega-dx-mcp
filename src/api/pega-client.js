@@ -2103,6 +2103,55 @@ export class PegaAPIClient {
   }
 
   /**
+   * Jump to a specific step within an assignment's navigation flow
+   * @param {string} assignmentID - Full handle of assignment (e.g., "ASSIGN-WORKLIST MYORG-SERVICES-WORK S-293001!APPROVAL_FLOW")
+   * @param {string} stepID - Navigation step path to jump to (e.g., "SubProcessSF1_ASSIGNMENT66", "ProcessStep_123")
+   * @param {string} eTag - Required eTag for optimistic locking from previous assignment API call
+   * @param {Object} options - Optional parameters
+   * @param {Object} options.content - Property values to set during navigation to the specified step
+   * @param {Array} options.pageInstructions - Page operations for embedded pages, page lists, or page groups
+   * @param {Array} options.attachments - Attachments to add/delete during step navigation
+   * @param {string} options.viewType - UI resources type ("none", "form", "page", default: "form")
+   * @returns {Promise<Object>} API response with step details and navigation context including breadcrumb information
+   */
+  async jumpToAssignmentStep(assignmentID, stepID, eTag, options = {}) {
+    const { content, pageInstructions, attachments, viewType } = options;
+    
+    // URL encode both assignment ID and step ID to handle spaces and special characters
+    const encodedAssignmentID = encodeURIComponent(assignmentID);
+    const encodedStepID = encodeURIComponent(stepID);
+    let url = `${this.baseUrl}/assignments/${encodedAssignmentID}/navigation_steps/${encodedStepID}`;
+
+    // Add query parameters if provided
+    const queryParams = new URLSearchParams();
+    if (viewType) {
+      queryParams.append('viewType', viewType);
+    }
+    
+    if (queryParams.toString()) {
+      url += `?${queryParams.toString()}`;
+    }
+
+    // Build request body
+    const requestBody = {};
+    if (content) requestBody.content = content;
+    if (pageInstructions) requestBody.pageInstructions = pageInstructions;
+    if (attachments) requestBody.attachments = attachments;
+
+    // Prepare headers - if-match is required for this operation
+    const headers = {
+      'if-match': eTag, // Required header for optimistic locking
+      'x-origin-channel': 'Web' // Default origin channel
+    };
+
+    return await this.makeRequest(url, {
+      method: 'PATCH',
+      headers: headers,
+      body: Object.keys(requestBody).length > 0 ? JSON.stringify(requestBody) : undefined
+    });
+  }
+
+  /**
    * Make HTTP request to Pega API with authentication
    * @param {string} url - Full API URL
    * @param {Object} options - HTTP request options

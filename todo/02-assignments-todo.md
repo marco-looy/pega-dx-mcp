@@ -17,7 +17,7 @@
 
 ## 🔄 Medium Priority (Navigation)
 - [x] `navigate_assignment_previous` - Navigate back to previous step (PATCH /assignments/{assignmentID}/navigation_steps/previous) ✅ **IMPLEMENTED**
-- [ ] `jump_to_step` - Jump to the specified step (PATCH /assignments/{assignmentID}/navigation_steps/{stepID})
+- [x] `jump_to_step` - Jump to the specified step (PATCH /assignments/{assignmentID}/navigation_steps/{stepID}) ✅ **IMPLEMENTED**
 
 ## Implementation Notes
 - **Dependencies:** PegaAPIClient, OAuth2Client

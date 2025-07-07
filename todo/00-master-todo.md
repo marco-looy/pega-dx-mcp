@@ -1,6 +1,6 @@
 # Pega DX MCP Server - Master Todo List
 
-**Project Status:** 47/54 endpoints implemented (87.0% complete)
+**Project Status:** 48/54 endpoints implemented (88.9% complete)
 **Last Updated:** January 7, 2025
 
 ## 📊 Progress Summary
@@ -8,7 +8,7 @@
 | API Category | Priority | Complexity | Status | Complete | Total | Percentage |
 |-------------|----------|------------|--------|----------|-------|-----------|
 | Cases | HIGH | MODERATE | 🔄 Active | 11 | 18 | 61.1% |
-| Assignments | HIGH | MODERATE | 🔄 Active | 6 | 9 | 66.7% |
+| Assignments | HIGH | MODERATE | 🔄 Active | 7 | 9 | 77.8% |
 | Attachments | HIGH | MODERATE-HIGH | ✅ Complete | 7 | 7 | 100% |
 | Participants | MEDIUM-HIGH | MODERATE | ✅ Complete | 7 | 7 | 100% |
 | Case Types | MEDIUM | SIMPLE | ✅ Complete | 3 | 3 | 100% |
@@ -18,7 +18,7 @@
 | Followers | LOW-MEDIUM | SIMPLE | ✅ Complete | 2 | 2 | 100% |
 | Tags | LOW-MEDIUM | SIMPLE | ✅ Complete | 3 | 3 | 100% |
 
-## ✅ Completed Tools (46/54)
+## ✅ Completed Tools (47/54)
 
 ### Core Infrastructure
 - [x] `ping_pega_service` - Test OAuth2 connectivity and verify authentication - ✅ **IMPLEMENTED** in `src/tools/ping-service.js`
@@ -36,13 +36,15 @@
 - [x] `perform_bulk_action` - Perform bulk action on multiple cases (PATCH /cases) - ✅ **IMPLEMENTED** in `src/tools/cases/perform-bulk-action.js`
 - [x] `bulk_cases_patch` - Alternative bulk cases implementation (PATCH /cases) - ✅ **IMPLEMENTED** in `src/tools/cases/bulk-cases-patch.js`
 
-### Assignments API (6/9)
+### Assignments API (7/9)
 - [x] `get_next_assignment` - Get next assignment details (GET /assignments/next) - ✅ **IMPLEMENTED** in `src/tools/assignments/get-next-assignment.js`
 - [x] `get_assignment` - Get assignment details (GET /assignments/{assignmentID}) - ✅ **IMPLEMENTED** in `src/tools/assignments/get-assignment.js`
 - [x] `get_assignment_action` - Get assignment action details (GET /assignments/{assignmentID}/actions/{actionID}) - ✅ **IMPLEMENTED** in `src/tools/assignments/get-assignment-action.js`
 - [x] `perform_assignment_action` - Perform assignment action (PATCH /assignments/{assignmentID}/actions/{actionID}) - ✅ **IMPLEMENTED** in `src/tools/assignments/perform-assignment-action.js`
 - [x] `refresh_assignment_action` - Refresh assignment action form data and execute Data Transforms (PATCH /assignments/{assignmentID}/actions/{actionID}/refresh) - ✅ **IMPLEMENTED** in `src/tools/assignments/refresh-assignment-action.js`
+- [x] `save_assignment_action` - Save assignment action form data without executing the action (PATCH /assignments/{assignmentID}/actions/{actionID}/save) - ✅ **IMPLEMENTED** in `src/tools/assignments/save-assignment-action.js`
 - [x] `navigate_assignment_previous` - Navigate back to previous step in screen flow or multi-step form (PATCH /assignments/{assignmentID}/navigation_steps/previous) - ✅ **IMPLEMENTED** in `src/tools/assignments/navigate-assignment-previous.js`
+- [x] `jump_to_step` - Jump to specified step within assignment navigation flow (PATCH /assignments/{assignmentID}/navigation_steps/{stepID}) - ✅ **IMPLEMENTED** in `src/tools/assignments/jump-to-step.js`
 
 ### Attachments API (7/7) ✅ COMPLETE
 - [x] `upload_attachment` - Upload a file as temporary attachment (POST /attachments/upload) - ✅ **IMPLEMENTED** in `src/tools/attachments/upload-attachment.js`
