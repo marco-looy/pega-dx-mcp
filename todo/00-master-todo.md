@@ -1,6 +1,6 @@
 # Pega DX MCP Server - Master Todo List
 
-**Project Status:** 46/54 endpoints implemented (85.2% complete)
+**Project Status:** 47/54 endpoints implemented (87.0% complete)
 **Last Updated:** January 7, 2025
 
 ## 📊 Progress Summary
@@ -8,7 +8,7 @@
 | API Category | Priority | Complexity | Status | Complete | Total | Percentage |
 |-------------|----------|------------|--------|----------|-------|-----------|
 | Cases | HIGH | MODERATE | 🔄 Active | 11 | 18 | 61.1% |
-| Assignments | HIGH | MODERATE | 🔄 Active | 5 | 9 | 55.6% |
+| Assignments | HIGH | MODERATE | 🔄 Active | 6 | 9 | 66.7% |
 | Attachments | HIGH | MODERATE-HIGH | ✅ Complete | 7 | 7 | 100% |
 | Participants | MEDIUM-HIGH | MODERATE | ✅ Complete | 7 | 7 | 100% |
 | Case Types | MEDIUM | SIMPLE | ✅ Complete | 3 | 3 | 100% |
@@ -36,12 +36,13 @@
 - [x] `perform_bulk_action` - Perform bulk action on multiple cases (PATCH /cases) - ✅ **IMPLEMENTED** in `src/tools/cases/perform-bulk-action.js`
 - [x] `bulk_cases_patch` - Alternative bulk cases implementation (PATCH /cases) - ✅ **IMPLEMENTED** in `src/tools/cases/bulk-cases-patch.js`
 
-### Assignments API (5/9)
+### Assignments API (6/9)
 - [x] `get_next_assignment` - Get next assignment details (GET /assignments/next) - ✅ **IMPLEMENTED** in `src/tools/assignments/get-next-assignment.js`
 - [x] `get_assignment` - Get assignment details (GET /assignments/{assignmentID}) - ✅ **IMPLEMENTED** in `src/tools/assignments/get-assignment.js`
 - [x] `get_assignment_action` - Get assignment action details (GET /assignments/{assignmentID}/actions/{actionID}) - ✅ **IMPLEMENTED** in `src/tools/assignments/get-assignment-action.js`
 - [x] `perform_assignment_action` - Perform assignment action (PATCH /assignments/{assignmentID}/actions/{actionID}) - ✅ **IMPLEMENTED** in `src/tools/assignments/perform-assignment-action.js`
 - [x] `refresh_assignment_action` - Refresh assignment action form data and execute Data Transforms (PATCH /assignments/{assignmentID}/actions/{actionID}/refresh) - ✅ **IMPLEMENTED** in `src/tools/assignments/refresh-assignment-action.js`
+- [x] `navigate_assignment_previous` - Navigate back to previous step in screen flow or multi-step form (PATCH /assignments/{assignmentID}/navigation_steps/previous) - ✅ **IMPLEMENTED** in `src/tools/assignments/navigate-assignment-previous.js`
 
 ### Attachments API (7/7) ✅ COMPLETE
 - [x] `upload_attachment` - Upload a file as temporary attachment (POST /attachments/upload) - ✅ **IMPLEMENTED** in `src/tools/attachments/upload-attachment.js`

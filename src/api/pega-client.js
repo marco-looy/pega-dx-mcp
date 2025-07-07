@@ -2056,6 +2056,53 @@ export class PegaAPIClient {
   }
 
   /**
+   * Navigate assignment to previous step in screen flow or multi-step form
+   * @param {string} assignmentID - Full handle of assignment (e.g., "ASSIGN-WORKLIST PBANK-LOAN-WORK V-76003!REVIEW_FLOW")
+   * @param {string} eTag - Required eTag for optimistic locking from previous assignment API call
+   * @param {Object} options - Optional parameters
+   * @param {Object} options.content - Property values to set during navigation
+   * @param {Array} options.pageInstructions - Page operations for embedded pages, page lists, or page groups
+   * @param {Array} options.attachments - Attachments to add/delete during navigation
+   * @param {string} options.viewType - UI resources type ("none", "form", "page", default: "none")
+   * @returns {Promise<Object>} API response with previous step details and navigation context including breadcrumb information
+   */
+  async navigateAssignmentPrevious(assignmentID, eTag, options = {}) {
+    const { content, pageInstructions, attachments, viewType } = options;
+    
+    // URL encode assignment ID to handle spaces and special characters
+    const encodedAssignmentID = encodeURIComponent(assignmentID);
+    let url = `${this.baseUrl}/assignments/${encodedAssignmentID}/navigation_steps/previous`;
+
+    // Add query parameters if provided
+    const queryParams = new URLSearchParams();
+    if (viewType) {
+      queryParams.append('viewType', viewType);
+    }
+    
+    if (queryParams.toString()) {
+      url += `?${queryParams.toString()}`;
+    }
+
+    // Build request body
+    const requestBody = {};
+    if (content) requestBody.content = content;
+    if (pageInstructions) requestBody.pageInstructions = pageInstructions;  
+    if (attachments) requestBody.attachments = attachments;
+
+    // Prepare headers - if-match is required for this operation
+    const headers = {
+      'if-match': eTag, // Required header for optimistic locking
+      'x-origin-channel': 'Web' // Default origin channel
+    };
+
+    return await this.makeRequest(url, {
+      method: 'PATCH',
+      headers: headers,
+      body: Object.keys(requestBody).length > 0 ? JSON.stringify(requestBody) : undefined
+    });
+  }
+
+  /**
    * Make HTTP request to Pega API with authentication
    * @param {string} url - Full API URL
    * @param {Object} options - HTTP request options

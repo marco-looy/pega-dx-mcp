@@ -16,7 +16,7 @@
 - [x] `save_assignment_action` - Save assignment action (PATCH /assignments/{assignmentID}/actions/{actionID}/save) ✅ **IMPLEMENTED**
 
 ## 🔄 Medium Priority (Navigation)
-- [ ] `go_back_previous_step` - Go back to previous step (PATCH /assignments/{assignmentID}/navigation_steps/previous)
+- [x] `navigate_assignment_previous` - Navigate back to previous step (PATCH /assignments/{assignmentID}/navigation_steps/previous) ✅ **IMPLEMENTED**
 - [ ] `jump_to_step` - Jump to the specified step (PATCH /assignments/{assignmentID}/navigation_steps/{stepID})
 
 ## Implementation Notes
