@@ -1,6 +1,6 @@
 # Pega DX MCP Server - Master Todo List
 
-**Project Status:** 45/54 endpoints implemented (83.3% complete)
+**Project Status:** 46/54 endpoints implemented (85.2% complete)
 **Last Updated:** January 7, 2025
 
 ## 📊 Progress Summary
@@ -16,9 +16,9 @@
 | Related Cases | MEDIUM | SIMPLE | ✅ Complete | 3 | 3 | 100% |
 | Documents | MEDIUM | SIMPLE | ✅ Complete | 2 | 2 | 100% |
 | Followers | LOW-MEDIUM | SIMPLE | ✅ Complete | 2 | 2 | 100% |
-| Tags | LOW-MEDIUM | SIMPLE | 🔄 Active | 2 | 3 | 66.7% |
+| Tags | LOW-MEDIUM | SIMPLE | ✅ Complete | 3 | 3 | 100% |
 
-## ✅ Completed Tools (45/54)
+## ✅ Completed Tools (46/54)
 
 ### Core Infrastructure
 - [x] `ping_pega_service` - Test OAuth2 connectivity and verify authentication - ✅ **IMPLEMENTED** in `src/tools/ping-service.js`
@@ -82,9 +82,10 @@
 - [x] `update_participant` - Update participant details (PATCH /cases/{caseID}/participants/{participantID}) - ✅ **IMPLEMENTED** in `src/tools/participants/update-participant.js`
 - [x] `delete_participant` - Delete participant from case (DELETE /cases/{caseID}/participants/{participantID}) - ✅ **IMPLEMENTED** in `src/tools/participants/delete-participant.js`
 
-### Tags API (2/3)
+### Tags API (3/3) ✅ COMPLETE
 - [x] `get_case_tags` - Get list of tags for a case (GET /cases/{caseID}/tags) - ✅ **IMPLEMENTED** in `src/tools/tags/get-case-tags.js`
 - [x] `add_case_tags` - Add multiple tags to a case (POST /cases/{caseID}/tags) - ✅ **IMPLEMENTED** in `src/tools/tags/add-case-tags.js`
+- [x] `delete_case_tag` - Delete specific tag from case (DELETE /cases/{caseID}/tags/{tagID}) - ✅ **IMPLEMENTED** in `src/tools/tags/delete-case-tag.js`
 
 ## 🎯 Development Roadmap
 

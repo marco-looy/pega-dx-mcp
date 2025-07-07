@@ -735,6 +735,59 @@ export class PegaAPIClient {
   }
 
   /**
+   * Save assignment action form data without executing the action
+   * @param {string} assignmentID - Full handle of the assignment (e.g., "ASSIGN-WORKLIST PBANK-LOAN-WORK V-76003!REVIEW_FLOW")
+   * @param {string} actionID - Name of the assignment action - ID of the flow action rule
+   * @param {string} eTag - Required eTag unique value representing the most recent save date time of the case
+   * @param {Object} options - Optional parameters
+   * @param {Object} options.content - Map of scalar and embedded page properties containing form data to be saved
+   * @param {Array} options.pageInstructions - List of page-related operations for embedded pages, page lists, or page groups
+   * @param {Array} options.attachments - List of attachments to be added to specific attachment fields
+   * @param {string} options.originChannel - Origin channel identifier (e.g., "Web", "Mobile", "WebChat")
+   * @returns {Promise<Object>} API response with save confirmation and case information
+   */
+  async saveAssignmentAction(assignmentID, actionID, eTag, options = {}) {
+    const { content, pageInstructions, attachments, originChannel } = options;
+    
+    // URL encode both the assignment ID and action ID to handle spaces and special characters
+    const encodedAssignmentID = encodeURIComponent(assignmentID);
+    const encodedActionID = encodeURIComponent(actionID);
+    const url = `${this.baseUrl}/assignments/${encodedAssignmentID}/actions/${encodedActionID}/save`;
+
+    // Build request body
+    const requestBody = {};
+
+    // Add optional parameters if provided
+    if (content) {
+      requestBody.content = content;
+    }
+    if (pageInstructions) {
+      requestBody.pageInstructions = pageInstructions;
+    }
+    if (attachments) {
+      requestBody.attachments = attachments;
+    }
+
+    // Prepare headers
+    const headers = {
+      'if-match': eTag // Required eTag header for optimistic locking
+    };
+
+    // Add origin channel header if provided, otherwise default to Web
+    if (originChannel) {
+      headers['x-origin-channel'] = originChannel;
+    } else {
+      headers['x-origin-channel'] = 'Web';
+    }
+
+    return await this.makeRequest(url, {
+      method: 'PATCH',
+      headers: headers,
+      body: Object.keys(requestBody).length > 0 ? JSON.stringify(requestBody) : undefined
+    });
+  }
+
+  /**
    * Get case attachments by case ID
    * @param {string} caseID - Full case handle to retrieve attachments from
    * @param {Object} options - Optional parameters
