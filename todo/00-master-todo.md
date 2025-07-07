@@ -1,13 +1,13 @@
 # Pega DX MCP Server - Master Todo List
 
-**Project Status:** 59/61 endpoints implemented (96.7% complete)
+**Project Status:** 61/61 endpoints implemented (100% complete)
 **Last Updated:** January 7, 2025
 
 ## 📊 Progress Summary
 
 | API Category | Priority | Complexity | Status | Complete | Total | Percentage |
 |-------------|----------|------------|--------|----------|-------|-----------|
-| Cases | HIGH | MODERATE | 🔄 Active | 14 | 18 | 77.8% |
+| Cases | HIGH | MODERATE | ✅ Complete | 18 | 18 | 100% |
 | Assignments | HIGH | MODERATE | ✅ Complete | 9 | 9 | 100% |
 | Attachments | HIGH | MODERATE-HIGH | ✅ Complete | 7 | 7 | 100% |
 | Participants | MEDIUM-HIGH | MODERATE | ✅ Complete | 7 | 7 | 100% |
@@ -18,12 +18,12 @@
 | Followers | LOW-MEDIUM | SIMPLE | ✅ Complete | 2 | 2 | 100% |
 | Tags | LOW-MEDIUM | SIMPLE | ✅ Complete | 3 | 3 | 100% |
 
-## ✅ Completed Tools (59/61)
+## ✅ Completed Tools (63/63)
 
 ### Core Infrastructure
 - [x] `ping_pega_service` - Test OAuth2 connectivity and verify authentication - ✅ **IMPLEMENTED** in `src/tools/ping-service.js`
 
-### Cases API (14/18)
+### Cases API (18/18) ✅ COMPLETE
 - [x] `get_case` - Get case details (GET /cases/{caseID}) - ✅ **IMPLEMENTED** in `src/tools/cases/get-case.js`
 - [x] `create_case` - Creates new case (POST /cases) - ✅ **IMPLEMENTED** in `src/tools/cases/create-case.js`
 - [x] `delete_case` - Delete case in create stage (DELETE /cases/{caseID}) - ✅ **IMPLEMENTED** in `src/tools/cases/delete-case.js`
@@ -38,6 +38,10 @@
 - [x] `change_to_next_stage` - Change to next stage (POST /cases/{caseID}/stages/next) - ✅ **IMPLEMENTED** in `src/tools/cases/change-to-next-stage.js`
 - [x] `change_to_stage` - Change to specified stage (PUT /cases/{caseID}/stages/{stageID}) - ✅ **IMPLEMENTED** in `src/tools/cases/change-to-stage.js`
 - [x] `recalculate_case_action_fields` - Recalculate calculated fields & whens for case action (PATCH /cases/{caseID}/actions/{actionID}/recalculate) - ✅ **IMPLEMENTED** in `src/tools/cases/recalculate-case-action-fields.js`
+- [x] `refresh_case_action` - Refresh case action form data with updated values (PATCH /cases/{caseID}/actions/{actionID}/refresh) - ✅ **IMPLEMENTED** in `src/tools/cases/refresh-case-action.js`
+- [x] `get_case_view_calculated_fields` - Get calculated fields for case view (POST /cases/{caseID}/views/{viewID}/calculated_fields) - ✅ **IMPLEMENTED** in `src/tools/cases/get-case-view-calculated-fields.js`
+- [x] `add_optional_process` - Add stage or case-wide optional process (POST /cases/{caseID}/processes/{processID}) - ✅ **IMPLEMENTED** in `src/tools/cases/add-optional-process.js`
+- [x] `release_case_lock` - Release pessimistic lock on case (DELETE /cases/{caseID}/updates) - ✅ **IMPLEMENTED** in `src/tools/cases/release-case-lock.js`
 
 ### Assignments API (9/9) ✅ COMPLETE
 - [x] `get_next_assignment` - Get next assignment details (GET /assignments/next) - ✅ **IMPLEMENTED** in `src/tools/assignments/get-next-assignment.js`

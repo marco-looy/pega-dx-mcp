@@ -2,9 +2,9 @@
 
 **Priority:** HIGH (Core functionality)  
 **Complexity:** MODERATE  
-**Current Status:** 14/18 endpoints completed (77.8% complete)
+**Current Status:** 18/18 endpoints completed (100% complete)
 
-## ✅ Completed Tools (14/18)
+## ✅ Completed Tools (18/18)
 - [x] `get_case` - Get case details (GET /cases/{caseID}) - ✅ **IMPLEMENTED** in `src/tools/cases/get-case.js`
 - [x] `create_case` - Creates new case (POST /cases) - ✅ **IMPLEMENTED** in `src/tools/cases/create-case.js`
 - [x] `delete_case` - Delete case in create stage (DELETE /cases/{caseID}) - ✅ **IMPLEMENTED** in `src/tools/cases/delete-case.js`
@@ -19,6 +19,9 @@
 - [x] `change_to_next_stage` - Change to next stage (POST /cases/{caseID}/stages/next) - ✅ **IMPLEMENTED** in `src/tools/cases/change-to-next-stage.js`
 - [x] `change_to_stage` - Change to specified stage (PUT /cases/{caseID}/stages/{stageID}) - ✅ **IMPLEMENTED** in `src/tools/cases/change-to-stage.js`
 - [x] `recalculate_case_action_fields` - Recalculate calculated fields & whens for case action (PATCH /cases/{caseID}/actions/{actionID}/recalculate) - ✅ **IMPLEMENTED** in `src/tools/cases/recalculate-case-action-fields.js`
+- [x] `refresh_case_action` - Refresh case action form data with updated values (PATCH /cases/{caseID}/actions/{actionID}/refresh) - ✅ **IMPLEMENTED** in `src/tools/cases/refresh-case-action.js`
+- [x] `get_case_view_calculated_fields` - Get calculated fields for case view (POST /cases/{caseID}/views/{viewID}/calculated_fields) - ✅ **IMPLEMENTED** in `src/tools/cases/get-case-view-calculated-fields.js`
+- [x] `release_case_lock` - Release pessimistic lock on case (DELETE /cases/{caseID}/updates) - ✅ **IMPLEMENTED** in `src/tools/cases/release-case-lock.js`
 
 ## ✅ Related Completed Tools (Case Types - 2/2) ✅ COMPLETE
 - [x] `get_case_types` - List available case types (GET /casetypes) - ✅ **IMPLEMENTED** in `src/tools/casetypes/get-case-types.js`
@@ -30,20 +33,20 @@
 ## ✅ High Priority (Core Operations) ✅ COMPLETE
 - [x] `perform_case_action` - Perform case action (PATCH /cases/{caseID}/actions/{actionID}) - ✅ **IMPLEMENTED** in `src/tools/cases/perform-case-action.js`
 
-## 🔄 Medium Priority (Advanced Operations)
+## ✅ Medium Priority (Advanced Operations) ✅ COMPLETE
 - [x] `get_case_ancestors` - Get ancestor case hierarchy (GET /cases/{caseID}/ancestors) - ✅ **IMPLEMENTED** in `src/tools/cases/get-case-ancestors.js`
 - [x] `get_case_descendants` - Get descendant case hierarchy (GET /cases/{caseID}/descendants) - ✅ **IMPLEMENTED** in `src/tools/cases/get-case-descendants.js`
 - [x] `change_to_next_stage` - Change to next stage (POST /cases/{caseID}/stages/next) - ✅ **IMPLEMENTED** in `src/tools/cases/change-to-next-stage.js`
 - [x] `change_to_stage` - Change to specified stage (PUT /cases/{caseID}/stages/{stageID}) - ✅ **IMPLEMENTED** in `src/tools/cases/change-to-stage.js`
-- [ ] `release_case_lock` - Release lock (DELETE /cases/{caseID}/updates)
+- [x] `release_case_lock` - Release lock (DELETE /cases/{caseID}/updates) - ✅ **IMPLEMENTED** in `src/tools/cases/release-case-lock.js`
 
 ## 🔄 Advanced Priority (Specialized Operations)
 - [ ] `get_bulk_actions` - Get bulk actions (POST /cases/bulk-actions)
 - [x] `perform_bulk_action` - Perform bulk action (PATCH /cases) - ✅ **IMPLEMENTED** in `src/tools/cases/perform-bulk-action.js`
-- [ ] `add_optional_process` - Add optional process (POST /cases/{caseID}/processes/{processID})
+- [x] `add_optional_process` - Add optional process (POST /cases/{caseID}/processes/{processID}) - ✅ **IMPLEMENTED** in `src/tools/cases/add-optional-process.js`
 - [x] `recalculate_case_fields` - Recalculate calculated fields (PATCH /cases/{caseID}/actions/{actionID}/recalculate) - ✅ **IMPLEMENTED** as `recalculate_case_action_fields` in `src/tools/cases/recalculate-case-action-fields.js`
-- [ ] `refresh_case_action` - Refresh case action (PATCH /cases/{caseID}/actions/{actionID}/refresh)
-- [ ] `get_calculated_fields` - Get calculated fields for case view (POST /cases/{caseID}/views/{viewID}/calculated_fields)
+- [x] `refresh_case_action` - Refresh case action (PATCH /cases/{caseID}/actions/{actionID}/refresh) - ✅ **IMPLEMENTED** in `src/tools/cases/refresh-case-action.js`
+- [x] `get_calculated_fields` - Get calculated fields for case view (POST /cases/{caseID}/views/{viewID}/calculated_fields) - ✅ **IMPLEMENTED** as `get_case_view_calculated_fields` in `src/tools/cases/get-case-view-calculated-fields.js`
 - [ ] `refresh_case_view` - Refresh view details (PATCH /cases/{caseID}/views/{viewID}/refresh)
 
 ## Implementation Notes

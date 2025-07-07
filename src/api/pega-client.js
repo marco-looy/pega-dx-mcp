@@ -2292,6 +2292,194 @@ export class PegaAPIClient {
   }
 
   /**
+   * Add stage or case-wide optional process and return details of the next assignment in the process
+   * @param {string} caseID - Full case handle to add optional process to
+   * @param {string} processID - Process ID - Name of the process which is the ID of a flow rule
+   * @param {Object} options - Optional parameters
+   * @param {string} options.viewType - Type of view data to return ("none", "form", "page")
+   * @returns {Promise<Object>} API response with case info, next assignment info, and optional UI resources
+   */
+  async addOptionalProcess(caseID, processID, options = {}) {
+    const { viewType } = options;
+    
+    // URL encode both the case ID and process ID to handle spaces and special characters
+    const encodedCaseID = encodeURIComponent(caseID);
+    const encodedProcessID = encodeURIComponent(processID);
+    let url = `${this.baseUrl}/cases/${encodedCaseID}/processes/${encodedProcessID}`;
+
+    // Add query parameters if provided
+    const queryParams = new URLSearchParams();
+    if (viewType) {
+      queryParams.append('viewType', viewType);
+    }
+    
+    if (queryParams.toString()) {
+      url += `?${queryParams.toString()}`;
+    }
+
+    return await this.makeRequest(url, {
+      method: 'POST',
+      headers: {
+        'x-origin-channel': 'Web'
+      }
+      // No request body - this endpoint takes no payload
+    });
+  }
+
+  /**
+   * Get calculated fields for a given case view
+   * @param {string} caseID - Full case handle (case ID) to retrieve calculated fields from
+   * @param {string} viewID - Name of the view from which calculated fields are retrieved - ID of the view rule
+   * @param {Object} calculations - Object containing the fields data to retrieve their respective calculated values
+   * @param {Array} calculations.fields - Array of field objects specifying which calculated fields to retrieve
+   * @param {Array} [calculations.whens] - Optional array of when condition objects for conditional field evaluation
+   * @returns {Promise<Object>} API response with calculated field results and case data
+   */
+  async getCaseViewCalculatedFields(caseID, viewID, calculations) {
+    // URL encode both the case ID and view ID to handle spaces and special characters
+    const encodedCaseID = encodeURIComponent(caseID);
+    const encodedViewID = encodeURIComponent(viewID);
+    const url = `${this.baseUrl}/cases/${encodedCaseID}/views/${encodedViewID}/calculated_fields`;
+
+    // Build request body with calculations object
+    const requestBody = {
+      calculations
+    };
+
+    return await this.makeRequest(url, {
+      method: 'POST',
+      headers: {
+        'x-origin-channel': 'Web'
+      },
+      body: JSON.stringify(requestBody)
+    });
+  }
+
+  /**
+   * Refresh case action form data with updated values after property changes, execute Data Transforms, and handle table row operations in modals
+   * @param {string} caseID - Full case handle (case ID) to perform refresh on
+   * @param {string} actionID - Name of the case action - ID of the flow action rule
+   * @param {string} eTag - Required eTag unique value for optimistic locking
+   * @param {Object} options - Optional parameters
+   * @param {string} [options.refreshFor] - Property name that triggers refresh after executing Data Transform
+   * @param {boolean} [options.fillFormWithAI=false] - Boolean to enable generative AI form filling
+   * @param {string} [options.operation] - Table row operation type ("showRow" or "submitRow")
+   * @param {Object} [options.content] - Property values to merge into case during refresh
+   * @param {Array} [options.pageInstructions] - Page-related operations for embedded pages
+   * @param {boolean} [options.contextData=false] - Boolean to fetch contextData or full view response
+   * @param {string} [options.interestPage] - Target page for table row operations (e.g., ".OrderItems(1)")
+   * @param {string} [options.interestPageActionID] - Action ID for embedded list operations
+   * @param {string} [options.originChannel] - Origin channel identifier (e.g., "Web", "Mobile", "WebChat")
+   * @returns {Promise<Object>} API response with refreshed form data, updated field states, and UI resources
+   */
+  async refreshCaseAction(caseID, actionID, eTag, options = {}) {
+    const { 
+      refreshFor, 
+      fillFormWithAI, 
+      operation, 
+      content, 
+      pageInstructions,
+      contextData,
+      interestPage, 
+      interestPageActionID,
+      originChannel 
+    } = options;
+    
+    // URL encode both the case ID and action ID to handle spaces and special characters
+    const encodedCaseID = encodeURIComponent(caseID);
+    const encodedActionID = encodeURIComponent(actionID);
+    let url = `${this.baseUrl}/cases/${encodedCaseID}/actions/${encodedActionID}/refresh`;
+
+    // Add query parameters if provided
+    const queryParams = new URLSearchParams();
+    if (refreshFor) {
+      queryParams.append('refreshFor', refreshFor);
+    }
+    if (fillFormWithAI !== undefined) {
+      queryParams.append('fillFormWithAI', fillFormWithAI.toString());
+    }
+    if (operation) {
+      queryParams.append('operation', operation);
+    }
+    
+    if (queryParams.toString()) {
+      url += `?${queryParams.toString()}`;
+    }
+
+    // Build request body
+    const requestBody = {};
+
+    // Add optional parameters if provided
+    if (content && Object.keys(content).length > 0) {
+      requestBody.content = content;
+    }
+    if (pageInstructions && pageInstructions.length > 0) {
+      requestBody.pageInstructions = pageInstructions;
+    }
+    if (contextData !== undefined) {
+      requestBody.contextData = contextData;
+    }
+    
+    // Add table row operation parameters for Pega Infinity '25 features
+    if (operation && interestPage) {
+      requestBody.interestPage = interestPage;
+    }
+    if (operation && interestPageActionID) {
+      requestBody.interestPageActionID = interestPageActionID;
+    }
+
+    // Prepare headers - if-match is required for this endpoint
+    const headers = {
+      'if-match': eTag // Required eTag header for optimistic locking
+    };
+
+    // Add origin channel header if provided, otherwise default to Web
+    if (originChannel) {
+      headers['x-origin-channel'] = originChannel;
+    } else {
+      headers['x-origin-channel'] = 'Web';
+    }
+
+    return await this.makeRequest(url, {
+      method: 'PATCH',
+      headers: headers,
+      body: Object.keys(requestBody).length > 0 ? JSON.stringify(requestBody) : undefined
+    });
+  }
+
+  /**
+   * Release pessimistic lock on a case and clean up cached/pending updates
+   * @param {string} caseID - Full case handle (case ID) to release lock from
+   * @param {Object} options - Optional parameters
+   * @param {string} options.viewType - Type of view data to return ("none" or "page", default: "none")
+   * @returns {Promise<Object>} API response with case details after lock release
+   */
+  async releaseCaseLock(caseID, options = {}) {
+    const { viewType } = options;
+    
+    // URL encode the case ID to handle spaces and special characters
+    const encodedCaseID = encodeURIComponent(caseID);
+    let url = `${this.baseUrl}/cases/${encodedCaseID}/updates`;
+
+    // Add query parameters if provided
+    const queryParams = new URLSearchParams();
+    if (viewType) {
+      queryParams.append('viewType', viewType);
+    }
+    
+    if (queryParams.toString()) {
+      url += `?${queryParams.toString()}`;
+    }
+
+    return await this.makeRequest(url, {
+      method: 'DELETE',
+      headers: {
+        'x-origin-channel': 'Web'
+      }
+    });
+  }
+
+  /**
    * Make HTTP request to Pega API with authentication
    * @param {string} url - Full API URL
    * @param {Object} options - HTTP request options
