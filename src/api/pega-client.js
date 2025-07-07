@@ -1634,6 +1634,110 @@ export class PegaAPIClient {
     });
   }
 
+  /**
+   * Get participant role details by case ID and participant role ID
+   * @param {string} caseID - Full case handle to retrieve participant role details from
+   * @param {string} participantRoleID - Participant role ID to get details for
+   * @param {Object} options - Optional parameters
+   * @param {string} options.viewType - Type of view data to return ("form" or "none", default: "form")
+   * @returns {Promise<Object>} API response with participant role details and metadata
+   */
+  async getParticipantRoleDetails(caseID, participantRoleID, options = {}) {
+    const { viewType } = options;
+    
+    // URL encode both the case ID and participant role ID to handle spaces and special characters
+    const encodedCaseID = encodeURIComponent(caseID);
+    const encodedParticipantRoleID = encodeURIComponent(participantRoleID);
+    let url = `${this.baseUrl}/cases/${encodedCaseID}/participant_roles/${encodedParticipantRoleID}`;
+
+    // Add query parameters if provided
+    const queryParams = new URLSearchParams();
+    if (viewType) {
+      queryParams.append('viewType', viewType);
+    }
+    
+    if (queryParams.toString()) {
+      url += `?${queryParams.toString()}`;
+    }
+
+    return await this.makeRequest(url, {
+      method: 'GET',
+      headers: {
+        'x-origin-channel': 'Web'
+      }
+    });
+  }
+
+  /**
+   * Get case participants by case ID
+   * @param {string} caseID - Full case handle to retrieve participants from
+   * @returns {Promise<Object>} API response with participants list and metadata
+   */
+  async getCaseParticipants(caseID) {
+    // URL encode the case ID to handle spaces and special characters
+    const encodedCaseID = encodeURIComponent(caseID);
+    const url = `${this.baseUrl}/cases/${encodedCaseID}/participants`;
+
+    return await this.makeRequest(url, {
+      method: 'GET',
+      headers: {
+        'x-origin-channel': 'Web'
+      }
+    });
+  }
+
+  /**
+   * Create participant in case
+   * @param {string} caseID - Full case handle to add participant to
+   * @param {Object} options - Creation options
+   * @param {string} options.eTag - Required eTag for optimistic locking
+   * @param {Object} options.content - Participant data object
+   * @param {string} options.participantRoleID - Role ID to assign
+   * @param {string} options.viewType - View type ("form" or "none")
+   * @param {Array} options.pageInstructions - Optional page instructions
+   * @returns {Promise<Object>} API response with created participant details
+   */
+  async createCaseParticipant(caseID, options = {}) {
+    const { eTag, content, participantRoleID, viewType, pageInstructions } = options;
+    
+    // URL encode the case ID to handle spaces and special characters
+    const encodedCaseID = encodeURIComponent(caseID);
+    let url = `${this.baseUrl}/cases/${encodedCaseID}/participants`;
+
+    // Add query parameters if provided
+    const queryParams = new URLSearchParams();
+    if (viewType) {
+      queryParams.append('viewType', viewType);
+    }
+    
+    if (queryParams.toString()) {
+      url += `?${queryParams.toString()}`;
+    }
+
+    // Build request body
+    const requestBody = {
+      content,
+      participantRoleID
+    };
+
+    // Add optional parameters if provided
+    if (pageInstructions) {
+      requestBody.pageInstructions = pageInstructions;
+    }
+
+    // Prepare headers
+    const headers = {
+      'if-match': eTag, // Required header for optimistic locking
+      'x-origin-channel': 'Web'
+    };
+
+    return await this.makeRequest(url, {
+      method: 'POST',
+      headers: headers,
+      body: JSON.stringify(requestBody)
+    });
+  }
+
 
   /**
    * Make HTTP request to Pega API with authentication

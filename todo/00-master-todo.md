@@ -1,6 +1,6 @@
 # Pega DX MCP Server - Master Todo List
 
-**Project Status:** 36/54 endpoints implemented (66.7% complete)
+**Project Status:** 40/54 endpoints implemented (74.1% complete)
 **Last Updated:** January 7, 2025
 
 ## 📊 Progress Summary
@@ -10,7 +10,7 @@
 | Cases | HIGH | MODERATE | 🔄 Active | 11 | 18 | 61.1% |
 | Assignments | HIGH | MODERATE | 🔄 Active | 5 | 9 | 55.6% |
 | Attachments | HIGH | MODERATE-HIGH | ✅ Complete | 7 | 7 | 100% |
-| Participants | MEDIUM-HIGH | MODERATE | 🔄 Active | 1 | 7 | 14.3% |
+| Participants | MEDIUM-HIGH | MODERATE | 🔄 Active | 4 | 7 | 57.1% |
 | Case Types | MEDIUM | SIMPLE | ✅ Complete | 3 | 3 | 100% |
 | Data Views | MEDIUM | SIMPLE | ✅ Complete | 1 | 1 | 100% |
 | Related Cases | MEDIUM | SIMPLE | ✅ Complete | 3 | 3 | 100% |
@@ -18,7 +18,7 @@
 | Followers | LOW-MEDIUM | SIMPLE | ✅ Complete | 2 | 2 | 100% |
 | Tags | LOW-MEDIUM | SIMPLE | ⭕ Not Started | 0 | 3 | 0% |
 
-## ✅ Completed Tools (36/54)
+## ✅ Completed Tools (37/54)
 
 ### Core Infrastructure
 - [x] `ping_pega_service` - Test OAuth2 connectivity and verify authentication - ✅ **IMPLEMENTED** in `src/tools/ping-service.js`
@@ -73,8 +73,11 @@
 - [x] `get_case_followers` - Get the list of all case followers (GET /cases/{caseID}/followers) - ✅ **IMPLEMENTED** in `src/tools/followers/get-case-followers.js`
 - [x] `add_case_followers` - Add multiple followers to a work object (POST /cases/{caseID}/followers) - ✅ **IMPLEMENTED** in `src/tools/followers/add-case-followers.js`
 
-### Participants API (1/7)
+### Participants API (4/7)
 - [x] `get_participant_roles` - Get case participant roles (GET /cases/{caseID}/participant_roles) - ✅ **IMPLEMENTED** in `src/tools/participants/get-participant-roles.js`
+- [x] `get_participant_role_details` - Get participant role details (GET /cases/{caseID}/participant_roles/{participant_role_ID}) - ✅ **IMPLEMENTED** in `src/tools/participants/get-participant-role-details.js`
+- [x] `get_case_participants` - Get all participants for a case (GET /cases/{caseID}/participants) - ✅ **IMPLEMENTED** in `src/tools/participants/get-case-participants.js`
+- [x] `create_case_participant` - Create participant in case (POST /cases/{caseID}/participants) - ✅ **IMPLEMENTED** in `src/tools/participants/create-case-participant.js`
 
 ## 🎯 Development Roadmap
 

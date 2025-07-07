@@ -2,18 +2,18 @@
 
 **Priority:** MEDIUM-HIGH (User management in cases)  
 **Complexity:** MODERATE  
-**Current Status:** 1/7 endpoints completed
+**Current Status:** 4/7 endpoints completed
 
 ## 🔄 High Priority (Core Participant Operations)
-- [ ] `get_case_participants` - Get all participants for a case (GET /cases/{caseID}/participants)
-- [ ] `create_case_participant` - Create participant in case (POST /cases/{caseID}/participants)
+- [x] `get_case_participants` - Get all participants for a case (GET /cases/{caseID}/participants) ✅ **IMPLEMENTED**
+- [x] `create_case_participant` - Create participant in case (POST /cases/{caseID}/participants) ✅ **IMPLEMENTED**
 - [ ] `get_case_participant` - Get specific participant details (GET /cases/{caseID}/participants/{participantID})
 - [ ] `update_case_participant` - Update participant details (PATCH /cases/{caseID}/participants/{participantID})
 - [ ] `delete_case_participant` - Delete participant from case (DELETE /cases/{caseID}/participants/{participantID})
 
 ## 🔄 Medium Priority (Role Management)
 - [x] `get_participant_roles` - Get case participant roles (GET /cases/{caseID}/participant_roles) ✅ **IMPLEMENTED**
-- [ ] `get_participant_role_details` - Get participant role details (GET /cases/{caseID}/participant_roles/{participant_role_ID})
+- [x] `get_participant_role_details` - Get participant role details (GET /cases/{caseID}/participant_roles/{participant_role_ID}) ✅ **IMPLEMENTED**
 
 ## Implementation Notes
 - **Dependencies:** PegaAPIClient, OAuth2Client
