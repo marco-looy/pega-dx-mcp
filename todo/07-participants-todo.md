@@ -2,18 +2,30 @@
 
 **Priority:** MEDIUM-HIGH (User management in cases)  
 **Complexity:** MODERATE  
-**Current Status:** 4/7 endpoints completed
+**Current Status:** 7/7 endpoints completed ✅ **COMPLETE**
 
-## 🔄 High Priority (Core Participant Operations)
+## ✅ High Priority (Core Participant Operations) - COMPLETE
 - [x] `get_case_participants` - Get all participants for a case (GET /cases/{caseID}/participants) ✅ **IMPLEMENTED**
 - [x] `create_case_participant` - Create participant in case (POST /cases/{caseID}/participants) ✅ **IMPLEMENTED**
-- [ ] `get_case_participant` - Get specific participant details (GET /cases/{caseID}/participants/{participantID})
-- [ ] `update_case_participant` - Update participant details (PATCH /cases/{caseID}/participants/{participantID})
-- [ ] `delete_case_participant` - Delete participant from case (DELETE /cases/{caseID}/participants/{participantID})
+- [x] `get_participant` - Get specific participant details (GET /cases/{caseID}/participants/{participantID}) ✅ **IMPLEMENTED**
+- [x] `update_participant` - Update participant details (PATCH /cases/{caseID}/participants/{participantID}) ✅ **IMPLEMENTED**
+- [x] `delete_participant` - Delete participant from case (DELETE /cases/{caseID}/participants/{participantID}) ✅ **IMPLEMENTED**
 
-## 🔄 Medium Priority (Role Management)
+## ✅ Medium Priority (Role Management) - COMPLETE
 - [x] `get_participant_roles` - Get case participant roles (GET /cases/{caseID}/participant_roles) ✅ **IMPLEMENTED**
 - [x] `get_participant_role_details` - Get participant role details (GET /cases/{caseID}/participant_roles/{participant_role_ID}) ✅ **IMPLEMENTED**
+
+## 🎉 Recently Completed (January 7, 2025)
+- [x] `get_participant` - Retrieves detailed participant information including personal data and UI resources
+- [x] `delete_participant` - Removes participant from case with eTag-based optimistic locking
+- [x] `update_participant` - Updates participant details with support for content and pageInstructions
+
+## Implementation Details
+- **Auto-Discovery**: All tools automatically registered via modular registry architecture
+- **API Client Methods**: `getParticipant()`, `deleteParticipant()`, `updateParticipant()` added to PegaAPIClient
+- **Error Handling**: Comprehensive error handling for all participant operations
+- **Testing**: Full test coverage with parameter validation and schema verification
+- **MCP Compliance**: All tools follow established BaseTool patterns and MCP protocol standards
 
 ## Implementation Notes
 - **Dependencies:** PegaAPIClient, OAuth2Client

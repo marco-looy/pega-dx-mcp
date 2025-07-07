@@ -2,11 +2,11 @@
 
 **Priority:** LOW-MEDIUM (Case organization and categorization)  
 **Complexity:** SIMPLE  
-**Current Status:** 0/3 endpoints completed
+**Current Status:** 2/3 endpoints completed
 
 ## 🔄 Medium Priority (Tag Management Operations)
-- [ ] `get_case_tags` - Get list of tags for a case (GET /cases/{caseID}/tags)
-- [ ] `add_case_tags` - Add multiple tags to a case (POST /cases/{caseID}/tags)
+- [x] `get_case_tags` - Get list of tags for a case (GET /cases/{caseID}/tags) ✅ **IMPLEMENTED**
+- [x] `add_case_tags` - Add multiple tags to a case (POST /cases/{caseID}/tags) ✅ **IMPLEMENTED**
 - [ ] `delete_case_tag` - Delete specific tag from case (DELETE /cases/{caseID}/tags/{tagID})
 
 ## Implementation Notes

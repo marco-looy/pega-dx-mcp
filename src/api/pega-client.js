@@ -1738,6 +1738,203 @@ export class PegaAPIClient {
     });
   }
 
+  /**
+   * Get participant details by case ID and participant ID
+   * @param {string} caseID - Full case handle to retrieve participant from
+   * @param {string} participantID - Participant ID to get details for
+   * @param {Object} options - Optional parameters
+   * @param {string} options.viewType - Type of view data to return ("form" or "none", default: "form")
+   * @returns {Promise<Object>} API response with participant details and metadata
+   */
+  async getParticipant(caseID, participantID, options = {}) {
+    const { viewType } = options;
+    
+    // URL encode both the case ID and participant ID to handle spaces and special characters
+    const encodedCaseID = encodeURIComponent(caseID);
+    const encodedParticipantID = encodeURIComponent(participantID);
+    let url = `${this.baseUrl}/cases/${encodedCaseID}/participants/${encodedParticipantID}`;
+
+    // Add query parameters if provided
+    const queryParams = new URLSearchParams();
+    if (viewType) {
+      queryParams.append('viewType', viewType);
+    }
+    
+    if (queryParams.toString()) {
+      url += `?${queryParams.toString()}`;
+    }
+
+    return await this.makeRequest(url, {
+      method: 'GET',
+      headers: {
+        'x-origin-channel': 'Web'
+      }
+    });
+  }
+
+  /**
+   * Delete a participant from a case
+   * @param {string} caseID - Full case handle to remove participant from
+   * @param {string} participantID - Participant ID to remove
+   * @param {string} eTag - Required eTag unique value for optimistic locking
+   * @returns {Promise<Object>} API response with success/error information
+   */
+  async deleteParticipant(caseID, participantID, eTag) {
+    // URL encode both the case ID and participant ID to handle spaces and special characters
+    const encodedCaseID = encodeURIComponent(caseID);
+    const encodedParticipantID = encodeURIComponent(participantID);
+    const url = `${this.baseUrl}/cases/${encodedCaseID}/participants/${encodedParticipantID}`;
+
+    try {
+      // Get OAuth2 token
+      const token = await this.oauth2Client.getAccessToken();
+      
+      // Prepare headers
+      const headers = {
+        'Authorization': `Bearer ${token}`,
+        'Accept': 'application/json',
+        'if-match': eTag, // Required eTag header for optimistic locking
+        'x-origin-channel': 'Web'
+      };
+
+      // Make DELETE request
+      const response = await fetch(url, {
+        method: 'DELETE',
+        headers,
+        timeout: config.pega.requestTimeout || 30000
+      });
+
+      // Handle non-2xx responses
+      if (!response.ok) {
+        return await this.handleParticipantDeleteErrorResponse(response);
+      }
+
+      // Get response headers (especially etag)
+      const responseHeaders = {};
+      response.headers.forEach((value, key) => {
+        responseHeaders[key] = value;
+      });
+
+      // Successful deletion - API returns 200 with etag header
+      return {
+        success: true,
+        data: {}, // Empty response body for successful deletion
+        headers: responseHeaders,
+        eTag: response.headers.get('etag'), // Capture new eTag
+        status: response.status,
+        statusText: response.statusText
+      };
+
+    } catch (error) {
+      // Handle network and other errors
+      return {
+        success: false,
+        error: {
+          type: 'CONNECTION_ERROR',
+          message: 'Failed to delete participant from case via Pega API',
+          details: error.message,
+          originalError: error
+        }
+      };
+    }
+  }
+
+  /**
+   * Update participant details by case ID and participant ID
+   * @param {string} caseID - Full case handle containing the participant
+   * @param {string} participantID - Participant ID to update
+   * @param {string} eTag - Required eTag unique value for optimistic locking
+   * @param {Object} options - Optional parameters
+   * @param {Object} options.content - Participant data object with properties to update
+   * @param {Array} options.pageInstructions - Page-related operations for embedded pages
+   * @param {string} options.viewType - Type of view data to return ("form" or "none", default: "form")
+   * @returns {Promise<Object>} API response with updated participant details
+   */
+  async updateParticipant(caseID, participantID, eTag, options = {}) {
+    const { content, pageInstructions, viewType } = options;
+    
+    // URL encode both the case ID and participant ID to handle spaces and special characters
+    const encodedCaseID = encodeURIComponent(caseID);
+    const encodedParticipantID = encodeURIComponent(participantID);
+    let url = `${this.baseUrl}/cases/${encodedCaseID}/participants/${encodedParticipantID}`;
+
+    // Add query parameters if provided
+    const queryParams = new URLSearchParams();
+    if (viewType) {
+      queryParams.append('viewType', viewType);
+    }
+    
+    if (queryParams.toString()) {
+      url += `?${queryParams.toString()}`;
+    }
+
+    // Build request body
+    const requestBody = {};
+
+    // Add optional parameters if provided
+    if (content) {
+      requestBody.content = content;
+    }
+    if (pageInstructions) {
+      requestBody.pageInstructions = pageInstructions;
+    }
+
+    // Prepare headers
+    const headers = {
+      'if-match': eTag, // Required eTag header for optimistic locking
+      'x-origin-channel': 'Web'
+    };
+
+    return await this.makeRequest(url, {
+      method: 'PATCH',
+      headers: headers,
+      body: Object.keys(requestBody).length > 0 ? JSON.stringify(requestBody) : undefined
+    });
+  }
+
+
+  /**
+   * Get case tags by case ID
+   * @param {string} caseID - Full case handle to retrieve tags from
+   * @returns {Promise<Object>} API response with tags list
+   */
+  async getCaseTags(caseID) {
+    // URL encode the case ID to handle spaces and special characters
+    const encodedCaseID = encodeURIComponent(caseID);
+    const url = `${this.baseUrl}/cases/${encodedCaseID}/tags`;
+
+    return await this.makeRequest(url, {
+      method: 'GET',
+      headers: {
+        'x-origin-channel': 'Web'
+      }
+    });
+  }
+
+  /**
+   * Add multiple tags to a case
+   * @param {string} caseID - Full case handle to add tags to
+   * @param {Array} tags - Array of tag objects with Name properties
+   * @returns {Promise<Object>} API response with multi-status results (207)
+   */
+  async addCaseTags(caseID, tags) {
+    // URL encode the case ID to handle spaces and special characters
+    const encodedCaseID = encodeURIComponent(caseID);
+    const url = `${this.baseUrl}/cases/${encodedCaseID}/tags`;
+
+    // Build request body with tags array as per OpenAPI spec
+    const requestBody = {
+      tags
+    };
+
+    return await this.makeRequest(url, {
+      method: 'POST',
+      headers: {
+        'x-origin-channel': 'Web'
+      },
+      body: JSON.stringify(requestBody)
+    });
+  }
 
   /**
    * Make HTTP request to Pega API with authentication
@@ -2522,6 +2719,109 @@ export class PegaAPIClient {
       default:
         errorResponse.error.type = 'HTTP_ERROR';
         errorResponse.error.message = `HTTP ${response.status} error removing follower from case`;
+        errorResponse.error.details = errorData.message || errorData.localizedValue || response.statusText;
+        break;
+    }
+
+    return errorResponse;
+  }
+
+  /**
+   * Handle error responses from participant delete API
+   * @param {Response} response - HTTP response object
+   * @returns {Promise<Object>} Structured error response for participant deletion
+   */
+  async handleParticipantDeleteErrorResponse(response) {
+    let errorData;
+    try {
+      errorData = await response.json();
+    } catch (e) {
+      errorData = { message: await response.text() };
+    }
+
+    const errorResponse = {
+      success: false,
+      error: {
+        status: response.status,
+        statusText: response.statusText
+      }
+    };
+
+    switch (response.status) {
+      case 400:
+        errorResponse.error.type = 'BAD_REQUEST';
+        errorResponse.error.message = 'Invalid participant deletion request';
+        errorResponse.error.details = errorData.localizedValue || 'Invalid case ID or participant ID parameters';
+        if (errorData.errorDetails) {
+          errorResponse.error.errorDetails = errorData.errorDetails;
+        }
+        break;
+
+      case 401:
+        errorResponse.error.type = 'UNAUTHORIZED';
+        errorResponse.error.message = 'Authentication failed';
+        errorResponse.error.details = errorData.errors?.[0]?.message || 'Invalid or expired token';
+        // Clear token cache on 401 to force refresh on next request
+        this.oauth2Client.clearTokenCache();
+        break;
+
+      case 403:
+        errorResponse.error.type = 'FORBIDDEN';
+        errorResponse.error.message = 'No access to remove participant';
+        errorResponse.error.details = errorData.localizedValue || 'User is not allowed to remove participants from this case';
+        if (errorData.errorDetails) {
+          errorResponse.error.errorDetails = errorData.errorDetails;
+        }
+        break;
+
+      case 404:
+        errorResponse.error.type = 'NOT_FOUND';
+        errorResponse.error.message = 'Case or participant not found';
+        errorResponse.error.details = errorData.localizedValue || 'The case or participant cannot be found, or the participant is not associated with this case';
+        if (errorData.errorDetails) {
+          errorResponse.error.errorDetails = errorData.errorDetails;
+        }
+        break;
+
+      case 409:
+        errorResponse.error.type = 'CONFLICT';
+        errorResponse.error.message = 'Conflict removing participant';
+        errorResponse.error.details = errorData.localizedValue || 'A conflict occurred while removing the participant from the case';
+        if (errorData.errorDetails) {
+          errorResponse.error.errorDetails = errorData.errorDetails;
+        }
+        break;
+
+      case 412:
+        errorResponse.error.type = 'PRECONDITION_FAILED';
+        errorResponse.error.message = 'eTag mismatch for participant deletion';
+        errorResponse.error.details = errorData.localizedValue || 'The provided eTag value does not match the current participant state';
+        if (errorData.errorDetails) {
+          errorResponse.error.errorDetails = errorData.errorDetails;
+        }
+        break;
+
+      case 423:
+        errorResponse.error.type = 'LOCKED';
+        errorResponse.error.message = 'Participant locked';
+        errorResponse.error.details = errorData.localizedValue || 'The participant is currently locked and cannot be deleted';
+        if (errorData.errorDetails) {
+          errorResponse.error.errorDetails = errorData.errorDetails;
+        }
+        break;
+
+      case 500:
+        errorResponse.error.type = 'INTERNAL_SERVER_ERROR';
+        errorResponse.error.message = 'Internal server error during participant removal';
+        errorResponse.error.details = errorData.localizedValue || 'An error occurred on the server while removing the participant from the case';
+        if (errorData.errorDetails) {
+          errorResponse.error.errorDetails = errorData.errorDetails;
+        }
+        break;
+
+      default:
+        errorResponse.error.type = 'HTTP_ERROR';
+        errorResponse.error.message = `HTTP ${response.status} error removing participant from case`;
         errorResponse.error.details = errorData.message || errorData.localizedValue || response.statusText;
         break;
     }

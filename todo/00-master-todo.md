@@ -1,6 +1,6 @@
 # Pega DX MCP Server - Master Todo List
 
-**Project Status:** 40/54 endpoints implemented (74.1% complete)
+**Project Status:** 45/54 endpoints implemented (83.3% complete)
 **Last Updated:** January 7, 2025
 
 ## 📊 Progress Summary
@@ -10,15 +10,15 @@
 | Cases | HIGH | MODERATE | 🔄 Active | 11 | 18 | 61.1% |
 | Assignments | HIGH | MODERATE | 🔄 Active | 5 | 9 | 55.6% |
 | Attachments | HIGH | MODERATE-HIGH | ✅ Complete | 7 | 7 | 100% |
-| Participants | MEDIUM-HIGH | MODERATE | 🔄 Active | 4 | 7 | 57.1% |
+| Participants | MEDIUM-HIGH | MODERATE | ✅ Complete | 7 | 7 | 100% |
 | Case Types | MEDIUM | SIMPLE | ✅ Complete | 3 | 3 | 100% |
 | Data Views | MEDIUM | SIMPLE | ✅ Complete | 1 | 1 | 100% |
 | Related Cases | MEDIUM | SIMPLE | ✅ Complete | 3 | 3 | 100% |
 | Documents | MEDIUM | SIMPLE | ✅ Complete | 2 | 2 | 100% |
 | Followers | LOW-MEDIUM | SIMPLE | ✅ Complete | 2 | 2 | 100% |
-| Tags | LOW-MEDIUM | SIMPLE | ⭕ Not Started | 0 | 3 | 0% |
+| Tags | LOW-MEDIUM | SIMPLE | 🔄 Active | 2 | 3 | 66.7% |
 
-## ✅ Completed Tools (37/54)
+## ✅ Completed Tools (45/54)
 
 ### Core Infrastructure
 - [x] `ping_pega_service` - Test OAuth2 connectivity and verify authentication - ✅ **IMPLEMENTED** in `src/tools/ping-service.js`
@@ -73,11 +73,18 @@
 - [x] `get_case_followers` - Get the list of all case followers (GET /cases/{caseID}/followers) - ✅ **IMPLEMENTED** in `src/tools/followers/get-case-followers.js`
 - [x] `add_case_followers` - Add multiple followers to a work object (POST /cases/{caseID}/followers) - ✅ **IMPLEMENTED** in `src/tools/followers/add-case-followers.js`
 
-### Participants API (4/7)
+### Participants API (7/7) ✅ COMPLETE
 - [x] `get_participant_roles` - Get case participant roles (GET /cases/{caseID}/participant_roles) - ✅ **IMPLEMENTED** in `src/tools/participants/get-participant-roles.js`
 - [x] `get_participant_role_details` - Get participant role details (GET /cases/{caseID}/participant_roles/{participant_role_ID}) - ✅ **IMPLEMENTED** in `src/tools/participants/get-participant-role-details.js`
 - [x] `get_case_participants` - Get all participants for a case (GET /cases/{caseID}/participants) - ✅ **IMPLEMENTED** in `src/tools/participants/get-case-participants.js`
 - [x] `create_case_participant` - Create participant in case (POST /cases/{caseID}/participants) - ✅ **IMPLEMENTED** in `src/tools/participants/create-case-participant.js`
+- [x] `get_participant` - Get specific participant details (GET /cases/{caseID}/participants/{participantID}) - ✅ **IMPLEMENTED** in `src/tools/participants/get-participant.js`
+- [x] `update_participant` - Update participant details (PATCH /cases/{caseID}/participants/{participantID}) - ✅ **IMPLEMENTED** in `src/tools/participants/update-participant.js`
+- [x] `delete_participant` - Delete participant from case (DELETE /cases/{caseID}/participants/{participantID}) - ✅ **IMPLEMENTED** in `src/tools/participants/delete-participant.js`
+
+### Tags API (2/3)
+- [x] `get_case_tags` - Get list of tags for a case (GET /cases/{caseID}/tags) - ✅ **IMPLEMENTED** in `src/tools/tags/get-case-tags.js`
+- [x] `add_case_tags` - Add multiple tags to a case (POST /cases/{caseID}/tags) - ✅ **IMPLEMENTED** in `src/tools/tags/add-case-tags.js`
 
 ## 🎯 Development Roadmap
 
