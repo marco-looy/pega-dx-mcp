@@ -1372,6 +1372,50 @@ export class PegaAPIClient {
   }
 
   /**
+   * Change case to specified stage by stage ID
+   * @param {string} caseID - Full case handle
+   * @param {string} stageID - Stage ID to navigate to (e.g., "PRIM1", "ALT1")
+   * @param {string} eTag - eTag unique value for optimistic locking (required)
+   * @param {Object} options - Optional parameters
+   * @param {string} options.viewType - Type of view data to return ("none", "form", "page")
+   * @param {boolean} options.cleanupProcesses - Whether to cleanup processes of previous stage
+   * @returns {Promise<Object>} API response with stage navigation results
+   */
+  async changeToStage(caseID, stageID, eTag, options = {}) {
+    const { viewType, cleanupProcesses } = options;
+    
+    // URL encode both the case ID and stage ID to handle spaces and special characters
+    const encodedCaseID = encodeURIComponent(caseID);
+    const encodedStageID = encodeURIComponent(stageID);
+    let url = `${this.baseUrl}/cases/${encodedCaseID}/stages/${encodedStageID}`;
+
+    // Add query parameters if provided
+    const queryParams = new URLSearchParams();
+    if (viewType) {
+      queryParams.append('viewType', viewType);
+    }
+    if (cleanupProcesses !== undefined) {
+      queryParams.append('cleanupProcesses', cleanupProcesses.toString());
+    }
+    
+    if (queryParams.toString()) {
+      url += `?${queryParams.toString()}`;
+    }
+
+    // Prepare headers - if-match is required for this operation
+    const headers = {
+      'if-match': eTag, // Required eTag header for optimistic locking
+      'x-origin-channel': 'Web'
+    };
+
+    return await this.makeRequest(url, {
+      method: 'PUT',
+      headers: headers
+      // No request body for this endpoint
+    });
+  }
+
+  /**
    * Get related cases for a specific case
    * @param {string} caseID - Full case handle to retrieve related cases for
    * @returns {Promise<Object>} API response with related cases list and metadata
