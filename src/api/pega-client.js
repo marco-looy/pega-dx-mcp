@@ -1937,6 +1937,72 @@ export class PegaAPIClient {
   }
 
   /**
+   * Delete a specific tag from a case
+   * @param {string} caseID - Full case handle to delete tag from
+   * @param {string} tagID - Tag ID to be deleted from the case
+   * @returns {Promise<Object>} API response with success/error information
+   */
+  async deleteCaseTag(caseID, tagID) {
+    // URL encode both the case ID and tag ID to handle spaces and special characters
+    const encodedCaseID = encodeURIComponent(caseID);
+    const encodedTagID = encodeURIComponent(tagID);
+    const url = `${this.baseUrl}/cases/${encodedCaseID}/tags/${encodedTagID}`;
+
+    try {
+      // Get OAuth2 token
+      const token = await this.oauth2Client.getAccessToken();
+      
+      // Prepare headers
+      const headers = {
+        'Authorization': `Bearer ${token}`,
+        'Accept': 'application/json',
+        'x-origin-channel': 'Web'
+      };
+
+      // Make DELETE request
+      const response = await fetch(url, {
+        method: 'DELETE',
+        headers,
+        timeout: config.pega.requestTimeout || 30000
+      });
+
+      // Handle non-2xx responses
+      if (!response.ok) {
+        return await this.handleTagDeleteErrorResponse(response);
+      }
+
+      // Get response headers (especially cache-control)
+      const responseHeaders = {};
+      response.headers.forEach((value, key) => {
+        responseHeaders[key] = value;
+      });
+
+      // Successful deletion - API returns 200 with string response
+      const responseText = await response.text();
+      
+      return {
+        success: true,
+        data: { message: responseText }, // Wrap the response text
+        headers: responseHeaders,
+        status: response.status,
+        statusText: response.statusText
+      };
+
+    } catch (error) {
+      // Handle network and other errors
+      return {
+        success: false,
+        error: {
+          type: 'CONNECTION_ERROR',
+          message: 'Failed to delete tag from case via Pega API',
+          details: error.message,
+          originalError: error
+        }
+      };
+    }
+  }
+
+  /**
    * Make HTTP request to Pega API with authentication
    * @param {string} url - Full API URL
    * @param {Object} options - HTTP request options
@@ -2822,6 +2888,82 @@ export class PegaAPIClient {
       default:
         errorResponse.error.type = 'HTTP_ERROR';
         errorResponse.error.message = `HTTP ${response.status} error removing participant from case`;
+        errorResponse.error.details = errorData.message || errorData.localizedValue || response.statusText;
+        break;
+    }
+
+    return errorResponse;
+  }
+
+  /**
+   * Handle error responses from tag delete API
+   * @param {Response} response - HTTP response object
+   * @returns {Promise<Object>} Structured error response for tag deletion
+   */
+  async handleTagDeleteErrorResponse(response) {
+    let errorData;
+    try {
+      errorData = await response.json();
+    } catch (e) {
+      errorData = { message: await response.text() };
+    }
+
+    const errorResponse = {
+      success: false,
+      error: {
+        status: response.status,
+        statusText: response.statusText
+      }
+    };
+
+    switch (response.status) {
+      case 400:
+        errorResponse.error.type = 'BAD_REQUEST';
+        errorResponse.error.message = 'Invalid tag deletion request';
+        errorResponse.error.details = errorData.localizedValue || 'Invalid case ID or tag ID parameters';
+        if (errorData.errorDetails) {
+          errorResponse.error.errorDetails = errorData.errorDetails;
+        }
+        break;
+
+      case 401:
+        errorResponse.error.type = 'UNAUTHORIZED';
+        errorResponse.error.message = 'Authentication failed';
+        errorResponse.error.details = errorData.errors?.[0]?.message || 'Invalid or expired token';
+        // Clear token cache on 401 to force refresh on next request
+        this.oauth2Client.clearTokenCache();
+        break;
+
+      case 403:
+        errorResponse.error.type = 'FORBIDDEN';
+        errorResponse.error.message = 'No access to remove tag';
+        errorResponse.error.details = errorData.localizedValue || 'User is not allowed to remove tags from this case';
+        if (errorData.errorDetails) {
+          errorResponse.error.errorDetails = errorData.errorDetails;
+        }
+        break;
+
+      case 404:
+        errorResponse.error.type = 'NOT_FOUND';
+        errorResponse.error.message = 'Case or tag not found';
+        errorResponse.error.details = errorData.localizedValue || 'The case or tag cannot be found, or the tag is not associated with this case';
+        if (errorData.errorDetails) {
+          errorResponse.error.errorDetails = errorData.errorDetails;
+        }
+        break;
+
+      case 500:
+        errorResponse.error.type = 'INTERNAL_SERVER_ERROR';
+        errorResponse.error.message = 'Internal server error during tag removal';
+        errorResponse.error.details = errorData.localizedValue || 'An error occurred on the server while removing the tag from the case';
+        if (errorData.errorDetails) {
+          errorResponse.error.errorDetails = errorData.errorDetails;
+        }
+        break;
+
+      default:
+        errorResponse.error.type = 'HTTP_ERROR';
+        errorResponse.error.message = `HTTP ${response.status} error removing tag from case`;
         errorResponse.error.details = errorData.message || errorData.localizedValue || response.statusText;
         break;
     }

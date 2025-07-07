@@ -1,4 +1,4 @@
-a#!/usr/bin/env node
+#!/usr/bin/env node
 
 import { AddCaseTagsTool } from '../../src/tools/tags/add-case-tags.js';
 import { BaseTool } from '../../src/registry/base-tool.js';

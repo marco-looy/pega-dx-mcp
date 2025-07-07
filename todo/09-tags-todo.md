@@ -2,12 +2,12 @@
 
 **Priority:** LOW-MEDIUM (Case organization and categorization)  
 **Complexity:** SIMPLE  
-**Current Status:** 2/3 endpoints completed
+**Current Status:** 3/3 endpoints completed ✅ **COMPLETE**
 
 ## 🔄 Medium Priority (Tag Management Operations)
 - [x] `get_case_tags` - Get list of tags for a case (GET /cases/{caseID}/tags) ✅ **IMPLEMENTED**
 - [x] `add_case_tags` - Add multiple tags to a case (POST /cases/{caseID}/tags) ✅ **IMPLEMENTED**
-- [ ] `delete_case_tag` - Delete specific tag from case (DELETE /cases/{caseID}/tags/{tagID})
+- [x] `delete_case_tag` - Delete specific tag from case (DELETE /cases/{caseID}/tags/{tagID}) ✅ **IMPLEMENTED**
 
 ## Implementation Notes
 - **Dependencies:** PegaAPIClient, OAuth2Client
