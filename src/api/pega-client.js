@@ -2480,6 +2480,89 @@ export class PegaAPIClient {
   }
 
   /**
+   * Test OAuth2 connectivity and verify authentication configuration
+   * @returns {Promise<Object>} Structured response with ping test results
+   */
+  async ping() {
+    const startTime = Date.now();
+    
+    try {
+      // Test OAuth2 authentication by getting an access token
+      const token = await this.oauth2Client.getAccessToken();
+      
+      const duration = Date.now() - startTime;
+      
+      // Get token info without exposing the actual token
+      const tokenInfo = {
+        type: 'Bearer',
+        length: token ? token.length : 0,
+        prefix: token ? token.substring(0, 10) + '...' : 'None',
+        acquired: !!token,
+        cached: !!this.oauth2Client.accessToken
+      };
+      
+      return {
+        success: true,
+        data: {
+          timestamp: new Date().toISOString(),
+          configuration: {
+            baseUrl: config.pega.baseUrl,
+            apiVersion: config.pega.apiVersion,
+            tokenUrl: config.pega.tokenUrl,
+            apiBaseUrl: config.pega.apiBaseUrl
+          },
+          tests: [{
+            test: 'OAuth2 Authentication',
+            success: true,
+            duration: `${duration}ms`,
+            endpoint: config.pega.tokenUrl,
+            message: 'Successfully obtained access token',
+            tokenInfo: tokenInfo
+          }]
+        }
+      };
+    } catch (error) {
+      const duration = Date.now() - startTime;
+      
+      return {
+        success: false,
+        error: {
+          type: 'CONNECTION_ERROR',
+          message: 'OAuth2 authentication failed',
+          details: error.message,
+          timestamp: new Date().toISOString(),
+          configuration: {
+            baseUrl: config.pega.baseUrl,
+            apiVersion: config.pega.apiVersion,
+            tokenUrl: config.pega.tokenUrl,
+            apiBaseUrl: config.pega.apiBaseUrl
+          },
+          tests: [{
+            test: 'OAuth2 Authentication',
+            success: false,
+            duration: `${duration}ms`,
+            endpoint: config.pega.tokenUrl,
+            error: error.message,
+            tokenInfo: {
+              type: 'Bearer',
+              length: 0,
+              prefix: 'None',
+              acquired: false,
+              cached: false
+            },
+            troubleshooting: [
+              'Verify PEGA_BASE_URL is correct and accessible',
+              'Check PEGA_CLIENT_ID and PEGA_CLIENT_SECRET are valid',
+              'Ensure OAuth2 client is configured in Pega Platform',
+              'Verify network connectivity to Pega instance'
+            ]
+          }]
+        }
+      };
+    }
+  }
+
+  /**
    * Make HTTP request to Pega API with authentication
    * @param {string} url - Full API URL
    * @param {Object} options - HTTP request options
