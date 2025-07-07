@@ -2243,6 +2243,55 @@ export class PegaAPIClient {
   }
 
   /**
+   * Recalculate calculated fields & whens for case action form
+   * @param {string} caseID - Full case handle
+   * @param {string} actionID - Case action ID  
+   * @param {string} eTag - Required eTag for optimistic locking
+   * @param {Object} calculations - Required calculations object with fields/whens arrays
+   * @param {Object} options - Optional parameters (content, pageInstructions, originChannel)
+   * @returns {Promise<Object>} API response with recalculated values and UI updates
+   */
+  async recalculateCaseActionFields(caseID, actionID, eTag, calculations, options = {}) {
+    const { content, pageInstructions, originChannel } = options;
+    
+    // URL encode both case ID and action ID to handle spaces and special characters
+    const encodedCaseID = encodeURIComponent(caseID);
+    const encodedActionID = encodeURIComponent(actionID);
+    const url = `${this.baseUrl}/cases/${encodedCaseID}/actions/${encodedActionID}/recalculate`;
+
+    // Build request body - calculations is required
+    const requestBody = {
+      calculations
+    };
+
+    // Add optional parameters if provided
+    if (content) {
+      requestBody.content = content;
+    }
+    if (pageInstructions) {
+      requestBody.pageInstructions = pageInstructions;
+    }
+
+    // Prepare headers - if-match is required for this operation
+    const headers = {
+      'if-match': eTag // Required eTag header for optimistic locking
+    };
+
+    // Add origin channel header if provided, otherwise default to Web
+    if (originChannel) {
+      headers['x-origin-channel'] = originChannel;
+    } else {
+      headers['x-origin-channel'] = 'Web';
+    }
+
+    return await this.makeRequest(url, {
+      method: 'PATCH',
+      headers: headers,
+      body: JSON.stringify(requestBody)
+    });
+  }
+
+  /**
    * Make HTTP request to Pega API with authentication
    * @param {string} url - Full API URL
    * @param {Object} options - HTTP request options

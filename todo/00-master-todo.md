@@ -1,13 +1,13 @@
 # Pega DX MCP Server - Master Todo List
 
-**Project Status:** 48/54 endpoints implemented (88.9% complete)
+**Project Status:** 59/61 endpoints implemented (96.7% complete)
 **Last Updated:** January 7, 2025
 
 ## 📊 Progress Summary
 
 | API Category | Priority | Complexity | Status | Complete | Total | Percentage |
 |-------------|----------|------------|--------|----------|-------|-----------|
-| Cases | HIGH | MODERATE | 🔄 Active | 11 | 18 | 61.1% |
+| Cases | HIGH | MODERATE | 🔄 Active | 14 | 18 | 77.8% |
 | Assignments | HIGH | MODERATE | ✅ Complete | 9 | 9 | 100% |
 | Attachments | HIGH | MODERATE-HIGH | ✅ Complete | 7 | 7 | 100% |
 | Participants | MEDIUM-HIGH | MODERATE | ✅ Complete | 7 | 7 | 100% |
@@ -18,12 +18,12 @@
 | Followers | LOW-MEDIUM | SIMPLE | ✅ Complete | 2 | 2 | 100% |
 | Tags | LOW-MEDIUM | SIMPLE | ✅ Complete | 3 | 3 | 100% |
 
-## ✅ Completed Tools (48/54)
+## ✅ Completed Tools (59/61)
 
 ### Core Infrastructure
 - [x] `ping_pega_service` - Test OAuth2 connectivity and verify authentication - ✅ **IMPLEMENTED** in `src/tools/ping-service.js`
 
-### Cases API (11/18)
+### Cases API (14/18)
 - [x] `get_case` - Get case details (GET /cases/{caseID}) - ✅ **IMPLEMENTED** in `src/tools/cases/get-case.js`
 - [x] `create_case` - Creates new case (POST /cases) - ✅ **IMPLEMENTED** in `src/tools/cases/create-case.js`
 - [x] `delete_case` - Delete case in create stage (DELETE /cases/{caseID}) - ✅ **IMPLEMENTED** in `src/tools/cases/delete-case.js`
@@ -35,6 +35,9 @@
 - [x] `perform_case_action` - Perform case action (PATCH /cases/{caseID}/actions/{actionID}) - ✅ **IMPLEMENTED** in `src/tools/cases/perform-case-action.js`
 - [x] `perform_bulk_action` - Perform bulk action on multiple cases (PATCH /cases) - ✅ **IMPLEMENTED** in `src/tools/cases/perform-bulk-action.js`
 - [x] `bulk_cases_patch` - Alternative bulk cases implementation (PATCH /cases) - ✅ **IMPLEMENTED** in `src/tools/cases/bulk-cases-patch.js`
+- [x] `change_to_next_stage` - Change to next stage (POST /cases/{caseID}/stages/next) - ✅ **IMPLEMENTED** in `src/tools/cases/change-to-next-stage.js`
+- [x] `change_to_stage` - Change to specified stage (PUT /cases/{caseID}/stages/{stageID}) - ✅ **IMPLEMENTED** in `src/tools/cases/change-to-stage.js`
+- [x] `recalculate_case_action_fields` - Recalculate calculated fields & whens for case action (PATCH /cases/{caseID}/actions/{actionID}/recalculate) - ✅ **IMPLEMENTED** in `src/tools/cases/recalculate-case-action-fields.js`
 
 ### Assignments API (9/9) ✅ COMPLETE
 - [x] `get_next_assignment` - Get next assignment details (GET /assignments/next) - ✅ **IMPLEMENTED** in `src/tools/assignments/get-next-assignment.js`
