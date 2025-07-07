@@ -2152,6 +2152,53 @@ export class PegaAPIClient {
   }
 
   /**
+   * Recalculate calculated fields & whens for the current assignment action form
+   * @param {string} assignmentID - Full handle of assignment (e.g., "ASSIGN-WORKLIST MYORG-SERVICES-WORK S-293001!APPROVAL_FLOW")
+   * @param {string} actionID - Name of the assignment action - ID of the flow action rule
+   * @param {string} eTag - Required eTag unique value representing the most recent save date time of the case
+   * @param {Object} calculations - Required object containing fields and when conditions to recalculate
+   * @param {Array} calculations.fields - Array of field objects with name and context properties to recalculate
+   * @param {Array} calculations.whens - Array of when condition objects with name and context properties to evaluate
+   * @param {Object} options - Optional parameters
+   * @param {Object} options.content - Property values to merge into case during recalculation process
+   * @param {Array} options.pageInstructions - Page operations for embedded pages, page lists, or page groups before recalculation
+   * @returns {Promise<Object>} API response with recalculated field values, when condition results, and updated UI resources
+   */
+  async recalculateAssignmentFields(assignmentID, actionID, eTag, calculations, options = {}) {
+    const { content, pageInstructions } = options;
+    
+    // URL encode both assignment ID and action ID to handle spaces and special characters
+    const encodedAssignmentID = encodeURIComponent(assignmentID);
+    const encodedActionID = encodeURIComponent(actionID);
+    const url = `${this.baseUrl}/assignments/${encodedAssignmentID}/actions/${encodedActionID}/recalculate`;
+
+    // Build request body - calculations is required
+    const requestBody = {
+      calculations
+    };
+
+    // Add optional parameters if provided
+    if (content) {
+      requestBody.content = content;
+    }
+    if (pageInstructions) {
+      requestBody.pageInstructions = pageInstructions;
+    }
+
+    // Prepare headers - if-match is required for this operation
+    const headers = {
+      'if-match': eTag, // Required eTag header for optimistic locking
+      'x-origin-channel': 'Web' // Default origin channel
+    };
+
+    return await this.makeRequest(url, {
+      method: 'PATCH',
+      headers: headers,
+      body: JSON.stringify(requestBody)
+    });
+  }
+
+  /**
    * Make HTTP request to Pega API with authentication
    * @param {string} url - Full API URL
    * @param {Object} options - HTTP request options
