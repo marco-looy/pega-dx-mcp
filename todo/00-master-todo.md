@@ -1,6 +1,6 @@
 # Pega DX MCP Server - Master Todo List
 
-**Project Status:** 28/56 endpoints implemented (50.0% complete)
+**Project Status:** 36/54 endpoints implemented (66.7% complete)
 **Last Updated:** January 7, 2025
 
 ## 📊 Progress Summary
@@ -10,15 +10,15 @@
 | Cases | HIGH | MODERATE | 🔄 Active | 11 | 18 | 61.1% |
 | Assignments | HIGH | MODERATE | 🔄 Active | 5 | 9 | 55.6% |
 | Attachments | HIGH | MODERATE-HIGH | ✅ Complete | 7 | 7 | 100% |
-| Participants | MEDIUM-HIGH | MODERATE | ⭕ Not Started | 0 | 7 | 0% |
+| Participants | MEDIUM-HIGH | MODERATE | 🔄 Active | 1 | 7 | 14.3% |
 | Case Types | MEDIUM | SIMPLE | ✅ Complete | 3 | 3 | 100% |
 | Data Views | MEDIUM | SIMPLE | ✅ Complete | 1 | 1 | 100% |
-| Related Cases | MEDIUM | SIMPLE | ⭕ Not Started | 0 | 3 | 0% |
-| Documents | MEDIUM | SIMPLE | ⭕ Not Started | 0 | 2 | 0% |
-| Followers | LOW-MEDIUM | SIMPLE | ⭕ Not Started | 0 | 3 | 0% |
+| Related Cases | MEDIUM | SIMPLE | ✅ Complete | 3 | 3 | 100% |
+| Documents | MEDIUM | SIMPLE | ✅ Complete | 2 | 2 | 100% |
+| Followers | LOW-MEDIUM | SIMPLE | ✅ Complete | 2 | 2 | 100% |
 | Tags | LOW-MEDIUM | SIMPLE | ⭕ Not Started | 0 | 3 | 0% |
 
-## ✅ Completed Tools (28/56)
+## ✅ Completed Tools (36/54)
 
 ### Core Infrastructure
 - [x] `ping_pega_service` - Test OAuth2 connectivity and verify authentication - ✅ **IMPLEMENTED** in `src/tools/ping-service.js`
@@ -59,6 +59,22 @@
 
 ### Data Views API (1/1) ✅ COMPLETE
 - [x] `get_data_view_metadata` - Retrieve data view metadata including parameters and queryable fields (GET /data_views/{data_view_ID}/metadata) - ✅ **IMPLEMENTED** in `src/tools/dataviews/get-data-view-metadata.js`
+
+### Related Cases API (3/3) ✅ COMPLETE
+- [x] `get_related_cases` - Get list of related cases for a specific case (GET /cases/{caseID}/related_cases) - ✅ **IMPLEMENTED** in `src/tools/related_cases/get-related-cases.js`
+- [x] `relate_cases` - Create relationships between cases (POST /cases/{caseID}/related_cases) - ✅ **IMPLEMENTED** in `src/tools/related_cases/relate-cases.js`
+- [x] `delete_related_case` - Delete a related case relationship (DELETE /cases/{caseID}/related_cases/{related_caseID}) - ✅ **IMPLEMENTED** in `src/tools/related_cases/delete-related-case.js`
+
+### Documents API (2/2) ✅ COMPLETE
+- [x] `get_document` - Get contents of a document as base64 encoded string (GET /documents/{documentID}) - ✅ **IMPLEMENTED** in `src/tools/documents/get-document.js`
+- [x] `remove_case_document` - Removes document linked to case (DELETE /cases/{caseID}/documents/{documentID}) - ✅ **IMPLEMENTED** in `src/tools/documents/remove-case-document.js`
+
+### Followers API (2/2) ✅ COMPLETE
+- [x] `get_case_followers` - Get the list of all case followers (GET /cases/{caseID}/followers) - ✅ **IMPLEMENTED** in `src/tools/followers/get-case-followers.js`
+- [x] `add_case_followers` - Add multiple followers to a work object (POST /cases/{caseID}/followers) - ✅ **IMPLEMENTED** in `src/tools/followers/add-case-followers.js`
+
+### Participants API (1/7)
+- [x] `get_participant_roles` - Get case participant roles (GET /cases/{caseID}/participant_roles) - ✅ **IMPLEMENTED** in `src/tools/participants/get-participant-roles.js`
 
 ## 🎯 Development Roadmap
 

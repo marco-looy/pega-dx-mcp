@@ -2,7 +2,7 @@
 
 **Priority:** MEDIUM-HIGH (User management in cases)  
 **Complexity:** MODERATE  
-**Current Status:** 0/7 endpoints completed
+**Current Status:** 1/7 endpoints completed
 
 ## 🔄 High Priority (Core Participant Operations)
 - [ ] `get_case_participants` - Get all participants for a case (GET /cases/{caseID}/participants)
@@ -12,7 +12,7 @@
 - [ ] `delete_case_participant` - Delete participant from case (DELETE /cases/{caseID}/participants/{participantID})
 
 ## 🔄 Medium Priority (Role Management)
-- [ ] `get_participant_roles` - Get case participant roles (GET /cases/{caseID}/participant_roles)
+- [x] `get_participant_roles` - Get case participant roles (GET /cases/{caseID}/participant_roles) ✅ **IMPLEMENTED**
 - [ ] `get_participant_role_details` - Get participant role details (GET /cases/{caseID}/participant_roles/{participant_role_ID})
 
 ## Implementation Notes

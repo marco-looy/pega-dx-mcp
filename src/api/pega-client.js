@@ -1319,6 +1319,323 @@ export class PegaAPIClient {
   }
 
   /**
+   * Get related cases for a specific case
+   * @param {string} caseID - Full case handle to retrieve related cases for
+   * @returns {Promise<Object>} API response with related cases list and metadata
+   */
+  async getRelatedCases(caseID) {
+    // URL encode the case ID to handle spaces and special characters
+    const encodedCaseID = encodeURIComponent(caseID);
+    const url = `${this.baseUrl}/cases/${encodedCaseID}/related_cases`;
+
+    return await this.makeRequest(url, {
+      method: 'GET',
+      headers: {
+        'x-origin-channel': 'Web'
+      }
+    });
+  }
+
+  /**
+   * Create relationships between cases
+   * @param {string} caseID - Primary case ID to relate other cases to
+   * @param {Array} cases - Array of case objects with ID properties to relate
+   * @returns {Promise<Object>} API response with multi-status results (207 status)
+   */
+  async relateCases(caseID, cases) {
+    // URL encode the case ID to handle spaces and special characters
+    const encodedCaseID = encodeURIComponent(caseID);
+    const url = `${this.baseUrl}/cases/${encodedCaseID}/related_cases`;
+
+    // Build request body
+    const requestBody = {
+      cases
+    };
+
+    return await this.makeRequest(url, {
+      method: 'POST',
+      headers: {
+        'x-origin-channel': 'Web'
+      },
+      body: JSON.stringify(requestBody)
+    });
+  }
+
+  /**
+   * Delete a related case relationship
+   * @param {string} caseID - Primary case ID from which to remove the related case
+   * @param {string} relatedCaseID - Related case ID to be removed from the primary case
+   * @returns {Promise<Object>} API response with deletion result
+   */
+  async deleteRelatedCase(caseID, relatedCaseID) {
+    // URL encode both case IDs to handle spaces and special characters
+    const encodedCaseID = encodeURIComponent(caseID);
+    const encodedRelatedCaseID = encodeURIComponent(relatedCaseID);
+    const url = `${this.baseUrl}/cases/${encodedCaseID}/related_cases/${encodedRelatedCaseID}`;
+
+    return await this.makeRequest(url, {
+      method: 'DELETE',
+      headers: {
+        'x-origin-channel': 'Web'
+      }
+    });
+  }
+
+  /**
+   * Get document content by document ID
+   * @param {string} documentID - Document ID to retrieve content for
+   * @returns {Promise<Object>} API response with base64 encoded document content and headers
+   */
+  async getDocumentContent(documentID) {
+    // URL encode the document ID to handle spaces and special characters
+    const encodedDocumentID = encodeURIComponent(documentID);
+    const url = `${this.baseUrl}/documents/${encodedDocumentID}`;
+
+    try {
+      // Get OAuth2 token
+      const token = await this.oauth2Client.getAccessToken();
+      
+      // Prepare headers
+      const headers = {
+        'Authorization': `Bearer ${token}`,
+        'Accept': 'text/plain', // Document API returns base64 content as text/plain
+        'x-origin-channel': 'Web'
+      };
+
+      // Make request
+      const response = await fetch(url, {
+        method: 'GET',
+        headers,
+        timeout: config.pega.requestTimeout || 30000
+      });
+
+      // Handle non-2xx responses
+      if (!response.ok) {
+        return await this.handleDocumentErrorResponse(response);
+      }
+
+      // Get response headers for content metadata
+      const responseHeaders = {};
+      response.headers.forEach((value, key) => {
+        responseHeaders[key] = value;
+      });
+
+      // Get content as text (base64 encoded)
+      const content = await response.text();
+      
+      return {
+        success: true,
+        data: content,
+        headers: responseHeaders,
+        status: response.status,
+        statusText: response.statusText
+      };
+
+    } catch (error) {
+      // Handle network and other errors
+      return {
+        success: false,
+        error: {
+          type: 'CONNECTION_ERROR',
+          message: 'Failed to retrieve document content from Pega API',
+          details: error.message,
+          originalError: error
+        }
+      };
+    }
+  }
+
+  /**
+   * Remove a document from a case
+   * @param {string} caseID - Full case handle from which to remove the document
+   * @param {string} documentID - Document ID to be removed from the case
+   * @returns {Promise<Object>} API response with success/error information
+   */
+  async removeCaseDocument(caseID, documentID) {
+    // URL encode both the case ID and document ID to handle spaces and special characters
+    const encodedCaseID = encodeURIComponent(caseID);
+    const encodedDocumentID = encodeURIComponent(documentID);
+    const url = `${this.baseUrl}/cases/${encodedCaseID}/documents/${encodedDocumentID}`;
+
+    try {
+      // Get OAuth2 token
+      const token = await this.oauth2Client.getAccessToken();
+      
+      // Prepare headers
+      const headers = {
+        'Authorization': `Bearer ${token}`,
+        'Accept': 'application/json',
+        'x-origin-channel': 'Web'
+      };
+
+      // Make DELETE request
+      const response = await fetch(url, {
+        method: 'DELETE',
+        headers,
+        timeout: config.pega.requestTimeout || 30000
+      });
+
+      // Handle non-2xx responses
+      if (!response.ok) {
+        return await this.handleRemoveCaseDocumentErrorResponse(response);
+      }
+
+      // Get response headers (especially cache-control)
+      const responseHeaders = {};
+      response.headers.forEach((value, key) => {
+        responseHeaders[key] = value;
+      });
+
+      // Successful deletion - API returns 200 with cache-control header
+      return {
+        success: true,
+        data: {}, // Empty response body for successful deletion
+        headers: responseHeaders,
+        status: response.status,
+        statusText: response.statusText
+      };
+
+    } catch (error) {
+      // Handle network and other errors
+      return {
+        success: false,
+        error: {
+          type: 'CONNECTION_ERROR',
+          message: 'Failed to remove document from case via Pega API',
+          details: error.message,
+          originalError: error
+        }
+      };
+    }
+  }
+
+  /**
+   * Get case followers by case ID
+   * @param {string} caseID - Full case handle to retrieve followers for
+   * @returns {Promise<Object>} API response with followers list and metadata
+   */
+  async getCaseFollowers(caseID) {
+    // URL encode the case ID to handle spaces and special characters
+    const encodedCaseID = encodeURIComponent(caseID);
+    const url = `${this.baseUrl}/cases/${encodedCaseID}/followers`;
+
+    return await this.makeRequest(url, {
+      method: 'GET',
+      headers: {
+        'x-origin-channel': 'Web'
+      }
+    });
+  }
+
+  /**
+   * Add followers to a case
+   * @param {string} caseID - Full case handle to add followers to
+   * @param {Array} users - Array of user objects with ID properties
+   * @returns {Promise<Object>} API response with multi-status information (207)
+   */
+  async addCaseFollowers(caseID, users) {
+    // URL encode the case ID to handle spaces and special characters
+    const encodedCaseID = encodeURIComponent(caseID);
+    const url = `${this.baseUrl}/cases/${encodedCaseID}/followers`;
+
+    // Build request body with users array as per OpenAPI spec
+    const requestBody = {
+      users
+    };
+
+    return await this.makeRequest(url, {
+      method: 'POST',
+      headers: {
+        'x-origin-channel': 'Web'
+      },
+      body: JSON.stringify(requestBody)
+    });
+  }
+
+  /**
+   * Delete a follower from a case
+   * @param {string} caseID - Full case handle to remove follower from
+   * @param {string} followerID - User ID of the follower to remove
+   * @returns {Promise<Object>} API response with success/error information
+   */
+  async deleteCaseFollower(caseID, followerID) {
+    // URL encode both the case ID and follower ID to handle spaces and special characters
+    const encodedCaseID = encodeURIComponent(caseID);
+    const encodedFollowerID = encodeURIComponent(followerID);
+    const url = `${this.baseUrl}/cases/${encodedCaseID}/followers/${encodedFollowerID}`;
+
+    try {
+      // Get OAuth2 token
+      const token = await this.oauth2Client.getAccessToken();
+      
+      // Prepare headers
+      const headers = {
+        'Authorization': `Bearer ${token}`,
+        'Accept': 'application/json',
+        'x-origin-channel': 'Web'
+      };
+
+      // Make DELETE request
+      const response = await fetch(url, {
+        method: 'DELETE',
+        headers,
+        timeout: config.pega.requestTimeout || 30000
+      });
+
+      // Handle non-2xx responses
+      if (!response.ok) {
+        return await this.handleFollowerDeleteErrorResponse(response);
+      }
+
+      // Get response headers (especially cache-control)
+      const responseHeaders = {};
+      response.headers.forEach((value, key) => {
+        responseHeaders[key] = value;
+      });
+
+      // Successful deletion - API returns 200 with cache-control header
+      return {
+        success: true,
+        data: {}, // Empty response body for successful deletion
+        headers: responseHeaders,
+        status: response.status,
+        statusText: response.statusText
+      };
+
+    } catch (error) {
+      // Handle network and other errors
+      return {
+        success: false,
+        error: {
+          type: 'CONNECTION_ERROR',
+          message: 'Failed to delete follower from case via Pega API',
+          details: error.message,
+          originalError: error
+        }
+      };
+    }
+  }
+
+  /**
+   * Get participant roles for a case by case ID
+   * @param {string} caseID - Full case handle to retrieve participant roles for
+   * @returns {Promise<Object>} API response with participant roles list and metadata
+   */
+  async getParticipantRoles(caseID) {
+    // URL encode the case ID to handle spaces and special characters
+    const encodedCaseID = encodeURIComponent(caseID);
+    const url = `${this.baseUrl}/cases/${encodedCaseID}/participant_roles`;
+
+    return await this.makeRequest(url, {
+      method: 'GET',
+      headers: {
+        'x-origin-channel': 'Web'
+      }
+    });
+  }
+
+
+  /**
    * Make HTTP request to Pega API with authentication
    * @param {string} url - Full API URL
    * @param {Object} options - HTTP request options
@@ -1804,6 +2121,91 @@ export class PegaAPIClient {
   }
 
   /**
+   * Handle error responses from document content retrieval API
+   * @param {Response} response - HTTP response object
+   * @returns {Promise<Object>} Structured error response for document content
+   */
+  async handleDocumentErrorResponse(response) {
+    let errorData;
+    try {
+      errorData = await response.json();
+    } catch (e) {
+      errorData = { message: await response.text() };
+    }
+
+    const errorResponse = {
+      success: false,
+      error: {
+        status: response.status,
+        statusText: response.statusText
+      }
+    };
+
+    switch (response.status) {
+      case 400:
+        errorResponse.error.type = 'BAD_REQUEST';
+        errorResponse.error.message = 'Invalid document request';
+        errorResponse.error.details = errorData.localizedValue || 'Invalid document ID or request parameters';
+        if (errorData.errorDetails) {
+          errorResponse.error.errorDetails = errorData.errorDetails;
+        }
+        break;
+
+      case 401:
+        errorResponse.error.type = 'UNAUTHORIZED';
+        errorResponse.error.message = 'Authentication failed';
+        errorResponse.error.details = errorData.errors?.[0]?.message || 'Invalid or expired token';
+        // Clear token cache on 401 to force refresh on next request
+        this.oauth2Client.clearTokenCache();
+        break;
+
+      case 403:
+        errorResponse.error.type = 'FORBIDDEN';
+        errorResponse.error.message = 'Access denied to document';
+        errorResponse.error.details = errorData.localizedValue || 'User is not allowed to access this document';
+        if (errorData.errorDetails) {
+          errorResponse.error.errorDetails = errorData.errorDetails;
+        }
+        break;
+
+      case 404:
+        errorResponse.error.type = 'NOT_FOUND';
+        errorResponse.error.message = 'Document not found';
+        errorResponse.error.details = errorData.localizedValue || 'The document cannot be found or is not available';
+        if (errorData.errorDetails) {
+          errorResponse.error.errorDetails = errorData.errorDetails;
+        }
+        break;
+
+      case 424:
+        errorResponse.error.type = 'FAILED_DEPENDENCY';
+        errorResponse.error.message = 'Document dependency failure';
+        errorResponse.error.details = errorData.localizedValue || 'A required dependency or pre-condition failed for document retrieval';
+        if (errorData.errorDetails) {
+          errorResponse.error.errorDetails = errorData.errorDetails;
+        }
+        break;
+
+      case 500:
+        errorResponse.error.type = 'INTERNAL_SERVER_ERROR';
+        errorResponse.error.message = 'Internal server error retrieving document';
+        errorResponse.error.details = errorData.localizedValue || 'An error occurred on the server while retrieving document content';
+        if (errorData.errorDetails) {
+          errorResponse.error.errorDetails = errorData.errorDetails;
+        }
+        break;
+
+      default:
+        errorResponse.error.type = 'HTTP_ERROR';
+        errorResponse.error.message = `HTTP ${response.status} error retrieving document content`;
+        errorResponse.error.details = errorData.message || errorData.localizedValue || response.statusText;
+        break;
+    }
+
+    return errorResponse;
+  }
+
+  /**
    * Handle error responses specific to bulk cases PATCH operations
    * @param {Response} response - HTTP response object
    * @returns {Promise<Object>} Structured error response for bulk cases operations
@@ -1864,6 +2266,158 @@ export class PegaAPIClient {
         // Fall back to generic error handling for other status codes
         errorResponse.error.type = 'HTTP_ERROR';
         errorResponse.error.message = `HTTP ${response.status} error during bulk cases operation`;
+        errorResponse.error.details = errorData.message || errorData.localizedValue || response.statusText;
+        break;
+    }
+
+    return errorResponse;
+  }
+
+  /**
+   * Handle error responses from remove case document API
+   * @param {Response} response - HTTP response object
+   * @returns {Promise<Object>} Structured error response for document removal from case
+   */
+  async handleRemoveCaseDocumentErrorResponse(response) {
+    let errorData;
+    try {
+      errorData = await response.json();
+    } catch (e) {
+      errorData = { message: await response.text() };
+    }
+
+    const errorResponse = {
+      success: false,
+      error: {
+        status: response.status,
+        statusText: response.statusText
+      }
+    };
+
+    switch (response.status) {
+      case 400:
+        errorResponse.error.type = 'BAD_REQUEST';
+        errorResponse.error.message = 'Invalid document removal request';
+        errorResponse.error.details = errorData.localizedValue || 'Invalid case ID or document ID parameters';
+        if (errorData.errorDetails) {
+          errorResponse.error.errorDetails = errorData.errorDetails;
+        }
+        break;
+
+      case 401:
+        errorResponse.error.type = 'UNAUTHORIZED';
+        errorResponse.error.message = 'Authentication failed';
+        errorResponse.error.details = errorData.errors?.[0]?.message || 'Invalid or expired token';
+        // Clear token cache on 401 to force refresh on next request
+        this.oauth2Client.clearTokenCache();
+        break;
+
+      case 403:
+        errorResponse.error.type = 'FORBIDDEN';
+        errorResponse.error.message = 'Insufficient permissions to remove document';
+        errorResponse.error.details = errorData.localizedValue || 'User is not allowed to remove documents from this case';
+        if (errorData.errorDetails) {
+          errorResponse.error.errorDetails = errorData.errorDetails;
+        }
+        break;
+
+      case 404:
+        errorResponse.error.type = 'NOT_FOUND';
+        errorResponse.error.message = 'Case or document not found';
+        errorResponse.error.details = errorData.localizedValue || 'The case or document cannot be found, or the document is not linked to the specified case';
+        if (errorData.errorDetails) {
+          errorResponse.error.errorDetails = errorData.errorDetails;
+        }
+        break;
+
+      case 500:
+        errorResponse.error.type = 'INTERNAL_SERVER_ERROR';
+        errorResponse.error.message = 'Internal server error during document removal';
+        errorResponse.error.details = errorData.localizedValue || 'An error occurred on the server while removing the document from the case';
+        if (errorData.errorDetails) {
+          errorResponse.error.errorDetails = errorData.errorDetails;
+        }
+        break;
+
+      default:
+        errorResponse.error.type = 'HTTP_ERROR';
+        errorResponse.error.message = `HTTP ${response.status} error removing document from case`;
+        errorResponse.error.details = errorData.message || errorData.localizedValue || response.statusText;
+        break;
+    }
+
+    return errorResponse;
+  }
+
+  /**
+   * Handle error responses from follower delete API
+   * @param {Response} response - HTTP response object
+   * @returns {Promise<Object>} Structured error response for follower deletion
+   */
+  async handleFollowerDeleteErrorResponse(response) {
+    let errorData;
+    try {
+      errorData = await response.json();
+    } catch (e) {
+      errorData = { message: await response.text() };
+    }
+
+    const errorResponse = {
+      success: false,
+      error: {
+        status: response.status,
+        statusText: response.statusText
+      }
+    };
+
+    switch (response.status) {
+      case 401:
+        errorResponse.error.type = 'UNAUTHORIZED';
+        errorResponse.error.message = 'Authentication failed';
+        errorResponse.error.details = errorData.errors?.[0]?.message || 'Invalid or expired token';
+        // Clear token cache on 401 to force refresh on next request
+        this.oauth2Client.clearTokenCache();
+        break;
+
+      case 403:
+        errorResponse.error.type = 'FORBIDDEN';
+        errorResponse.error.message = 'No access to remove follower';
+        errorResponse.error.details = errorData.localizedValue || 'User is not allowed to remove followers from this case';
+        if (errorData.errorDetails) {
+          errorResponse.error.errorDetails = errorData.errorDetails;
+        }
+        break;
+
+      case 404:
+        errorResponse.error.type = 'NOT_FOUND';
+        errorResponse.error.message = 'Case or follower not found';
+        errorResponse.error.details = errorData.localizedValue || 'The case or follower cannot be found, or the user is not following this case';
+        if (errorData.errorDetails) {
+          errorResponse.error.errorDetails = errorData.errorDetails;
+        }
+        break;
+
+      case 409:
+        errorResponse.error.type = 'CONFLICT';
+        errorResponse.error.message = 'Conflict removing follower';
+        errorResponse.error.details = errorData.localizedValue || 'A conflict occurred while removing the follower from the case';
+        if (errorData.errorDetails) {
+          errorResponse.error.errorDetails = errorData.errorDetails;
+        }
+        break;
+
+      case 500:
+        errorResponse.error.type = 'INTERNAL_SERVER_ERROR';
+        errorResponse.error.message = 'Internal server error during follower removal';
+        errorResponse.error.details = errorData.localizedValue || 'An error occurred on the server while removing the follower from the case';
+        if (errorData.errorDetails) {
+          errorResponse.error.errorDetails = errorData.errorDetails;
+        }
+        break;
+
+      default:
+        errorResponse.error.type = 'HTTP_ERROR';
+        errorResponse.error.message = `HTTP ${response.status} error removing follower from case`;
         errorResponse.error.details = errorData.message || errorData.localizedValue || response.statusText;
         break;
     }

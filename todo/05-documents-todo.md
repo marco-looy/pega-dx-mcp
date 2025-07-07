@@ -2,11 +2,11 @@
 
 **Priority:** MEDIUM (Document management)  
 **Complexity:** SIMPLE  
-**Current Status:** 0/2 endpoints completed
+**Current Status:** 2/2 endpoints completed ✅ **COMPLETE**
 
-## 🔄 Medium Priority (Document Operations)
-- [ ] `get_document` - Get contents of a document (GET /documents/{documentID})
-- [ ] `remove_case_document` - Removes document linked to case (DELETE /cases/{caseID}/documents/{documentID})
+## ✅ Completed (Document Operations)
+- [x] ✅ **IMPLEMENTED** `get_document` - Get contents of a document (GET /documents/{documentID})
+- [x] ✅ **IMPLEMENTED** `remove_case_document` - Removes document linked to case (DELETE /cases/{caseID}/documents/{documentID})
 
 ## Implementation Notes
 - **Dependencies:** PegaAPIClient, OAuth2Client
