@@ -319,8 +319,8 @@ export class CreateCaseTool extends BaseTool {
       Object.entries(fieldResources).forEach(([fieldName, fieldData]) => {
         const field = Array.isArray(fieldData) ? fieldData[0] : fieldData;
         
-        // Only include fields for the main recipe collection class
-        if (field.classID === caseTypeID) {
+        // Include fields for the case type (flexible matching for both short and full class names)
+        if (field.classID && (field.classID === caseTypeID || field.classID.includes(caseTypeID))) {
           fields.push({
             name: fieldName,
             type: field.type || 'Unknown',
