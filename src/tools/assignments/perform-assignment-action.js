@@ -39,16 +39,40 @@ export class PerformAssignmentActionTool extends BaseTool {
           pageInstructions: {
             type: 'array',
             items: {
-                      "type": "object",
-                      "description": "Page operation object with instruction type and target"
+              type: 'object',
+              properties: {
+                instruction: {
+                  type: 'string',
+                  description: 'The type of page instruction to perform'
+                },
+                target: {
+                  type: 'string',
+                  description: 'The target page or page list for the instruction'
+                }
+              },
+              description: 'Page operation object with instruction type and target'
             },
             description: 'Optional list of page-related operations to be performed on embedded pages, page lists, or page groups included in the assignment action\'s view. These operations allow manipulation of complex data structures within the case. Each instruction specifies the operation type and target page structure. Only pages included in the assignment action\'s view can be modified.'
           },
           attachments: {
             type: 'array',
             items: {
-                      "type": "object",
-                      "description": "Attachment object with file details and metadata"
+              type: 'object',
+              properties: {
+                fileName: {
+                  type: 'string',
+                  description: 'Name of the attachment file'
+                },
+                fileContent: {
+                  type: 'string',
+                  description: 'Base64 encoded file content'
+                },
+                mimeType: {
+                  type: 'string',
+                  description: 'MIME type of the attachment'
+                }
+              },
+              description: 'Attachment object with file details and metadata'
             },
             description: 'Optional list of attachments to be added to or deleted from specific attachment fields included in the assignment action\'s view. Each attachment entry specifies the operation (add/delete) and attachment details. Only attachment fields included in the assignment action\'s view can be modified.'
           },

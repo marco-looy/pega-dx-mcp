@@ -1,0 +1,96 @@
+{
+  "version": "1.0.0",
+  "description": "Pega DX MCP Tool Configuration - Controls which tools are loaded by the MCP server",
+  "defaultEnabled": true,
+  "globalSettings": {
+    "loadAll": false,
+    "strictValidation": true,
+    "logLevel": "info"
+  },
+  "categories": {
+    "assignments": {
+      "enabled": true,
+      "description": "Pega assignment-related operations",
+      "tools": {}
+    },
+    "attachments": {
+      "enabled": true,
+      "description": "File attachment management",
+      "tools": {}
+    },
+    "cases": {
+      "enabled": true,
+      "description": "Case management and operations",
+      "tools": {}
+    },
+    "casetypes": {
+      "enabled": true,
+      "description": "Case type information and metadata",
+      "tools": {}
+    },
+    "dataviews": {
+      "enabled": true,
+      "description": "Data view queries and operations",
+      "tools": {}
+    },
+    "documents": {
+      "enabled": true,
+      "description": "Document management",
+      "tools": {}
+    },
+    "followers": {
+      "enabled": true,
+      "description": "Case follower management",
+      "tools": {}
+    },
+    "participants": {
+      "enabled": true,
+      "description": "Case participant management",
+      "tools": {}
+    },
+    "related_cases": {
+      "enabled": true,
+      "description": "Related case management",
+      "tools": {}
+    },
+    "services": {
+      "enabled": true,
+      "description": "Pega service utilities",
+      "tools": {}
+    },
+    "tags": {
+      "enabled": true,
+      "description": "Case tag management",
+      "tools": {}
+    }
+  },
+  "tools": {
+    "_comment": "Individual tool overrides - tool-specific settings override category settings",
+    "_examples": {
+      "create_case": {
+        "enabled": true,
+        "description": "Override to enable/disable specific tools"
+      },
+      "delete_case": {
+        "enabled": false,
+        "reason": "Disabled for safety in production"
+      }
+    }
+  },
+  "environment": {
+    "_comment": "Environment-specific overrides",
+    "development": {
+      "globalSettings": {
+        "logLevel": "debug"
+      }
+    },
+    "production": {
+      "tools": {
+        "delete_case": {
+          "enabled": false,
+          "reason": "Disabled for safety in production"
+        }
+      }
+    }
+  }
+}

@@ -1,15 +1,15 @@
-import { toolLoader } from './tool-loader.js';
+import { configurableToolLoader } from './configurable-tool-loader.js';
 
 /**
  * Central tool registry for managing MCP tools
- * Coordinates between tool loader and MCP server
+ * Coordinates between configurable tool loader and MCP server
  */
 export class ToolRegistry {
   constructor() {
     this.initialized = false;
     this.tools = new Map();
     this.categories = new Map();
-    this.loader = toolLoader;
+    this.loader = configurableToolLoader;
   }
 
   /**
