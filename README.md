@@ -187,8 +187,8 @@ Licensed under the Apache License, Version 2.0. See [LICENSE](LICENSE) for detai
 
 <div align="center">
 
-**Built with ❤️ by Pegasystems**
+**Built with ❤️ by Pega Enablement**
 
-[Website](https://www.pega.com) • [Community](https://community.pega.com) • [Documentation](https://docs.pega.com)
+[Community](https://community.pega.com) • [Academy](https://academy.pega.com) •  [Documentation](https://docs.pega.com)
 
 </div>
