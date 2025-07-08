@@ -141,6 +141,6 @@ vite.config.ts.timestamp-*
 # Memory Bank
 memory-bank/
 .clinerules/*
-Prompt.md
+Prompt*
 .gitignore
 WIP.md
