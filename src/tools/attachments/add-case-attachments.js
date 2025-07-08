@@ -26,7 +26,6 @@ export class AddCaseAttachmentsTool extends BaseTool {
             type: 'array',
             description: 'Array of attachment objects to add to the case. Can contain file attachments (using temporary attachment IDs from upload_attachment tool) and/or URL attachments. All attachments must be successfully processed or none will be attached (atomic operation).',
             items: {
-              type: 'object',
               oneOf: [
                 {
                   type: 'object',
