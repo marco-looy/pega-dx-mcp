@@ -1,13 +1,9 @@
-import dotenv from 'dotenv';
-
-// Load environment variables from .env file
-dotenv.config();
-
 /**
  * Simplified Tool Configuration Manager
  * 
- * Single source of truth using only environment variables.
+ * Single source of truth using only environment variables from MCP client.
  * All tools enabled by default - set to 'false' to disable.
+ * Environment variables are passed directly from MCP client configuration.
  */
 export class ToolConfig {
   constructor() {

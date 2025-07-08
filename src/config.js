@@ -1,7 +1,3 @@
-import dotenv from 'dotenv';
-
-// Load environment variables
-dotenv.config();
 
 // Validate and clean base URL
 let baseUrl = process.env.PEGA_BASE_URL;
