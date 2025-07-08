@@ -8,17 +8,17 @@
 export class ToolConfig {
   constructor() {
     this.categoryMap = {
-      'assignments': 'assignment_tools',
-      'attachments': 'attachment_tools', 
-      'cases': 'case_tools',
-      'casetypes': 'casetype_tools',
-      'dataviews': 'dataview_tools',
-      'documents': 'document_tools',
-      'followers': 'follower_tools',
-      'participants': 'participant_tools',
-      'related_cases': 'related_case_tools',
-      'services': 'service_tools',
-      'tags': 'tag_tools'
+      'assignments': 'PEGA_ASSIGNMENT_TOOLS',
+      'attachments': 'PEGA_ATTACHMENT_TOOLS', 
+      'cases': 'PEGA_CASE_TOOLS',
+      'casetypes': 'PEGA_CASETYPE_TOOLS',
+      'dataviews': 'PEGA_DATAVIEW_TOOLS',
+      'documents': 'PEGA_DOCUMENT_TOOLS',
+      'followers': 'PEGA_FOLLOWER_TOOLS',
+      'participants': 'PEGA_PARTICIPANT_TOOLS',
+      'related_cases': 'PEGA_RELATED_CASE_TOOLS',
+      'services': 'PEGA_SERVICE_TOOLS',
+      'tags': 'PEGA_TAG_TOOLS'
     };
     
     this.logLevel = process.env.LOG_LEVEL || 'info';

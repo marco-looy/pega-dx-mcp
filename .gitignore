@@ -147,3 +147,4 @@ WIP.md
 tools/validate-schemas.js
 tools/fix-array-schemas.js
 tools/openapi-schema-fixer-v2.js
+tools/enhanced-schema-validator.js
