@@ -144,3 +144,4 @@ memory-bank/
 Prompt*
 .gitignore
 WIP.md
+tools/validate-schemas.js
