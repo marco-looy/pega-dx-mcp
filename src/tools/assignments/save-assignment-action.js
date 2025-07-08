@@ -38,10 +38,18 @@ export class SaveAssignmentActionTool extends BaseTool {
           },
           pageInstructions: {
             type: 'array',
+            items: {
+                      "type": "object",
+                      "description": "Page operation object with instruction type and target"
+            },
             description: 'Optional list of page-related operations to be performed on embedded pages, page lists, or page groups included in the assignment action\'s view during the save operation. These operations allow manipulation of complex data structures within the assignment. Each instruction specifies the operation type and target page structure.'
           },
           attachments: {
             type: 'array',
+            items: {
+                      "type": "object",
+                      "description": "Attachment object with file details and metadata"
+            },
             description: 'Optional list of attachments to be added to specific attachment fields included in the assignment action\'s view during the save operation. Each attachment entry specifies the attachment details and target field. Only attachment fields included in the assignment action\'s view can be modified during save.'
           },
           originChannel: {

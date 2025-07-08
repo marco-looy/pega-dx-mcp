@@ -51,6 +51,10 @@ export class CreateCaseParticipantTool extends BaseTool {
           },
           pageInstructions: {
             type: 'array',
+            items: {
+                      "type": "object",
+                      "description": "Page operation object with instruction type and target"
+            },
             description: 'Optional list of page-related operations for embedded pages, page lists, or page groups included in the participant creation view.'
           }
         },

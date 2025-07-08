@@ -38,10 +38,18 @@ export class JumpToStepTool extends BaseTool {
           },
           pageInstructions: {
             type: 'array',
+            items: {
+                      "type": "object",
+                      "description": "Page operation object with instruction type and target"
+            },
             description: 'Optional list of page-related operations to be performed on embedded pages, page lists, or page groups during the step navigation. These operations allow manipulation of complex data structures within the assignment. Each instruction specifies the operation type and target page structure. Only pages included in the assignment\'s view can be modified.'
           },
           attachments: {
             type: 'array',
+            items: {
+                      "type": "object",
+                      "description": "Attachment object with file details and metadata"
+            },
             description: 'Optional list of attachments to be added to or deleted from specific attachment fields during the step navigation. Each attachment entry specifies the operation (add/delete) and attachment details. Only attachment fields included in the assignment\'s view can be modified during navigation.'
           },
           viewType: {

@@ -32,10 +32,18 @@ export class CreateCaseTool extends BaseTool {
           },
           pageInstructions: {
             type: 'array',
+            items: {
+                      "type": "object",
+                      "description": "Page operation object with instruction type and target"
+            },
             description: 'A list of page-related operations to be performed on embedded pages, page lists, or page group properties (optional)'
           },
           attachments: {
             type: 'array',
+            items: {
+                      "type": "object",
+                      "description": "Attachment object with file details and metadata"
+            },
             description: 'A list of attachments to be added to specific attachment fields (optional)'
           },
           viewType: {
