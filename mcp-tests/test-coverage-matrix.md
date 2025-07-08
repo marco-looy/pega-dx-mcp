@@ -17,9 +17,9 @@ This matrix tracks the testing status of all 63 MCP tools in the Pega DX MCP Ser
 ## Testing Status Summary
 
 - **Total Tools**: 63
-- **Completed**: 2 (3.2%)
+- **Completed**: 3 (4.8%)
 - **In Progress**: 0 (0.0%)
-- **Not Started**: 61 (96.8%)
+- **Not Started**: 60 (95.2%)
 - **Under Review**: 0 (0.0%)
 - **Skipped**: 0 (0.0%)
 
@@ -69,7 +69,7 @@ This matrix tracks the testing status of all 63 MCP tools in the Pega DX MCP Ser
 | change-to-stage | ❌ | - | - | Navigate to specific stage |
 | create-case | ❌ | - | - | Create new cases |
 | delete-case | ❌ | - | - | Delete cases in create stage |
-| get-case | ❌ | - | - | Retrieve case details |
+| get-case | ✅ | 2025-01-08 | [results/cases/get-case-results.md] | **Completed** - Basic retrieval and UI metadata working |
 | get-case-action | ❌ | - | - | Get case action details |
 | get-case-ancestors | ❌ | - | - | Get parent case hierarchy |
 | get-case-descendants | ❌ | - | - | Get child case hierarchy |
@@ -169,7 +169,7 @@ This matrix tracks the testing status of all 63 MCP tools in the Pega DX MCP Ser
 
 | Tool Name | Status | Test Date | Documentation | Notes |
 |-----------|--------|-----------|---------------|-------|
-| ping-pega-service | ✅ | 2025-07-07 | [results/2025-07-07-ping-service-results.md] | **Completed** - OAuth2 working |
+| ping-pega-service | ✅ | 2025-01-08 | [results/ping-pega-service-results.md] | **Completed** - OAuth2 working, connectivity verified |
 
 ### Service Category Status: 1/1 (100.0%) Complete
 

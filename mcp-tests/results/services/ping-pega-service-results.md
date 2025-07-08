@@ -1,22 +1,10 @@
-# ping_pega_service - Test Results
+# ping-pega-service Results
 
-## Test 1: Basic Connectivity
-*Date: 2025-07-07T15:03:27Z*
-
-**MCP Call:**
-```json
-{
-  "server": "pega-dx-mcp",
-  "tool": "ping_pega_service",
-  "arguments": {}
-}
-```
-
-**Response:**
-```markdown
+## Use Case 1: Basic Connectivity Test
+**Result:**
 ## Ping Pega Service
 
-*Operation completed at: 2025-07-07T15:03:27.862Z*
+*Operation completed at: 2025-07-08T07:28:30.301Z*
 
 ### Configuration
 - **Base URL**: https://pega.52a90b217c219.pegaenablement.com
@@ -26,7 +14,7 @@
 ### Test Results
 ✅ **OAuth2 Authentication**
    - **Endpoint**: https://pega.52a90b217c219.pegaenablement.com/prweb/PRRestService/oauth2/v1/token
-   - **Duration**: 1ms
+   - **Duration**: 0ms
    - **Status**: Successfully obtained access token
    - **Token Details**:
      - Type: Bearer
@@ -34,8 +22,7 @@
      - Prefix: eyJraWQiOi...
      - Acquired: Yes
      - Cached: Yes
-```
 
-**Result**: ✅ SUCCESS - OAuth2 authentication working, environment connectivity confirmed
-
----
+## Use Case 2: Environment Verification
+**Result:**
+Same as Use Case 1 - authentication and connectivity verified successfully.
