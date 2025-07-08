@@ -1,78 +1,78 @@
-import { readFile } from 'fs/promises';
-import { resolve, dirname } from 'path';
-import { fileURLToPath } from 'url';
+import dotenv from 'dotenv';
 
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = dirname(__filename);
+// Load environment variables from .env file
+dotenv.config();
 
 /**
- * Tool Configuration Manager
+ * Simplified Tool Configuration Manager
  * 
- * Handles loading and processing of tool configuration with:
- * - JSON configuration file
- * - Environment variable overrides
- * - Category and tool-level control
- * - Environment-specific settings
+ * Single source of truth using only environment variables.
+ * All tools enabled by default - set to 'false' to disable.
  */
 export class ToolConfig {
-  constructor(configPath = null) {
-    this.configPath = configPath || resolve(__dirname, 'enabled-tools.json');
-    this.config = null;
-    this.processedConfig = null;
+  constructor() {
+    this.categoryMap = {
+      'assignments': 'assignment_tools',
+      'attachments': 'attachment_tools', 
+      'cases': 'case_tools',
+      'casetypes': 'casetype_tools',
+      'dataviews': 'dataview_tools',
+      'documents': 'document_tools',
+      'followers': 'follower_tools',
+      'participants': 'participant_tools',
+      'related_cases': 'related_case_tools',
+      'services': 'service_tools',
+      'tags': 'tag_tools'
+    };
+    
+    this.logLevel = process.env.LOG_LEVEL || 'info';
   }
 
   /**
-   * Load and process configuration
-   * @returns {Promise<Object>} Processed configuration
+   * Check if a tool category should be loaded
+   * @param {string} category - Category name (e.g., 'cases', 'assignments')
+   * @returns {boolean} Whether the category should be loaded
    */
-  async load() {
-    if (this.processedConfig) {
-      return this.processedConfig;
+  isCategoryEnabled(category) {
+    const envVar = this.categoryMap[category];
+    if (!envVar) {
+      console.warn(`⚠️  Unknown category: ${category}`);
+      return true; // Default to enabled for unknown categories
     }
-
-    try {
-      // Load base configuration
-      const configData = await readFile(this.configPath, 'utf-8');
-      this.config = JSON.parse(configData);
-      
-      // Process configuration with environment overrides
-      this.processedConfig = this.processConfiguration(this.config);
-      
-      return this.processedConfig;
-    } catch (error) {
-      console.error(`❌ Failed to load tool configuration from ${this.configPath}:`, error.message);
-      
-      // Return default configuration if file load fails
-      return this.getDefaultConfiguration();
-    }
+    
+    const value = process.env[envVar];
+    
+    // Default to enabled (true) unless explicitly set to 'false'
+    return value !== 'false';
   }
 
   /**
-   * Process configuration with environment overrides
-   * @param {Object} baseConfig - Base configuration from JSON
-   * @returns {Object} Processed configuration
+   * Check if a specific tool should be loaded
+   * @param {string} toolName - Name of the tool
+   * @param {string} category - Category the tool belongs to
+   * @returns {boolean} Whether the tool should be loaded
    */
-  processConfiguration(baseConfig) {
-    // Start with base configuration
-    let config = JSON.parse(JSON.stringify(baseConfig)); // Deep clone
-    
-    // Apply environment-specific settings
-    const environment = this.getEnvironment();
-    if (config.environment && config.environment[environment]) {
-      config = this.mergeConfigurations(config, config.environment[environment]);
+  isToolEnabled(toolName, category) {
+    // Check for tool-specific override first
+    const toolOverride = process.env[`${toolName}_enabled`];
+    if (toolOverride !== undefined) {
+      return toolOverride !== 'false';
     }
     
-    // Apply environment variable overrides
-    config = this.applyEnvironmentVariables(config);
-    
-    // Validate and normalize configuration
-    config = this.validateAndNormalize(config);
-    
-    return config;
+    // Fall back to category setting
+    return this.isCategoryEnabled(category);
   }
 
   /**
-   * Get current environment from NODE_ENV or default to 'development'
+   * Get log level for the application
+   * @returns {string} Log level
+   */
+  getLogLevel() {
+    return this.logLevel;
+  }
+
+  /**
+   * Get environment name
    * @returns {string} Environment name
    */
   getEnvironment() {
@@ -80,298 +80,73 @@ export class ToolConfig {
   }
 
   /**
-   * Apply environment variable overrides
-   * @param {Object} config - Configuration to modify
-   * @returns {Object} Modified configuration
+   * Get all category settings
+   * @returns {Object} Object with category names and their enabled status
    */
-  applyEnvironmentVariables(config) {
-    // Global overrides
-    if (process.env.PEGA_MCP_LOAD_ALL !== undefined) {
-      config.globalSettings.loadAll = process.env.PEGA_MCP_LOAD_ALL === 'true';
+  getAllCategorySettings() {
+    const settings = {};
+    
+    for (const [category, envVar] of Object.entries(this.categoryMap)) {
+      settings[category] = {
+        envVar: envVar,
+        enabled: this.isCategoryEnabled(category),
+        value: process.env[envVar] || 'not set (default: true)'
+      };
     }
     
-    if (process.env.PEGA_MCP_DEFAULT_ENABLED !== undefined) {
-      config.defaultEnabled = process.env.PEGA_MCP_DEFAULT_ENABLED === 'true';
-    }
-    
-    if (process.env.PEGA_MCP_LOG_LEVEL) {
-      config.globalSettings.logLevel = process.env.PEGA_MCP_LOG_LEVEL;
-    }
-    
-    // Category overrides: PEGA_MCP_CATEGORY_<NAME>=true/false
-    Object.keys(process.env).forEach(key => {
-      const categoryMatch = key.match(/^PEGA_MCP_CATEGORY_(.+)$/);
-      if (categoryMatch) {
-        const categoryName = categoryMatch[1].toLowerCase();
-        const enabled = process.env[key] === 'true';
-        
-        if (config.categories[categoryName]) {
-          config.categories[categoryName].enabled = enabled;
-        }
-      }
-    });
-    
-    // Tool overrides: PEGA_MCP_TOOL_<NAME>=true/false
-    Object.keys(process.env).forEach(key => {
-      const toolMatch = key.match(/^PEGA_MCP_TOOL_(.+)$/);
-      if (toolMatch) {
-        const toolName = toolMatch[1].toLowerCase();
-        const enabled = process.env[key] === 'true';
-        
-        if (!config.tools[toolName]) {
-          config.tools[toolName] = {};
-        }
-        config.tools[toolName].enabled = enabled;
-      }
-    });
-    
-    // Enabled/disabled tool lists: PEGA_MCP_ENABLED_TOOLS=tool1,tool2,tool3
-    if (process.env.PEGA_MCP_ENABLED_TOOLS) {
-      const enabledTools = process.env.PEGA_MCP_ENABLED_TOOLS.split(',').map(t => t.trim());
-      enabledTools.forEach(toolName => {
-        if (!config.tools[toolName]) {
-          config.tools[toolName] = {};
-        }
-        config.tools[toolName].enabled = true;
-      });
-    }
-    
-    if (process.env.PEGA_MCP_DISABLED_TOOLS) {
-      const disabledTools = process.env.PEGA_MCP_DISABLED_TOOLS.split(',').map(t => t.trim());
-      disabledTools.forEach(toolName => {
-        if (!config.tools[toolName]) {
-          config.tools[toolName] = {};
-        }
-        config.tools[toolName].enabled = false;
-      });
-    }
-    
-    return config;
+    return settings;
   }
 
   /**
-   * Validate and normalize configuration
-   * @param {Object} config - Configuration to validate
-   * @returns {Object} Validated configuration
-   */
-  validateAndNormalize(config) {
-    // Ensure required fields exist
-    if (!config.version) {
-      config.version = '1.0.0';
-    }
-    
-    if (!config.globalSettings) {
-      config.globalSettings = {};
-    }
-    
-    if (!config.categories) {
-      config.categories = {};
-    }
-    
-    if (!config.tools) {
-      config.tools = {};
-    }
-    
-    // Normalize boolean values
-    if (typeof config.defaultEnabled !== 'boolean') {
-      config.defaultEnabled = true;
-    }
-    
-    if (typeof config.globalSettings.loadAll !== 'boolean') {
-      config.globalSettings.loadAll = false;
-    }
-    
-    if (typeof config.globalSettings.strictValidation !== 'boolean') {
-      config.globalSettings.strictValidation = true;
-    }
-    
-    // Validate log level
-    const validLogLevels = ['debug', 'info', 'warn', 'error'];
-    if (!validLogLevels.includes(config.globalSettings.logLevel)) {
-      config.globalSettings.logLevel = 'info';
-    }
-    
-    return config;
-  }
-
-  /**
-   * Merge two configuration objects (deep merge)
-   * @param {Object} base - Base configuration
-   * @param {Object} override - Override configuration
-   * @returns {Object} Merged configuration
-   */
-  mergeConfigurations(base, override) {
-    const result = JSON.parse(JSON.stringify(base)); // Deep clone
-    
-    function mergeDeep(target, source) {
-      for (const key in source) {
-        if (source[key] && typeof source[key] === 'object' && !Array.isArray(source[key])) {
-          if (!target[key]) {
-            target[key] = {};
-          }
-          mergeDeep(target[key], source[key]);
-        } else {
-          target[key] = source[key];
-        }
-      }
-    }
-    
-    mergeDeep(result, override);
-    return result;
-  }
-
-  /**
-   * Get default configuration if file loading fails
-   * @returns {Object} Default configuration
-   */
-  getDefaultConfiguration() {
-    return {
-      version: '1.0.0',
-      description: 'Default configuration - all tools enabled',
-      defaultEnabled: true,
-      globalSettings: {
-        loadAll: true,
-        strictValidation: true,
-        logLevel: 'info'
-      },
-      categories: {},
-      tools: {}
-    };
-  }
-
-  /**
-   * Check if a tool should be loaded
-   * @param {string} toolName - Name of the tool
-   * @param {string} category - Category the tool belongs to
-   * @returns {boolean} Whether the tool should be loaded
-   */
-  isToolEnabled(toolName, category) {
-    if (!this.processedConfig) {
-      throw new Error('Configuration not loaded. Call load() first.');
-    }
-    
-    const config = this.processedConfig;
-    
-    // If loadAll is true, load everything
-    if (config.globalSettings.loadAll) {
-      return true;
-    }
-    
-    // Check tool-specific override first (highest priority)
-    if (config.tools[toolName] && typeof config.tools[toolName].enabled === 'boolean') {
-      return config.tools[toolName].enabled;
-    }
-    
-    // Check category setting
-    if (config.categories[category] && typeof config.categories[category].enabled === 'boolean') {
-      return config.categories[category].enabled;
-    }
-    
-    // Fall back to default setting
-    return config.defaultEnabled;
-  }
-
-  /**
-   * Check if a category should be loaded
-   * @param {string} category - Category name
-   * @returns {boolean} Whether the category should be loaded
-   */
-  isCategoryEnabled(category) {
-    if (!this.processedConfig) {
-      throw new Error('Configuration not loaded. Call load() first.');
-    }
-    
-    const config = this.processedConfig;
-    
-    // If loadAll is true, load everything
-    if (config.globalSettings.loadAll) {
-      return true;
-    }
-    
-    // Check category setting
-    if (config.categories[category] && typeof config.categories[category].enabled === 'boolean') {
-      return config.categories[category].enabled;
-    }
-    
-    // Fall back to default setting
-    return config.defaultEnabled;
-  }
-
-  /**
-   * Get tool configuration for a specific tool
-   * @param {string} toolName - Name of the tool
-   * @returns {Object|null} Tool configuration or null if not found
-   */
-  getToolConfig(toolName) {
-    if (!this.processedConfig) {
-      throw new Error('Configuration not loaded. Call load() first.');
-    }
-    
-    return this.processedConfig.tools[toolName] || null;
-  }
-
-  /**
-   * Get category configuration
-   * @param {string} category - Category name
-   * @returns {Object|null} Category configuration or null if not found
-   */
-  getCategoryConfig(category) {
-    if (!this.processedConfig) {
-      throw new Error('Configuration not loaded. Call load() first.');
-    }
-    
-    return this.processedConfig.categories[category] || null;
-  }
-
-  /**
-   * Get global settings
-   * @returns {Object} Global settings
-   */
-  getGlobalSettings() {
-    if (!this.processedConfig) {
-      throw new Error('Configuration not loaded. Call load() first.');
-    }
-    
-    return this.processedConfig.globalSettings;
-  }
-
-  /**
-   * Generate configuration summary
+   * Generate configuration summary for logging
    * @returns {Object} Configuration summary
    */
   getSummary() {
-    if (!this.processedConfig) {
-      throw new Error('Configuration not loaded. Call load() first.');
-    }
+    const categories = this.getAllCategorySettings();
+    const enabledCount = Object.values(categories).filter(cat => cat.enabled).length;
+    const disabledCount = Object.keys(categories).length - enabledCount;
     
-    const config = this.processedConfig;
-    const summary = {
-      version: config.version,
+    return {
       environment: this.getEnvironment(),
-      globalSettings: config.globalSettings,
+      logLevel: this.getLogLevel(),
       categories: {
-        total: Object.keys(config.categories).length,
-        enabled: Object.values(config.categories).filter(cat => cat.enabled !== false).length,
-        disabled: Object.values(config.categories).filter(cat => cat.enabled === false).length
+        total: Object.keys(categories).length,
+        enabled: enabledCount,
+        disabled: disabledCount
       },
-      tools: {
-        total: Object.keys(config.tools).length,
-        enabled: Object.values(config.tools).filter(tool => tool.enabled === true).length,
-        disabled: Object.values(config.tools).filter(tool => tool.enabled === false).length
-      }
+      settings: categories
     };
-    
-    return summary;
   }
 
   /**
-   * Reload configuration from file
-   * @returns {Promise<Object>} Reloaded configuration
+   * Log configuration summary
    */
+  logSummary() {
+    const summary = this.getSummary();
+    
+    console.error(`🔧 Simple Tool Configuration:`);
+    console.error(`   Environment: ${summary.environment}`);
+    console.error(`   Log Level: ${summary.logLevel}`);
+    console.error(`   Categories: ${summary.categories.enabled}/${summary.categories.total} enabled`);
+    
+    if (summary.categories.disabled > 0) {
+      console.error(`   Disabled categories:`);
+      for (const [category, config] of Object.entries(summary.settings)) {
+        if (!config.enabled) {
+          console.error(`     - ${category} (${config.envVar}=${config.value})`);
+        }
+      }
+    }
+  }
+
+  // Legacy method compatibility - no longer loads from file
+  async load() {
+    return this.getSummary();
+  }
+
+  // Legacy method compatibility - no configuration to reload
   async reload() {
-    this.config = null;
-    this.processedConfig = null;
-    return await this.load();
+    return this.getSummary();
   }
 }
 

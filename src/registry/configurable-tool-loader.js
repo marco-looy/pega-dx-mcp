@@ -33,11 +33,10 @@ export class ConfigurableToolLoader {
     try {
       // Load configuration first
       this.config = await toolConfig.load();
-      const globalSettings = toolConfig.getGlobalSettings();
       
-      console.error(`🔧 Loading tools with configuration v${this.config.version}`);
+      console.error(`🔧 Loading tools with simplified configuration`);
       console.error(`📋 Environment: ${toolConfig.getEnvironment()}`);
-      console.error(`⚙️  Global settings: loadAll=${globalSettings.loadAll}, defaultEnabled=${this.config.defaultEnabled}`);
+      console.error(`⚙️  Log Level: ${toolConfig.getLogLevel()}`);
       
       const categories = await this.scanCategories();
       
@@ -286,7 +285,7 @@ export class ConfigurableToolLoader {
     const configSummary = toolConfig.getSummary();
     
     console.error(`\n📊 Tool Loading Summary:`);
-    console.error(`   🔧 Configuration: v${configSummary.version} (${configSummary.environment})`);
+    console.error(`   🔧 Configuration: Simplified (${configSummary.environment})`);
     console.error(`   📂 Categories: ${stats.categories} loaded, ${this.skippedTools.size} skipped`);
     console.error(`   🔨 Tools: ${stats.totalTools} loaded, ${stats.totalSkipped} skipped`);
     
