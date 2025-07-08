@@ -185,9 +185,18 @@ export class BaseTool {
     for (const [key, value] of Object.entries(obj)) {
       if (value !== null && value !== undefined) {
         if (typeof value === 'object' && !Array.isArray(value)) {
-          section += `- **${key}**: [Object]\n`;
+          // Show object contents in JSON format for readability
+          section += `- **${key}**:\n`;
+          section += '```json\n';
+          section += JSON.stringify(value, null, 2);
+          section += '\n```\n';
         } else if (Array.isArray(value)) {
           section += `- **${key}**: [${value.length} items]\n`;
+          if (value.length > 0) {
+            section += '```json\n';
+            section += JSON.stringify(value, null, 2);
+            section += '\n```\n';
+          }
         } else {
           section += `- **${key}**: ${value}\n`;
         }

@@ -69,7 +69,7 @@ This matrix tracks the testing status of all 63 MCP tools in the Pega DX MCP Ser
 | change-to-stage | ❌ | - | - | Navigate to specific stage |
 | create-case | ❌ | - | - | Create new cases |
 | delete-case | ❌ | - | - | Delete cases in create stage |
-| get-case | ✅ | 2025-01-08 | [results/cases/get-case-results.md] | **Completed** - Basic retrieval and UI metadata working |
+| get-case | ✅ | 2025-01-08 | [results/cases/get-case-results.md] | **Completed** - All viewType options working, JSON data display fixed |
 | get-case-action | ❌ | - | - | Get case action details |
 | get-case-ancestors | ❌ | - | - | Get parent case hierarchy |
 | get-case-descendants | ❌ | - | - | Get child case hierarchy |
@@ -192,7 +192,7 @@ This matrix tracks the testing status of all 63 MCP tools in the Pega DX MCP Ser
 ### Phase 1: Foundation Tools (Week 1) - 5 tools
 1. ✅ `ping-pega-service` - **Completed**
 2. ✅ `get-case-types` - **Completed**
-3. ❌ `get-case` - Core functionality
+3. ✅ `get-case` - **Completed**
 4. ❌ `create-case` - Case creation
 5. ❌ `get-data-objects` - Data access
 

@@ -64,11 +64,24 @@ The following case types are available for testing (verified 2025-07-07T15:03:46
 ## Test Data Standards
 
 ### Case ID Format
-All case IDs follow the pattern: `ON6E5R-DIYRecipe-Work-{CaseType} R-{Number}`
+**Working Format**: `ON6E5R-DIYRECIPE-WORK R-{Number}` (discovered during testing)
 
 Examples:
-- `ON6E5R-DIYRecipe-Work-RecipeCollection R-1008`
-- `ON6E5R-DIYRecipe-Work-RecipeSubmission R-2001`
+- `ON6E5R-DIYRECIPE-WORK R-1016` ✅ **Working case ID**
+
+**Note**: The documented format `ON6E5R-DIYRecipe-Work-{CaseType} R-{Number}` does not work.
+
+### Available Test Cases
+- **ON6E5R-DIYRECIPE-WORK R-1016**: Recipe Collection case (created 2025-01-08)
+  - **Case Type**: ON6E5R-DIYRecipe-Work-RecipeCollection  
+  - **Status**: New
+  - **Current Stage**: Recipe Intake (PRIM0)
+  - **Recipe Name**: "Test Recipe for Get Case"
+  - **Category**: "Test"
+  - **Active Assignment**: "Enter Recipe Details"
+  - **Assignment ID**: `ASSIGN-WORKLIST ON6E5R-DIYRECIPE-WORK R-1016!RECIPEINTAKE_FLOW`
+  - **Available Actions**: `pyUpdateCaseDetails`, `pyChangeStage`
+  - **Stage IDs**: PRIM0, PRIM1, PRIM2, PRIM3, PRIM4, PRIM5, ALT1
 
 ### User Context
 - **Test User**: Current authenticated user via OAuth2
