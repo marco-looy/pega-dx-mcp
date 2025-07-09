@@ -82,8 +82,8 @@ Control which tool categories are loaded using environment variables. All catego
 
 ```bash
 # Enable/disable entire tool categories
-PEGA_ASSIGNMENT_TOOLS=true          # Assignment operations (9 tools)
-PEGA_ATTACHMENT_TOOLS=true          # File and attachment management (7 tools)
+PEGA_ASSIGNMENT_TOOLS=true         # Assignment operations (9 tools)
+PEGA_ATTACHMENT_TOOLS=true         # File and attachment management (7 tools)
 PEGA_CASE_TOOLS=true               # Case lifecycle management (16 tools)
 PEGA_CASETYPE_TOOLS=true           # Case type information (3 tools)
 PEGA_DATAVIEW_TOOLS=true           # Data view operations (7 tools)
