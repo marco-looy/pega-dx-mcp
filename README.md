@@ -36,7 +36,7 @@ The Pega DX MCP Server is an experimental project exploring the intersection of 
 
 ```bash
 # Install from npm (recommended)
-npm install -g @pega-enablement/pega-dx-mcp
+npm install -g @marco-looy/pega-dx-mcp
 ```
 
 ### Integration with MCP Clients
@@ -48,7 +48,7 @@ Compatible with Claude Desktop, Cursor, Cline, and other MCP-enabled application
   "mcpServers": {
     "pega-dx-mcp": {
       "command": "npx",
-      "args": ["-y", "@pega-enablement/pega-dx-mcp"],
+      "args": ["-y", "@marco-looy/pega-dx-mcp"],
       "env": {
         "PEGA_BASE_URL": "https://your-pega-instance.com",
         "PEGA_CLIENT_ID": "your-client-id",
@@ -78,21 +78,63 @@ The Pega DX MCP Server provides **61 comprehensive tools** organized into 11 fun
 
 ### 🔧 Tool Configuration
 
-Control which tool categories are loaded using environment variables. All categories are enabled by default - set to `'false'` to disable:
+Control which tool categories are loaded using environment variables in your MCP client configuration. All categories are enabled by default - set to `"false"` to disable:
 
-```bash
-# Enable/disable entire tool categories
-PEGA_ASSIGNMENT_TOOLS=true         # Assignment operations (9 tools)
-PEGA_ATTACHMENT_TOOLS=true         # File and attachment management (7 tools)
-PEGA_CASE_TOOLS=true               # Case lifecycle management (16 tools)
-PEGA_CASETYPE_TOOLS=true           # Case type information (3 tools)
-PEGA_DATAVIEW_TOOLS=true           # Data view operations (7 tools)
-PEGA_DOCUMENT_TOOLS=true           # Document operations (2 tools)
-PEGA_FOLLOWER_TOOLS=true           # Case follower management (3 tools)
-PEGA_PARTICIPANT_TOOLS=true        # Case participant management (7 tools)
-PEGA_RELATED_CASE_TOOLS=true       # Related case operations (3 tools)
-PEGA_SERVICE_TOOLS=true            # Service connectivity (1 tool)
-PEGA_TAG_TOOLS=true                # Case tagging operations (3 tools)
+```json
+{
+  "mcpServers": {
+    "pega-dx-mcp": {
+      "command": "npx",
+      "args": ["-y", "@marco-looy/pega-dx-mcp"],
+      "env": {
+        "PEGA_BASE_URL": "https://your-pega-instance.com",
+        "PEGA_CLIENT_ID": "your-client-id",
+        "PEGA_CLIENT_SECRET": "your-client-secret",
+        
+        // Tool Categories (all enabled by default - set to "false" to disable)
+        "PEGA_ASSIGNMENT_TOOLS": "true",         // Assignment operations (9 tools)
+        "PEGA_ATTACHMENT_TOOLS": "true",         // File and attachment management (7 tools)
+        "PEGA_CASE_TOOLS": "true",               // Case lifecycle management (16 tools)
+        "PEGA_CASETYPE_TOOLS": "true",           // Case type information (3 tools)
+        "PEGA_DATAVIEW_TOOLS": "true",           // Data view operations (7 tools)
+        "PEGA_DOCUMENT_TOOLS": "true",           // Document operations (2 tools)
+        "PEGA_FOLLOWER_TOOLS": "true",           // Case follower management (3 tools)
+        "PEGA_PARTICIPANT_TOOLS": "true",        // Case participant management (7 tools)
+        "PEGA_RELATED_CASE_TOOLS": "true",       // Related case operations (3 tools)
+        "PEGA_SERVICE_TOOLS": "true",            // Service connectivity (1 tool)
+        "PEGA_TAG_TOOLS": "true"                 // Case tagging operations (3 tools)
+      }
+    }
+  }
+}
+```
+
+**Example - Enable only core case management tools:**
+```json
+{
+  "mcpServers": {
+    "pega-dx-mcp": {
+      "command": "npx",
+      "args": ["-y", "@marco-looy/pega-dx-mcp"],
+      "env": {
+        "PEGA_BASE_URL": "https://your-pega-instance.com",
+        "PEGA_CLIENT_ID": "your-client-id",
+        "PEGA_CLIENT_SECRET": "your-client-secret",
+        "PEGA_SERVICE_TOOLS": "true",
+        "PEGA_CASETYPE_TOOLS": "true",
+        "PEGA_CASE_TOOLS": "true",
+        "PEGA_ASSIGNMENT_TOOLS": "false",
+        "PEGA_ATTACHMENT_TOOLS": "false",
+        "PEGA_DATAVIEW_TOOLS": "false",
+        "PEGA_DOCUMENT_TOOLS": "false",
+        "PEGA_FOLLOWER_TOOLS": "false",
+        "PEGA_PARTICIPANT_TOOLS": "false",
+        "PEGA_RELATED_CASE_TOOLS": "false",
+        "PEGA_TAG_TOOLS": "false"
+      }
+    }
+  }
+}
 ```
 
 ### 📋 Complete Tool Inventory
@@ -276,13 +318,3 @@ npm test
 ## 📄 License
 
 Licensed under the Apache License, Version 2.0. See [LICENSE](LICENSE) for details.
-
----
-
-<div align="center">
-
-**Built with ❤️ by Pega Enablement**
-
-[Community](https://community.pega.com) • [Academy](https://academy.pega.com) •  [Documentation](https://docs.pega.com)
-
-</div>
