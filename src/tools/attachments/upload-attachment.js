@@ -46,18 +46,7 @@ export class UploadAttachmentTool extends BaseTool {
             description: 'Whether to append a unique identifier to the filename to prevent naming conflicts. Pega will add timestamp-based unique ID to filename.',
             default: true
           }
-        },
-        anyOf: [
-          {
-            required: ['filePath']
-          },
-          {
-            required: ['fileContent', 'fileName']
-          },
-          {
-            required: ['fileUrl', 'fileName'] 
-          }
-        ]
+        }
       }
     };
   }

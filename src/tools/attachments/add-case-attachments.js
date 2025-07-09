@@ -26,54 +26,32 @@ export class AddCaseAttachmentsTool extends BaseTool {
             type: 'array',
             description: 'Array of attachment objects to add to the case. Can contain file attachments (using temporary attachment IDs from upload_attachment tool) and/or URL attachments. All attachments must be successfully processed or none will be attached (atomic operation).',
             items: {
-              oneOf: [
-                {
-                  type: 'object',
-                  properties: {
-                    type: {
-                      type: 'string',
-                      enum: ['File'],
-                      description: 'Attachment type for file attachments. Must be "File".'
-                    },
-                    category: {
-                      type: 'string',
-                      enum: ['File'],
-                      description: 'Attachment category for file attachments. Must be "File".'
-                    },
-                    ID: {
-                      type: 'string',
-                      description: 'Temporary attachment ID returned from upload_attachment tool. Example: "450b7275-8868-43ca-9827-bcfd9ec1b54b". Note: Temporary attachments expire after 2 hours if not linked to a case.'
-                    }
-                  },
-                  required: ['type', 'category', 'ID'],
-                  additionalProperties: false
+              type: 'object',
+              properties: {
+                type: {
+                  type: 'string',
+                  enum: ['File', 'URL'],
+                  description: 'Attachment type. Must be "File" for file attachments or "URL" for URL/link attachments.'
                 },
-                {
-                  type: 'object',
-                  properties: {
-                    type: {
-                      type: 'string',
-                      enum: ['URL'],
-                      description: 'Attachment type for URL/link attachments. Must be "URL".'
-                    },
-                    category: {
-                      type: 'string',
-                      enum: ['URL'],
-                      description: 'Attachment category for URL/link attachments. Must be "URL".'
-                    },
-                    url: {
-                      type: 'string',
-                      description: 'URL/link to attach to the case. Example: "https://www.google.com". Must be a valid URL format.'
-                    },
-                    name: {
-                      type: 'string',
-                      description: 'Display name for the URL attachment. Example: "google". This will be shown as the attachment name in the case.'
-                    }
-                  },
-                  required: ['type', 'category', 'url', 'name'],
-                  additionalProperties: false
+                category: {
+                  type: 'string',
+                  enum: ['File', 'URL'],
+                  description: 'Attachment category. Must match the type ("File" or "URL").'
+                },
+                ID: {
+                  type: 'string',
+                  description: 'Temporary attachment ID returned from upload_attachment tool (required for File type). Example: "450b7275-8868-43ca-9827-bcfd9ec1b54b". Note: Temporary attachments expire after 2 hours if not linked to a case.'
+                },
+                url: {
+                  type: 'string',
+                  description: 'URL/link to attach to the case (required for URL type). Example: "https://www.google.com". Must be a valid URL format.'
+                },
+                name: {
+                  type: 'string',
+                  description: 'Display name for the URL attachment (required for URL type). Example: "google". This will be shown as the attachment name in the case.'
                 }
-              ]
+              },
+              required: ['type', 'category']
             },
             minItems: 1,
             maxItems: 50

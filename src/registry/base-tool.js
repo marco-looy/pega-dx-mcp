@@ -6,7 +6,19 @@ import { PegaAPIClient } from '../api/pega-client.js';
  */
 export class BaseTool {
   constructor() {
-    this.pegaClient = new PegaAPIClient();
+    // Use lazy initialization - only create pegaClient when needed
+    this._pegaClient = null;
+  }
+
+  /**
+   * Get PegaAPIClient instance with lazy initialization
+   * This ensures config is only loaded when actually executing tools
+   */
+  get pegaClient() {
+    if (!this._pegaClient) {
+      this._pegaClient = new PegaAPIClient();
+    }
+    return this._pegaClient;
   }
 
   /**
