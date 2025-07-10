@@ -6,6 +6,28 @@ This document tracks all releases of the Pega DX MCP Server, providing detailed 
 
 ## 🚀 Current Releases
 
+### v0.1.4 - Data Views: Information Management
+
+**Status:** ✅ Available
+
+**Data Operations**
+
+Introducing comprehensive data view operations for querying, updating, and managing data through natural language interfaces.
+
+**What's New:**
+
+- ✅ **Data View Operations** (7 tools) - Query, update, and manage data records
+
+**Key Capabilities:**
+
+- Query data views: "Show me customer data for region East"
+- Perform CRUD operations on data records
+- Handle complex data filtering and aggregation
+- Manage data view metadata and parameters
+- Execute advanced data operations with conditional logic
+
+---
+
 ### v0.1.3 - Workflow: Assignment Management
 
 **Status:** ✅ Available
@@ -71,27 +93,51 @@ Introducing the essential tools for Pega case management through natural languag
 
 ## 🗺️ Release Roadmap
 
-### v0.1.x - Data & Documents: Information Management
+### v0.1.x - Attachments & Documents: File Management
 
 **Status:** 📋 Planned
 
-#### 📊 Information Management - Data and File Operations
+#### 📎 File Management - Attachment and Document Operations
 
-Comprehensive data operations and document management capabilities.
+Comprehensive file handling and document management capabilities.
 
 #### What's New:
 
-- ✅ **Data View Operations** (7 tools) - Query, update, and manage data
 - ✅ **Attachment Management** (7 tools) - Upload, organize, and retrieve files
 - ✅ **Document Operations** (2 tools) - Handle documents and content
 
 #### Key Capabilities:
 
-- Query data views: "Show me customer data for region East"
 - Upload attachments: "Attach the signed contract to this case"
 - Manage document categories and metadata
-- Perform CRUD operations on data records
-- Handle complex data filtering and aggregation
+- Handle file uploads and downloads
+- Organize attachments with categories
+- Process document content and metadata
+
+#### Configuration:
+
+```bash
+# Enable previous tools plus:
+PEGA_ATTACHMENT_TOOLS=true         # File and attachment management (7 tools)
+PEGA_DOCUMENT_TOOLS=true           # Document operations (2 tools)
+```
+
+#### Tools Added:
+
+**Attachment Tools:**
+
+- `add_case_attachments` - Attach files/URLs to cases
+- `delete_attachment` - Remove attachments from cases
+- `get_attachment` - Retrieve attachment content
+- `get_attachment_categories` - List available attachment categories
+- `get_case_attachments` - List all case attachments
+- `update_attachment` - Update attachment metadata
+- `upload_attachment` - Upload files as temporary attachments
+
+**Document Tools:**
+
+- `get_document` - Retrieve document content as base64
+- `remove_case_document` - Remove documents linked to cases
 
 ---
 
