@@ -31,6 +31,10 @@ export class GetCaseTool extends BaseTool {
           pageName: {
             type: 'string',
             description: 'If provided, view metadata for specific page name will be returned (only used when viewType is "page")'
+          },
+          originChannel: {
+            type: 'string',
+            description: 'Origin of this service. E.g. - Web, Mobile etc.'
           }
         },
         required: ['caseID']
@@ -42,7 +46,7 @@ export class GetCaseTool extends BaseTool {
    * Execute the get case operation
    */
   async execute(params) {
-    const { caseID, viewType, pageName } = params;
+    const { caseID, viewType, pageName, originChannel } = params;
 
     // Validate required parameters using base class
     const requiredValidation = this.validateRequiredParams(params, ['caseID']);
@@ -68,8 +72,8 @@ export class GetCaseTool extends BaseTool {
     // Execute with standardized error handling
     return await this.executeWithErrorHandling(
       `Case Details: ${caseID}`,
-      async () => await this.pegaClient.getCase(caseID.trim(), { viewType, pageName }),
-      { viewType, pageName }
+      async () => await this.pegaClient.getCase(caseID.trim(), { viewType, pageName, originChannel }),
+      { viewType, pageName, originChannel }
     );
   }
 

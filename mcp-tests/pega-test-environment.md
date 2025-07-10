@@ -72,16 +72,49 @@ Examples:
 **Note**: The documented format `ON6E5R-DIYRecipe-Work-{CaseType} R-{Number}` does not work.
 
 ### Available Test Cases
-- **ON6E5R-DIYRECIPE-WORK R-1016**: Recipe Collection case (created 2025-01-08)
-  - **Case Type**: ON6E5R-DIYRecipe-Work-RecipeCollection  
-  - **Status**: New
-  - **Current Stage**: Recipe Intake (PRIM0)
-  - **Recipe Name**: "Test Recipe for Get Case"
-  - **Category**: "Test"
-  - **Active Assignment**: "Enter Recipe Details"
-  - **Assignment ID**: `ASSIGN-WORKLIST ON6E5R-DIYRECIPE-WORK R-1016!RECIPEINTAKE_FLOW`
-  - **Available Actions**: `pyUpdateCaseDetails`, `pyChangeStage`
-  - **Stage IDs**: PRIM0, PRIM1, PRIM2, PRIM3, PRIM4, PRIM5, ALT1
+
+#### Primary Test Case: ON6E5R-DIYRECIPE-WORK R-1016 ✅ Fully Tested
+**Recipe Collection case** (tested and verified 2025-07-10)
+- **Case Type**: ON6E5R-DIYRecipe-Work-RecipeCollection  
+- **Status**: New
+- **Current Stage**: Recipe Intake (PRIM0)
+- **Stage Label**: "Recipe Intake"
+- **Business ID**: R-1016
+- **Owner**: AU20881751960963974
+- **Created**: 2025-07-08T07:49:24.006Z
+- **Last Updated**: 2025-07-08T07:49:24.024Z
+
+**Case Properties**:
+- **Recipe Name**: "Test Recipe for Get Case"
+- **Category**: "Test"
+- **Urgency**: 10
+- **SLA**: No goals/deadlines set
+
+**Workflow Information**:
+- **Active Assignment**: "Enter Recipe Details"
+- **Assignment ID**: `ASSIGN-WORKLIST ON6E5R-DIYRECIPE-WORK R-1016!RECIPEINTAKE_FLOW`
+- **Process ID**: `RecipeIntake_Flow`
+- **Process Name**: "Recipe Intake"
+- **Assignment Action ID**: `EnterRecipeDetails`
+
+**Available Case Actions**:
+- **Edit details**: `pyUpdateCaseDetails`
+- **Change stage**: `pyChangeStage`
+
+**Stage Progression** (7 stages total):
+1. **PRIM0**: Recipe Intake (active) - create transition
+2. **PRIM1**: Classification (future) - automatic transition  
+3. **PRIM2**: Enhancement (future) - automatic transition
+4. **PRIM3**: Review (future) - automatic transition
+5. **PRIM4**: Publication (future) - automatic transition
+6. **PRIM5**: Archival (future) - resolution transition
+7. **ALT1**: Approval Rejection (future, alternate) - resolution transition
+
+**Testing Status**: 
+- ✅ get-case: All viewType options tested successfully
+- ✅ Error handling: Invalid case ID scenarios validated
+- ✅ UI Resources: Page metadata loading confirmed
+- ✅ JSON Display: Full case data structure verified
 
 ### User Context
 - **Test User**: Current authenticated user via OAuth2

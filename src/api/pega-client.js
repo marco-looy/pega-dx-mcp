@@ -12,7 +12,7 @@ export class PegaAPIClient {
    * Get case details by case ID
    */
   async getCase(caseID, options = {}) {
-    const { viewType, pageName } = options;
+    const { viewType, pageName, originChannel } = options;
     
     // URL encode the case ID to handle spaces and special characters
     const encodedCaseID = encodeURIComponent(caseID);
@@ -34,7 +34,7 @@ export class PegaAPIClient {
     return await this.makeRequest(url, {
       method: 'GET',
       headers: {
-        'x-origin-channel': 'Web'
+        'x-origin-channel': originChannel || 'Web'
       }
     });
   }

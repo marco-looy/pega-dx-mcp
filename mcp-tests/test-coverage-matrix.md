@@ -69,7 +69,7 @@ This matrix tracks the testing status of all 63 MCP tools in the Pega DX MCP Ser
 | change-to-stage | ❌ | - | - | Navigate to specific stage |
 | create-case | ❌ | - | - | Create new cases |
 | delete-case | ✅ | 2025-01-08 | [results/cases/delete-case-results.md] | **Completed** - Tool functionality verified, error handling working |
-| get-case | ✅ | 2025-01-08 | [results/cases/get-case-results.md] | **Completed** - All viewType options working, JSON data display fixed |
+| get-case | ✅ | 2025-07-10 | [results/cases/get-case-results.md] | **Completed** - All viewType options working, comprehensive testing validated |
 | get-case-action | ❌ | - | - | Get case action details |
 | get-case-ancestors | ❌ | - | - | Get parent case hierarchy |
 | get-case-descendants | ❌ | - | - | Get child case hierarchy |
