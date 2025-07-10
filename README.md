@@ -1,4 +1,4 @@
-![Pega DX MCP Server](./media/pega-dx-mcp-1280x640.png)
+![Pega DX MCP Server](https://raw.githubusercontent.com/marco-looy/pega-dx-mcp/main/media/pega-dx-mcp-1280x640.png)
 
 # Pega DX MCP Server
 
@@ -71,7 +71,7 @@ Compatible with Claude Desktop, Cursor, Cline, and other MCP-enabled application
 
 The Pega DX MCP Server bridges GenAI applications with Pega Infinity using the Model Context Protocol:
 
-![Pega DX MCP Server Architecture](./media/architecture.png)
+![Pega DX MCP Server Architecture](https://raw.githubusercontent.com/marco-looy/pega-dx-mcp/main/media/architecture.png)
 
 ## 🛠️ Available Tools
 
