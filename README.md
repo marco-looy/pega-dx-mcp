@@ -60,6 +60,7 @@ Compatible with Claude Desktop, Cursor, Cline, and other MCP-enabled application
 ```
 
 **Configuration file locations:**
+
 - **Claude Desktop**: `~/Library/Application Support/Claude/claude_desktop_config.json` (macOS) or `%APPDATA%/Claude/claude_desktop_config.json` (Windows)
 - **Cursor**: `.cursor/mcp.json` in your project root
 - **Cline**: MCP settings in VS Code
@@ -80,36 +81,8 @@ The Pega DX MCP Server provides **61 comprehensive tools** organized into 11 fun
 
 Control which tool categories are loaded using environment variables in your MCP client configuration. All categories are enabled by default - set to `"false"` to disable:
 
-```json
-{
-  "mcpServers": {
-    "pega-dx-mcp": {
-      "command": "npx",
-      "args": ["-y", "@marco-looy/pega-dx-mcp"],
-      "env": {
-        "PEGA_BASE_URL": "https://your-pega-instance.com",
-        "PEGA_CLIENT_ID": "your-client-id",
-        "PEGA_CLIENT_SECRET": "your-client-secret",
-        
-        // Tool Categories (all enabled by default - set to "false" to disable)
-        "PEGA_ASSIGNMENT_TOOLS": "true",         // Assignment operations (9 tools)
-        "PEGA_ATTACHMENT_TOOLS": "true",         // File and attachment management (7 tools)
-        "PEGA_CASE_TOOLS": "true",               // Case lifecycle management (16 tools)
-        "PEGA_CASETYPE_TOOLS": "true",           // Case type information (3 tools)
-        "PEGA_DATAVIEW_TOOLS": "true",           // Data view operations (7 tools)
-        "PEGA_DOCUMENT_TOOLS": "true",           // Document operations (2 tools)
-        "PEGA_FOLLOWER_TOOLS": "true",           // Case follower management (3 tools)
-        "PEGA_PARTICIPANT_TOOLS": "true",        // Case participant management (7 tools)
-        "PEGA_RELATED_CASE_TOOLS": "true",       // Related case operations (3 tools)
-        "PEGA_SERVICE_TOOLS": "true",            // Service connectivity (1 tool)
-        "PEGA_TAG_TOOLS": "true"                 // Case tagging operations (3 tools)
-      }
-    }
-  }
-}
-```
+**Example - Only core case management tools enabled:**
 
-**Example - Enable only core case management tools:**
 ```json
 {
   "mcpServers": {
@@ -140,6 +113,7 @@ Control which tool categories are loaded using environment variables in your MCP
 ### 📋 Complete Tool Inventory
 
 #### Assignment Tools (9)
+
 - `get_assignment` - Get detailed assignment information
 - `get_assignment_action` - Get assignment action details and UI metadata
 - `get_next_assignment` - Get next work assignment for user
@@ -151,6 +125,7 @@ Control which tool categories are loaded using environment variables in your MCP
 - `save_assignment_action` - Save assignment form data without executing
 
 #### Attachment Tools (7)
+
 - `add_case_attachments` - Attach files/URLs to cases
 - `delete_attachment` - Remove attachments from cases
 - `get_attachment` - Retrieve attachment content
@@ -160,6 +135,7 @@ Control which tool categories are loaded using environment variables in your MCP
 - `upload_attachment` - Upload files as temporary attachments
 
 #### Case Tools (16)
+
 - `add_optional_process` - Add stage or case-wide optional processes
 - `bulk_cases_patch` - Perform actions on multiple cases
 - `change_to_next_stage` - Navigate case to next stage
@@ -180,11 +156,13 @@ Control which tool categories are loaded using environment variables in your MCP
 - `release_case_lock` - Release pessimistic case locks
 
 #### Case Type Tools (3)
+
 - `get_case_type_action` - Get case type action metadata
 - `get_case_type_bulk_action` - Get bulk action metadata for case types
 - `get_case_types` - List available case types
 
 #### Data View Tools (7)
+
 - `delete_data_record` - Delete data records from savable data pages
 - `get_data_objects` - List available data objects
 - `get_data_view_count` - Get data view result counts
@@ -194,15 +172,18 @@ Control which tool categories are loaded using environment variables in your MCP
 - `update_data_record_partial` - Partially update data records
 
 #### Document Tools (2)
+
 - `get_document` - Retrieve document content as base64
 - `remove_case_document` - Remove documents linked to cases
 
 #### Follower Tools (3)
+
 - `add_case_followers` - Add users as case followers
 - `delete_case_follower` - Remove case followers
 - `get_case_followers` - List case followers
 
 #### Participant Tools (7)
+
 - `create_case_participant` - Add participants to cases
 - `delete_participant` - Remove case participants
 - `get_case_participants` - List all case participants
@@ -212,14 +193,17 @@ Control which tool categories are loaded using environment variables in your MCP
 - `update_participant` - Update participant information
 
 #### Related Case Tools (3)
+
 - `delete_related_case` - Remove case relationships
 - `get_related_cases` - List related cases
 - `relate_cases` - Create case relationships
 
 #### Service Tools (1)
+
 - `ping_pega_service` - Test OAuth2 connectivity to Pega Platform
 
 #### Tag Tools (3)
+
 - `add_case_tags` - Add tags to cases
 - `delete_case_tag` - Remove specific case tags
 - `get_case_tags` - List case tags
