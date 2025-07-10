@@ -45,6 +45,7 @@ jobs:
         with:
           node-version: 22
           registry-url: https://npm.pkg.github.com/
+          scope: "@marco-looy"
       - run: npm ci
       - run: npm publish
         env:
