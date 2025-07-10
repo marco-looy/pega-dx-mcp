@@ -6,11 +6,11 @@ This document tracks all releases of the Pega DX MCP Server, providing detailed 
 
 ## 🚀 Current Releases
 
-### v0.1.4 - Data Views: Information Management
+### v0.1.4 - Data View Operations
 
 **Status:** ✅ Available
 
-**Data Operations**
+**Data View Operations**
 
 Introducing comprehensive data view operations for querying, updating, and managing data through natural language interfaces.
 
@@ -28,11 +28,11 @@ Introducing comprehensive data view operations for querying, updating, and manag
 
 ---
 
-### v0.1.3 - Workflow: Assignment Management
+### v0.1.3 - Assignment and Workflow Execution
 
 **Status:** ✅ Available
 
-**Workflow Execution**
+**Assignment and Workflow Execution**
 
 Introducing comprehensive assignment and workflow execution capabilities through natural language interfaces.
 
