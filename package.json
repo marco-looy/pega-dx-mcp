@@ -17,13 +17,13 @@
     "MCP Server",
     "Model Context Protocol"
   ],
-  "homepage": "https://github.com/MarcoLooy/pega-dx-mcp#readme",
+  "homepage": "https://github.com/marco-looy/pega-dx-mcp#readme",
   "bugs": {
-    "url": "https://github.com/MarcoLooy/pega-dx-mcp/issues"
+    "url": "https://github.com/marco-looy/pega-dx-mcp/issues"
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/MarcoLooy/pega-dx-mcp.git"
+    "url": "git+https://github.com/marco-looy/pega-dx-mcp.git"
   },
   "license": "SEE LICENSE IN LICENSE",
   "author": "Marco Looy <marco.looy@gmail.com> (https://linkedin.com/in/marcolooy)",
