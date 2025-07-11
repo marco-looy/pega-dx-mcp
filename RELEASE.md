@@ -1,10 +1,32 @@
 # Pega DX MCP Server - Release Notes
 
-This document tracks all releases of the Pega DX MCP Server, providing detailed information about new features, capabilities, and configuration changes.
+This document tracks all releases of the Pega DX MCP Server, providing detailed information about what's new and key capabilities.
 
 ---
 
 ## 🚀 Current Releases
+
+### v0.1.5 - Attachment Management
+
+**Status:** ✅ Available
+
+**File Attachment Operations**
+
+Introducing comprehensive file attachment management capabilities for Pega cases through natural language interfaces.
+
+**What's New:**
+
+- ✅ **Attachment Management** (7 tools) - Upload, organize, and retrieve files
+
+**Key Capabilities:**
+
+- Upload attachments: "Attach the signed contract to this case"
+- Manage document categories and metadata
+- Handle file uploads and downloads
+- Organize attachments with categories
+- Process document content and metadata
+
+---
 
 ### v0.1.4 - Data View Operations
 
@@ -93,51 +115,23 @@ Introducing the essential tools for Pega case management through natural languag
 
 ## 🗺️ Release Roadmap
 
-### v0.1.x - Attachments & Documents: File Management
+### v0.1.x - Documents: Content Management
 
 **Status:** 📋 Planned
 
-#### 📎 File Management - Attachment and Document Operations
+#### 📄 Document Operations - Content and Metadata Management
 
-Comprehensive file handling and document management capabilities.
+Document handling and content management capabilities.
 
 #### What's New:
 
-- ✅ **Attachment Management** (7 tools) - Upload, organize, and retrieve files
 - ✅ **Document Operations** (2 tools) - Handle documents and content
 
 #### Key Capabilities:
 
-- Upload attachments: "Attach the signed contract to this case"
-- Manage document categories and metadata
-- Handle file uploads and downloads
-- Organize attachments with categories
+- Retrieve document content and metadata
+- Remove case documents
 - Process document content and metadata
-
-#### Configuration:
-
-```bash
-# Enable previous tools plus:
-PEGA_ATTACHMENT_TOOLS=true         # File and attachment management (7 tools)
-PEGA_DOCUMENT_TOOLS=true           # Document operations (2 tools)
-```
-
-#### Tools Added:
-
-**Attachment Tools:**
-
-- `add_case_attachments` - Attach files/URLs to cases
-- `delete_attachment` - Remove attachments from cases
-- `get_attachment` - Retrieve attachment content
-- `get_attachment_categories` - List available attachment categories
-- `get_case_attachments` - List all case attachments
-- `update_attachment` - Update attachment metadata
-- `upload_attachment` - Upload files as temporary attachments
-
-**Document Tools:**
-
-- `get_document` - Retrieve document content as base64
-- `remove_case_document` - Remove documents linked to cases
 
 ---
 
