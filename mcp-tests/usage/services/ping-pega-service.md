@@ -1,18 +1,18 @@
 # ping-pega-service End User Usage
 
 ## Overview
-This document shows how end users can invoke the ping-pega-service tool to test Pega Platform connectivity.
+This document shows how end users can invoke the ping-pega-service tool to test Pega Infinity connectivity.
 
 ## Use Case 1: Basic Connectivity Test
 
 ### Context
-Test if your Pega MCP server can connect to the Pega Platform and authenticate properly.
+Test if your Pega MCP server can connect to the Pega Infinity server and authenticate properly.
 
 ### How to Invoke
 In Claude Desktop or any MCP-compatible client, use this request:
 
 ```
-Please use the ping_pega_service tool to test connectivity to our Pega Platform.
+Please use the ping_pega_service tool to test connectivity to the Pega Infinity server.
 ```
 
 ### Expected Response
@@ -39,12 +39,12 @@ Same as Use Case 1 - comprehensive connectivity and authentication verification.
 
 ### If Authentication Fails
 - Check environment variables (PEGA_CLIENT_ID, PEGA_CLIENT_SECRET)
-- Verify OAuth2 client configuration in Pega Platform
+- Verify OAuth2 client configuration in Pega Infinity
 - Confirm base URL is accessible
 
 ### If Connection Fails
 - Verify PEGA_BASE_URL is correct and accessible
-- Check network connectivity to Pega Platform
+- Check network connectivity to Pega Infinity server
 - Confirm firewall settings allow HTTPS connections
 
 ## Integration Examples

@@ -1,7 +1,7 @@
 # get-case End User Usage
 
 ## Overview
-This document shows how end users can invoke the get-case tool to retrieve case information from Pega Platform.
+This document shows how end users can invoke the get-case tool to retrieve case information from Pega Infinity application.
 
 ## Use Case 1: Basic Case Information Lookup
 

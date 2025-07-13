@@ -324,7 +324,7 @@ export class GetAssignmentActionTool extends BaseTool {
         response += '\n**Suggestion**: Verify the Pega instance URL and network connectivity.\n';
         break;
       case 'INTERNAL_SERVER_ERROR':
-        response += '\n**Suggestion**: The Pega Platform encountered an internal error. This could be due to preprocessing rule failures or other server-side issues. Please try again or contact support if the issue persists.\n';
+        response += '\n**Suggestion**: The Pega Infinity server encountered an internal error. This could be due to preprocessing rule failures or other server-side issues. Please try again or contact support if the issue persists.\n';
         break;
     }
 

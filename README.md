@@ -5,7 +5,7 @@
 [![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](LICENSE)
 [![Node.js](https://img.shields.io/badge/Node.js-22%2B-green.svg)](https://nodejs.org/)
 [![MCP](https://img.shields.io/badge/MCP-Compatible-purple.svg)](https://modelcontextprotocol.io/)
-[![Pega Platform](https://img.shields.io/badge/Pega_Infinity-23%2B-red.svg)](https://www.pega.com/)
+[![Pega Infinity](https://img.shields.io/badge/Pega_Infinity-23%2B-red.svg)](https://www.pega.com/)
 
 ## Enabling conversational interaction with Pega Infinity&trade; applications
 
@@ -41,7 +41,7 @@ npm install -g @marco-looy/pega-dx-mcp
 
 ### Integration with MCP Clients
 
-Compatible with Claude Desktop, Cursor, Cline, and other MCP-enabled applications. Add to your MCP client's configuration file:
+Compatible with Claude Desktop, Claude Code, Cursor, Cline, and many other MCP-enabled applications. Add to your MCP client's configuration file:
 
 ```json
 {
@@ -62,10 +62,11 @@ Compatible with Claude Desktop, Cursor, Cline, and other MCP-enabled application
 **Configuration file locations:**
 
 - **Claude Desktop**: `~/Library/Application Support/Claude/claude_desktop_config.json` (macOS) or `%APPDATA%/Claude/claude_desktop_config.json` (Windows)
+- **Claude Code**: `.mcp.json` in your project root
 - **Cursor**: `.cursor/mcp.json` in your project root
 - **Cline**: MCP settings in VS Code
 
-**Verify installation:** Restart your MCP client and confirm the Pega DX tools are available.
+**Verify installation:** Restart your MCP client and confirm the Pega DX MCP tools are available.
 
 ## 🏗️ Architecture
 
@@ -200,7 +201,7 @@ Control which tool categories are loaded using environment variables in your MCP
 
 #### Service Tools (1)
 
-- `ping_pega_service` - Test OAuth2 connectivity to Pega Platform
+- `ping_pega_service` - Test OAuth2 connectivity to Pega Infinity
 
 #### Tag Tools (3)
 
@@ -253,7 +254,7 @@ PEGA_CLIENT_SECRET=your-oauth-client-secret
 
 ### OAuth Setup
 
-1. **Register OAuth Client** in your Pega Platform
+1. **Register OAuth Client** in your Pega Infinity instance
 2. **Configure Scopes** for API access
 3. **Set Redirect URIs** if using authorization code flow
 4. **Update Environment** with client credentials

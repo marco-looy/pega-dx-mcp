@@ -223,7 +223,7 @@ export class BulkCasesPatchTool extends BaseTool {
       }
       
     } else {
-      response += '**Platform**: Pega Platform (Execution Mode Determined)\n\n';
+      response += '**Infinity**: Pega Infinity (Execution Mode Determined)\n\n';
       response += '### Execution Status\n';
       response += '- **Status**: Bulk action execution completed\n';
       response += `- **Cases Processed**: ${cases.length}\n`;
@@ -320,7 +320,7 @@ export class BulkCasesPatchTool extends BaseTool {
         response += `**Details**: ${error.details || 'An unhandled server exception occurred'}\n\n`;
         response += '**Resolution**:\n';
         response += '- Contact system administrator to review server logs\n';
-        response += '- Verify Pega Platform configuration for bulk operations\n';
+        response += '- Verify Pega Infinity configuration for bulk operations\n';
         response += '- Check if the specified action ID is valid and accessible\n';
         break;
         
@@ -360,7 +360,7 @@ export class BulkCasesPatchTool extends BaseTool {
     response += '\n### Troubleshooting Guide\n';
     response += '- **Verify Case IDs**: Ensure all case IDs are valid full case handles\n';
     response += '- **Check Action ID**: Confirm the action ID exists and is a case-wide action\n';
-    response += '- **Platform Compatibility**: Verify the action is supported on your Pega platform version\n';
+    response += '- **Version Compatibility**: Verify the action is supported on your Pega Infinity version\n';
     response += '- **Permissions**: Ensure your user account has bulk operation permissions\n';
     response += '- **System Resources**: For large bulk operations, check system capacity\n';
 

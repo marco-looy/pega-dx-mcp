@@ -147,7 +147,7 @@ export class BaseTool {
       'UNAUTHORIZED': '\n**Suggestion**: Authentication may have expired. The system will attempt to refresh the token on the next request.\n',
       'BAD_REQUEST': '\n**Suggestion**: Check the parameters and their format.\n',
       'CONNECTION_ERROR': '\n**Suggestion**: Verify the Pega instance URL and network connectivity.\n',
-      'INTERNAL_SERVER_ERROR': '\n**Suggestion**: The Pega Platform encountered an internal error. Please try again or contact support if the issue persists.\n'
+      'INTERNAL_SERVER_ERROR': '\n**Suggestion**: The Pega Infinity server encountered an internal error. Please try again or contact support if the issue persists.\n'
     };
 
     return guidanceMap[errorType] || '\n**Suggestion**: Please check the parameters and try again.\n';

@@ -187,7 +187,7 @@ export class GetNextAssignmentTool extends BaseTool {
           response += '\n**Suggestion**: Verify the Pega instance URL and network connectivity.\n';
           break;
         case 'SERVER_ERROR':
-          response += '\n**Suggestion**: The Pega Platform encountered an internal error. Please try again or contact support.\n';
+          response += '\n**Suggestion**: The Pega Infinity server encountered an internal error. Please try again or contact support.\n';
           break;
       }
 

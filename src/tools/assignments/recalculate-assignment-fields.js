@@ -560,7 +560,7 @@ export class RecalculateAssignmentFieldsTool extends BaseTool {
         response += '\n**Suggestion**: Verify the Pega instance URL and network connectivity.\n';
         break;
       case 'INTERNAL_SERVER_ERROR':
-        response += '\n**Suggestion**: The Pega Platform encountered an internal error during calculation processing. This could be due to:\n';
+        response += '\n**Suggestion**: The Pega Infinity server encountered an internal error during calculation processing. This could be due to:\n';
         response += '- Field calculation rule execution failures\n';
         response += '- When condition rule evaluation errors\n';
         response += '- Data Transform or Activity execution issues during calculations\n';

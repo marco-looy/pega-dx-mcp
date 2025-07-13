@@ -4,7 +4,7 @@
 
 ## Overview
 
-This directory contains comprehensive testing documentation for all 63 MCP tools in the Pega DX MCP Server. Each tool is tested systematically with real API calls against our Pega Platform environment.
+This directory contains comprehensive testing documentation for all 63 MCP tools in the Pega DX MCP Server. Each tool is tested systematically with real API calls against our Pega Infinity environment.
 
 ## Quick Navigation
 
@@ -53,7 +53,7 @@ This directory contains comprehensive testing documentation for all 63 MCP tools
 
 ## Environment Details
 
-### Pega Platform
+### Pega Infinity
 - **Environment**: https://pega.52a90b217c219.pegaenablement.com
 - **Application**: DIYRecipe (ON6E5R)
 - **Authentication**: OAuth2 Client Credentials ✅
@@ -143,7 +143,7 @@ Each tool must have:
 - **Actual responses**: Document complete API responses
 - **Reproducible**: Exact parameters and steps documented
 - **Timestamped**: All results include execution timestamps
-- **Versioned**: Track MCP server and Pega platform versions
+- **Versioned**: Track MCP server and Pega Infinity versions
 
 ## Support
 
@@ -161,4 +161,4 @@ Each tool must have:
 
 ---
 
-*This documentation ensures comprehensive, standardized testing of all MCP tools with real Pega Platform integration.*
+*This documentation ensures comprehensive, standardized testing of all MCP tools with real Pega Infinity integration.*

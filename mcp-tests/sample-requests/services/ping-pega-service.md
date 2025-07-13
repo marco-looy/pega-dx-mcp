@@ -1,7 +1,7 @@
 # ping-pega-service Sample Requests
 
 ## Use Case 1: Basic Connectivity Test
-Test OAuth2 authentication and verify Pega Platform connectivity.
+Test OAuth2 authentication and verify Pega Infinity connectivity.
 
 ```json
 {

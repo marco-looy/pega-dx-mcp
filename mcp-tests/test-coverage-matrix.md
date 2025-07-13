@@ -4,7 +4,7 @@
 
 ## Overview
 
-This matrix tracks the testing status of all 63 MCP tools in the Pega DX MCP Server. Each tool is tested systematically with real API calls against our Pega Platform environment.
+This matrix tracks the testing status of all 63 MCP tools in the Pega DX MCP Server. Each tool is tested systematically with real API calls against our Pega Infinity application.
 
 ## Legend
 

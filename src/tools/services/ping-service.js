@@ -14,7 +14,7 @@ export class PingServiceTool extends BaseTool {
   static getDefinition() {
     return {
       name: 'ping_pega_service',
-      description: 'Test OAuth2 connectivity to Pega Platform and verify authentication configuration',
+      description: 'Test OAuth2 connectivity to Pega Infinity server and verify authentication configuration',
       inputSchema: {
         type: 'object',
         properties: {},

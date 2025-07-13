@@ -576,7 +576,7 @@ export class RefreshCaseActionTool extends BaseTool {
         response += '\n**Suggestion**: Verify the Pega instance URL and network connectivity.\n';
         break;
       case 'INTERNAL_SERVER_ERROR':
-        response += '\n**Suggestion**: The Pega Platform encountered an internal error during refresh processing. This could be due to:\n';
+        response += '\n**Suggestion**: The Pega Infinity server encountered an internal error during refresh processing. This could be due to:\n';
         response += '- Data Transform execution failures in form refresh settings\n';
         response += '- Preprocessing or post-processing errors for embedded actions\n';
         response += '- Generative AI service failures when fillFormWithAI=true\n';

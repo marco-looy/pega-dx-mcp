@@ -4,9 +4,9 @@
 
 ## Environment Overview
 
-This document captures the details of our Pega Platform environment used for comprehensive MCP tool testing.
+This document captures the details of our Pega Infinity application used for comprehensive MCP tool testing.
 
-## Pega Platform Configuration
+## Pega Infinity Configuration
 
 ### Connection Details
 - **Environment**: Pega Cloud (Pega Enablement)

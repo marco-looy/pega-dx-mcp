@@ -2553,7 +2553,7 @@ export class PegaAPIClient {
             troubleshooting: [
               'Verify PEGA_BASE_URL is correct and accessible',
               'Check PEGA_CLIENT_ID and PEGA_CLIENT_SECRET are valid',
-              'Ensure OAuth2 client is configured in Pega Platform',
+              'Ensure OAuth2 client is configured in Pega Infinity',
               'Verify network connectivity to Pega instance'
             ]
           }]
