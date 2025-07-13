@@ -6,6 +6,28 @@ This document tracks all releases of the Pega DX MCP Server, providing detailed 
 
 ## 🚀 Current Releases
 
+### v0.1.6 - Document Operations
+
+**Status:** ✅ Available
+
+**Document Content Management**
+
+Introducing comprehensive document content management capabilities for Pega cases through natural language interfaces.
+
+**What's New:**
+
+- ✅ **Document Operations** (2 tools) - Retrieve and manage document content
+
+**Key Capabilities:**
+
+- Retrieve document content: "Get the contents of document ID 12345"
+- Remove case documents: "Remove the contract document from this case"
+- Process document content and metadata
+- Handle document lifecycle management
+- Manage document-case relationships
+
+---
+
 ### v0.1.5 - Attachment Management
 
 **Status:** ✅ Available
@@ -114,26 +136,6 @@ Introducing the essential tools for Pega case management through natural languag
 ---
 
 ## 🗺️ Release Roadmap
-
-### v0.1.x - Documents: Content Management
-
-**Status:** 📋 Planned
-
-#### 📄 Document Operations - Content and Metadata Management
-
-Document handling and content management capabilities.
-
-#### What's New:
-
-- ✅ **Document Operations** (2 tools) - Handle documents and content
-
-#### Key Capabilities:
-
-- Retrieve document content and metadata
-- Remove case documents
-- Process document content and metadata
-
----
 
 ### v0.1.x - Collaboration: Team Management
 
