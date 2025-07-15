@@ -6,6 +6,30 @@ This document tracks all releases of the Pega DX MCP Server, providing detailed 
 
 ## 🚀 Current Releases
 
+### v0.1.7 - Participant Management
+
+**Status:** ✅ Available
+
+**Team Collaboration and Case Access Management**
+
+Introducing comprehensive participant management capabilities for Pega cases through natural language interfaces, enabling team collaboration and role-based access control.
+
+**What's New:**
+
+- ✅ **Participant Management** (7 tools) - Manage case participants and roles
+
+**Key Capabilities:**
+
+- Add case participants: "Add Sarah as a reviewer for this claim"
+- Manage participant roles and permissions
+- Update participant information: "Change John's role to approver"
+- Remove participants: "Remove the external consultant from this case"
+- List case participants: "Who has access to this case?"
+- Explore available roles: "What participant roles are available?"
+- Get detailed role information for proper assignment
+
+---
+
 ### v0.1.6 - Document Operations
 
 **Status:** ✅ Available
@@ -137,27 +161,45 @@ Introducing the essential tools for Pega case management through natural languag
 
 ## 🗺️ Release Roadmap
 
-### v0.1.x - Collaboration: Team Management
+### v0.1.8 - Follower Management
 
 **Status:** 📋 Planned
 
-#### 👥 Team Collaboration - User Management and Social Features
+#### 📢 Case Following and Notifications
 
-Enable team collaboration and case organization features.
+Enable users to subscribe to case updates and receive notifications about case progress.
 
 #### What's New:
 
-- ✅ **Participant Management** (7 tools) - Manage case participants and roles
 - ✅ **Follower Management** (3 tools) - Subscribe to case updates and notifications
+
+#### Key Capabilities:
+
+- Follow case updates: "Subscribe me to updates on this case"
+- Manage case followers: "Who is following this case?"
+- Handle notification preferences and subscriptions
+- Enable team awareness of case progress
+
+---
+
+### v0.1.9 - Tagging System
+
+**Status:** 📋 Planned
+
+#### 🏷️ Case Organization and Categorization
+
+Enable case organization through flexible tagging and categorization systems.
+
+#### What's New:
+
 - ✅ **Tagging System** (3 tools) - Organize and categorize cases
 
 #### Key Capabilities:
 
-- Manage case participants: "Add Sarah as a reviewer for this claim"
-- Follow case updates: "Subscribe me to updates on this case"
 - Organize with tags: "Tag this case as high-priority"
-- Handle participant roles and permissions
-- Enable case subscription and notification workflows
+- Manage case categories and labels
+- Enable flexible case organization
+- Support dynamic case classification
 
 ---
 
