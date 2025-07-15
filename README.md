@@ -9,7 +9,7 @@
 
 ## Enabling conversational interaction with Pega Infinity&trade; applications
 
-This package transforms Pega Infinity&trade; interactions into intuitive, conversational experiences through the Model Context Protocol. By bridging Pega DX APIs with natural language interfaces, it enables GenAI Agents, IDEs, and other MCP-enabled tools to interact with Pega Infinity&trade; applications using simple, human-readable commands.
+This package transforms Pega Infinity&trade; interactions into intuitive, conversational experiences through the [Model Context Protocol](https://modelcontextprotocol.io/introduction). By bridging [Pega DX API](https://docs.pega.com/bundle/dx-api/page/platform/dx-api/dx-api-overview.html) with natural language interfaces, it enables GenAI Agents, IDEs, and other MCP-enabled tools to interact with Pega Infinity&trade; applications using simple, human-readable commands.
 
 ## 🧪 Experimental
 
@@ -41,7 +41,7 @@ npm install -g @marco-looy/pega-dx-mcp
 
 ### Integration with MCP Clients
 
-Compatible with Claude Desktop, Claude Code, Cursor, Cline, and many other MCP-enabled applications. Add to your MCP client's configuration file:
+Compatible with Claude Desktop, Claude Code, Cline, and many other MCP-enabled applications. Add to your MCP client's configuration file:
 
 ```json
 {
@@ -61,12 +61,11 @@ Compatible with Claude Desktop, Claude Code, Cursor, Cline, and many other MCP-e
 
 **Configuration file locations:**
 
-- **Claude Desktop**: `~/Library/Application Support/Claude/claude_desktop_config.json` (macOS) or `%APPDATA%/Claude/claude_desktop_config.json` (Windows)
-- **Claude Code**: `.mcp.json` in your project root
-- **Cursor**: `.cursor/mcp.json` in your project root
-- **Cline**: MCP settings in VS Code
+- **Claude Desktop**: See Claude Desktop documentation how to [add an MCP Server](https://modelcontextprotocol.io/quickstart/user#2-add-the-filesystem-mcp-server)
+- **Claude Code**: See Claude Code documentation how to [configure MCP Servers](https://docs.anthropic.com/en/docs/claude-code/mcp#configure-mcp-servers)
+- **Cline**: See Cline documentation how to [edit Cline MCP settings](https://docs.cline.bot/mcp/configuring-mcp-servers#editing-mcp-settings-files)
 
-**Verify installation:** Restart your MCP client and confirm the Pega DX MCP tools are available.
+**TIP:** Restart your MCP client and confirm the Pega DX MCP tools are available.
 
 ## 🏗️ Architecture
 
