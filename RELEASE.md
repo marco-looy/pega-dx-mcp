@@ -10,7 +10,7 @@ This document tracks all releases of the Pega DX MCP Server, providing detailed 
 
 **Status:** ✅ Available
 
-**Team Collaboration and Case Access Management**
+**Participant Management**
 
 Introducing comprehensive participant management capabilities for Pega cases through natural language interfaces, enabling team collaboration and role-based access control.
 

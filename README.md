@@ -75,7 +75,7 @@ The Pega DX MCP Server bridges GenAI applications with Pega Infinity using the M
 
 ## 🛠️ Available Tools
 
-The Pega DX MCP Server provides **61 comprehensive tools** organized into 11 functional categories. Each category can be enabled or disabled via environment variables for granular control.
+The Pega DX MCP Server provides **60+ comprehensive tools** organized into **10+ functional categories**. Each category can be enabled or disabled via environment variables for granular control.
 
 ### 🔧 Tool Configuration
 
