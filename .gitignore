@@ -146,3 +146,9 @@ Prompt*
 WIP.md
 
 bin/act
+CLAUDE.md
+.gitignore
+UNIT-TESTING*
+unit-test-logs/*
+unit-test-results/*
+
