@@ -35,7 +35,7 @@ The Pega DX MCP Server is an experimental project exploring the intersection of 
 ### Installation
 
 ```bash
-# Install from npm (recommended)
+# Install from npm 
 npm install -g @marco-looy/pega-dx-mcp
 ```
 
