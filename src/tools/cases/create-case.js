@@ -149,19 +149,45 @@ export class CreateCaseTool extends BaseTool {
   }
 
   /**
-   * Discover available fields for case creation and provide guidance
+   * Discover available fields for case creation and provide guidance using data objects approach
    */
   async discoverFieldsAndGuide(caseTypeID, originalError = null, attemptedContent = null) {
     try {
-      // Call get_case_type_action internally to discover fields
-      const fieldDiscovery = await this.pegaClient.getCaseTypeAction(caseTypeID.trim(), 'Create');
+      // Step 1: Get case data objects to find the default list data view
+      const dataObjectsResponse = await this.pegaClient.getDataObjects({ type: 'case' });
+      
+      if (!dataObjectsResponse.success) {
+        throw new Error(`Failed to retrieve case data objects: ${dataObjectsResponse.error?.message || 'Unknown error'}`);
+      }
+      
+      // Step 2: Find the matching case type in the data objects  
+      const dataObjects = dataObjectsResponse.data?.dataObjects || dataObjectsResponse.data;
+      const caseTypeData = this.findCaseTypeInDataObjects(dataObjects, caseTypeID);
+      
+      if (!caseTypeData) {
+        throw new Error(`Case type "${caseTypeID}" not found in available data objects`);
+      }
+      
+      if (!caseTypeData.defaultListDataView) {
+        throw new Error(`No default list data view found for case type "${caseTypeID}"`);
+      }
+      
+      // Step 3: Get field metadata from the data view
+      const fieldMetadataResponse = await this.pegaClient.getDataViewMetadata(caseTypeData.defaultListDataView);
+      
+      if (!fieldMetadataResponse.success) {
+        throw new Error(`Failed to retrieve field metadata for data view "${caseTypeData.defaultListDataView}": ${fieldMetadataResponse.error?.message || 'Unknown error'}`);
+      }
+      
+      // Step 4: Process field metadata and filter out OOTB fields
+      const processedFields = this.processDataViewFields(fieldMetadataResponse.data);
       
       // Format and return field discovery guidance
       return {
         content: [
           {
             type: "text",
-            text: this.formatFieldDiscoveryGuidance(caseTypeID, fieldDiscovery, originalError, attemptedContent)
+            text: this.formatFieldDiscoveryGuidanceFromDataView(caseTypeID, processedFields, caseTypeData, originalError, attemptedContent)
           }
         ]
       };
@@ -173,12 +199,98 @@ export class CreateCaseTool extends BaseTool {
         errorMessage += `\n\nOriginal creation error: ${originalError.message}`;
       }
       
-      errorMessage += `\n\nPlease use the get_case_type_action tool with actionID="Create" to manually discover available fields.`;
+      errorMessage += `\n\nField discovery error: ${discoveryError.message}`;
+      errorMessage += `\n\nPlease verify the case type ID is correct and accessible.`;
       
       return {
         error: errorMessage
       };
     }
+  }
+
+  /**
+   * Find case type data in the data objects response
+   */
+  findCaseTypeInDataObjects(dataObjectsData, caseTypeID) {
+    if (!dataObjectsData || !Array.isArray(dataObjectsData)) {
+      return null;
+    }
+    
+    // Look for exact match first
+    let caseTypeData = dataObjectsData.find(obj => obj.classID === caseTypeID);
+    
+    // If no exact match, try partial matching (case insensitive)
+    if (!caseTypeData) {
+      const caseTypeIDLower = caseTypeID.toLowerCase();
+      caseTypeData = dataObjectsData.find(obj => 
+        obj.classID && obj.classID.toLowerCase().includes(caseTypeIDLower)
+      );
+    }
+    
+    return caseTypeData;
+  }
+
+  /**
+   * Process data view fields and filter out OOTB Pega fields
+   */
+  processDataViewFields(fieldMetadataData) {
+    if (!fieldMetadataData || !fieldMetadataData.fields || !Array.isArray(fieldMetadataData.fields)) {
+      return [];
+    }
+    
+    return fieldMetadataData.fields
+      .filter(field => {
+        // Filter out OOTB Pega fields (px, py, pz prefixes)
+        const fieldName = field.fieldID || field.name || '';
+        const isOOTBField = /^p[xyz]/i.test(fieldName);
+        
+        // Also filter out read-only fields
+        const isReadOnly = field.isReadOnly === true;
+        
+        // Filter out associated/nested fields (those with colons or associationID)
+        const hasColonNotation = fieldName.includes(':');
+        const isAssociatedField = field.associationID !== undefined;
+        const isEmbeddedPageField = fieldName.startsWith('!P!');
+        
+        return !isOOTBField && !isReadOnly && !hasColonNotation && !isAssociatedField && !isEmbeddedPageField;
+      })
+      .map(field => ({
+        name: field.fieldID || field.name,
+        type: this.mapDataViewFieldType(field.dataType || field.fieldType),
+        label: field.name || field.fieldID,
+        required: field.required || false, // Data view metadata typically doesn't indicate required fields
+        category: field.category,
+        maxLength: field.maxLength,
+        dataType: field.dataType,
+        fieldType: field.fieldType
+      }));
+  }
+
+  /**
+   * Map data view field types to user-friendly types
+   */
+  mapDataViewFieldType(dataType) {
+    if (!dataType) return 'Text';
+    
+    const typeMapping = {
+      'Text': 'Text',
+      'Text (single line)': 'Text', 
+      'Text (multiple lines)': 'Text',
+      'Integer': 'Integer',
+      'Decimal': 'Decimal',
+      'Number': 'Integer',
+      'Date': 'Date',
+      'DateTime': 'DateTime',
+      'Time': 'TimeOfDay',
+      'TimeOfDay': 'TimeOfDay',
+      'Boolean': 'Boolean',
+      'True/False': 'Boolean',
+      'Page': 'Page',
+      'Page List': 'Page List',
+      'Page Group': 'Page Group'
+    };
+    
+    return typeMapping[dataType] || 'Text';
   }
 
   /**
@@ -319,7 +431,125 @@ export class CreateCaseTool extends BaseTool {
   }
 
   /**
-   * Format field discovery guidance response
+   * Format field discovery guidance response using data view fields
+   */
+  formatFieldDiscoveryGuidanceFromDataView(caseTypeID, processedFields, caseTypeData, originalError = null, attemptedContent = null) {
+    let response = `## Field Discovery for Case Type: ${caseTypeID}\n\n`;
+    
+    // Add timestamp
+    response += `*Field discovery completed at: ${new Date().toISOString()}*\n\n`;
+    
+    // Add data view information
+    response += `**Data View**: ${caseTypeData.defaultListDataView}\n`;
+    response += `**Case Type Description**: ${caseTypeData.description || 'N/A'}\n\n`;
+    
+    
+    // Show original error if provided
+    if (originalError) {
+      response += `### ❌ Case Creation Error\n`;
+      response += `**Error**: ${originalError.message}\n\n`;
+      
+      if (attemptedContent && Object.keys(attemptedContent).length > 0) {
+        response += `**Attempted Content**:\n`;
+        response += `\`\`\`json\n${JSON.stringify(attemptedContent, null, 2)}\n\`\`\`\n\n`;
+      }
+    }
+    
+    response += `### 📋 Available Fields for Case Creation\n\n`;
+    
+    if (processedFields.length > 0) {
+      response += `| Field Name | Type | Label | Required | Category | Example |\n`;
+      response += `|------------|------|-------|----------|----------|----------|\n`;
+      
+      // Sort fields by category first, then alphabetically
+      processedFields.sort((a, b) => {
+        if (a.category !== b.category) {
+          return (a.category || '').localeCompare(b.category || '');
+        }
+        return a.name.localeCompare(b.name);
+      });
+      
+      processedFields.forEach(field => {
+        const example = this.generateFieldExample(field.type, field.name);
+        const exampleStr = typeof example === 'string' ? example : JSON.stringify(example);
+        const requiredIcon = field.required ? '✅' : '';
+        const category = field.category || 'General';
+        
+        response += `| ${field.name} | ${field.type} | ${field.label} | ${requiredIcon} | ${category} | ${exampleStr} |\n`;
+      });
+      
+      response += `\n*Required fields are marked with ✅*\n`;
+      response += `*OOTB Pega fields (px, py, pz) have been filtered out*\n\n`;
+    } else {
+      response += `No business fields discovered after filtering OOTB fields. This case type may be configured for automatic field population or may require different parameters.\n\n`;
+    }
+    
+    // Generate sample case creation request
+    response += `### 🚀 Sample Case Creation Request\n\n`;
+    response += `\`\`\`json\n`;
+    response += `{\n`;
+    response += `  "caseTypeID": "${caseTypeID}",\n`;
+    response += `  "content": {\n`;
+    
+    if (processedFields.length > 0) {
+      // Show up to 5 fields for the sample
+      const sampleFields = processedFields.slice(0, 5);
+      
+      sampleFields.forEach((field, index) => {
+        const example = this.generateFieldExample(field.type, field.name);
+        const comma = index < sampleFields.length - 1 ? ',' : '';
+        
+        if (field.type === 'Page List') {
+          response += `    "${field.name}": []${comma}  // Array of objects\n`;
+        } else if (field.type === 'Page') {
+          response += `    "${field.name}": {}${comma}  // Nested object\n`;
+        } else {
+          response += `    "${field.name}": ${JSON.stringify(example)}${comma}\n`;
+        }
+      });
+    } else {
+      response += `    // No specific fields required - try basic case properties\n`;
+      response += `    "Description": "Sample case description",\n`;
+      response += `    "Priority": "Medium"\n`;
+    }
+    
+    response += `  }\n`;
+    response += `}\n`;
+    response += `\`\`\`\n\n`;
+    
+    // Add helpful tips
+    response += `### 💡 Tips for Successful Case Creation\n\n`;
+    response += `1. **Data View Based**: Fields discovered from ${caseTypeData.defaultListDataView}\n`;
+    response += `2. **OOTB Fields Filtered**: Pega system fields (px, py, pz) are excluded\n`;
+    response += `3. **Field Types**: Match the expected data types shown above\n`;
+    response += `4. **Case Categories**: Fields are organized by category for clarity\n`;
+    response += `5. **Validation**: Some fields may have additional validation rules not shown here\n\n`;
+    
+    // Add workflow guidance
+    response += `### 🔄 Recommended Workflow\n\n`;
+    response += `1. Review the available fields above\n`;
+    response += `2. Use the sample JSON as a template\n`;
+    response += `3. Customize field values for your specific case\n`;
+    response += `4. Call create_case again with your content object\n`;
+    response += `5. If creation still fails, check Pega AllowedStartingFields configuration\n\n`;
+    
+    // Add troubleshooting section
+    response += `### 🔧 Troubleshooting\n\n`;
+    if (processedFields.length === 0) {
+      response += `- **No Fields Found**: This may indicate the case type uses a different field configuration approach\n`;
+      response += `- **Try Without Content**: Call create_case with just the caseTypeID to see what Pega accepts\n`;
+      response += `- **Check Configuration**: Verify the case type supports the discovered data view\n`;
+    } else {
+      response += `- **Field Validation**: If creation fails, check field formats and required validation rules\n`;
+      response += `- **AllowedStartingFields**: Ensure fields are configured in the case type's AllowedStartingFields Data Transform\n`;
+      response += `- **Case Access**: Verify you have permission to create cases of this type\n`;
+    }
+    
+    return response;
+  }
+
+  /**
+   * Format field discovery guidance response (legacy UI resources method)
    */
   formatFieldDiscoveryGuidance(caseTypeID, discoveryData, originalError = null, attemptedContent = null) {
     let response = `## Field Discovery for Case Type: ${caseTypeID}\n\n`;
