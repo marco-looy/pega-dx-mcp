@@ -104,9 +104,10 @@ export class BaseTool {
    * Format error response for display
    * @param {string} operation - Operation description
    * @param {Object} error - Error object
+   * @param {Object} options - Additional context options (optional)
    * @returns {string} Formatted error response text
    */
-  formatErrorResponse(operation, error) {
+  formatErrorResponse(operation, error, options = {}) {
     let response = `## Error: ${operation}\n\n`;
     
     response += `**Error Type**: ${error.type}\n`;
@@ -250,6 +251,24 @@ export class BaseTool {
   }
 
   /**
+   * Create a standardized error response with context options
+   * @param {string} operation - Operation description
+   * @param {Object} error - Error object
+   * @param {Object} options - Additional context options
+   * @returns {Object} MCP tool response object
+   */
+  createErrorResponse(operation, error, options = {}) {
+    return {
+      content: [
+        {
+          type: 'text',
+          text: this.formatErrorResponse(operation, error, options)
+        }
+      ]
+    };
+  }
+
+  /**
    * Execute operation with standardized error handling
    * @param {string} operation - Operation description
    * @param {Function} apiCall - API call function
@@ -263,7 +282,7 @@ export class BaseTool {
       if (result.success) {
         return this.createResponse(true, operation, result.data, options);
       } else {
-        return this.createResponse(false, operation, result.error);
+        return this.createErrorResponse(operation, result.error, options);
       }
     } catch (error) {
       return {

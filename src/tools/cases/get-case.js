@@ -73,8 +73,33 @@ export class GetCaseTool extends BaseTool {
     return await this.executeWithErrorHandling(
       `Case Details: ${caseID}`,
       async () => await this.pegaClient.getCase(caseID.trim(), { viewType, pageName, originChannel }),
-      { viewType, pageName, originChannel }
+      { caseID, viewType, pageName, originChannel }
     );
+  }
+
+  /**
+   * Override formatSuccessResponse to display eTag information
+   */
+  formatSuccessResponse(operation, data, options = {}) {
+    const { caseID } = options;
+    
+    let response = `## ${operation}\n\n`;
+    response += `*Operation completed at: ${new Date().toISOString()}*\n\n`;
+    
+    // Display eTag information prominently if available
+    if (data.eTag) {
+      response += '### 🔑 Current eTag Information\n';
+      response += `- **eTag**: \`${data.eTag}\`\n`;
+      response += '- **Usage**: Use this exact value as eTag parameter for update operations\n';
+      response += '- **Format**: ISO date-time representing pxSaveDateTime\n\n';
+    }
+    
+    // Add the standard data formatting
+    if (data && typeof data === 'object') {
+      response += this.formatDataSection(data);
+    }
+    
+    return response;
   }
 
 }

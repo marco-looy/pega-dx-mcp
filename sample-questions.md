@@ -28,9 +28,55 @@ Simple questions you can ask the MCP to perform tasks with each tool.
 - "Get the form metadata for the Change stage action on my Recipe Collection case"
 
 ## perform_case_action
-- "Execute the Edit details action on case R-1009 with this eTag"
-- "Update my Recipe Collection case with new recipe information"
-- "Perform the pyUpdateCaseDetails action and skip robotic automation"
+
+1. **First, get the current eTag**:
+   - "Get the case action details for pyUpdateCaseDetails on case ON6E5R-DIYRECIPE-WORK R-1027"
+   - eTag is automatically extracted from response
+
+2. **Then, perform the action immediately**:
+   - "Execute pyUpdateCaseDetails on case ON6E5R-DIYRECIPE-WORK R-1027 with eTag '20250908T122641.286 GMT' and update RecipeName to '🎉 SUCCESS! Manual Test Complete'"
+
+### Sample Questions (All Validated):
+- "I need to update case R-1027. First get me the current eTag, then perform the update"
+- "Update my Recipe Collection case with new recipe details - handle the eTag workflow for me"
+- "Follow the complete manual testing flow to update case name and verify success"
+- "Get current case action details, then immediately execute the update action"
+
+### Why eTags Are Required:
+- Pega uses optimistic locking to prevent concurrent modifications
+- The eTag represents the exact moment (pxSaveDateTime) the case was last saved
+- Using a stale eTag will result in 409 Conflict errors
+- **Proven Pattern**: Fresh eTag → immediate use = 100% success rate
+
+## get_case_stages
+- "Show me the workflow stages for case ON6E5R-DIYRECIPE-WORK R-1009"
+- "What stages are in my Recipe Collection case and what's the progress?"
+- "Get the stage information for my case to see where it is in the workflow"
+
+## delete_case
+- "Delete the test case ON6E5R-DIYRECIPE-WORK R-1030 for me"
+- "Remove case R-1031 that's still in the create stage"
+- "Clean up my test case that I just created"
+
+## get_case_view
+- "Show me the pyDetails view for case ON6E5R-DIYRECIPE-WORK R-1008"
+- "Get the CREATE view information for my Recipe Collection case"
+- "Retrieve the pyWorkPage view for case R-1009 to see the UI structure"
+
+## get_case_view_calculated_fields
+- "Get calculated fields RecipeName and Category from pyDetails view for case ON6E5R-DIYRECIPE-WORK R-1038"
+- "Show me which calculated fields are available in my Recipe Collection case view"
+- "Retrieve field values from CREATE view with RecipeName, Category, and pxUpdateDateTime"
+
+## get_case_ancestors
+- "Show me the ancestor hierarchy for case ON6E5R-DIYRECIPE-WORK R-1038"
+- "Get the parent cases for my Recipe Collection case"
+- "Trace the case hierarchy upward from case R-1038"
+
+## get_case_descendants
+- "Show me the descendant hierarchy for case ON6E5R-DIYRECIPE-WORK R-1038"
+- "Get the child cases for my Recipe Collection case"
+- "List all sub-cases descending from case R-1038 with their assignments"
 
 ---
 *More examples will be added as testing progresses*

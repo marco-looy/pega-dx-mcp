@@ -151,4 +151,9 @@ CLAUDE.md
 UNIT-TESTING*
 unit-test-logs/*
 unit-test-results/*
+documentation/*
+json/*
+tests/*
 
+todo.md
+TODO.md

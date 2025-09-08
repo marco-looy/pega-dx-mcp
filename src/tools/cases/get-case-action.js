@@ -85,7 +85,10 @@ export class GetCaseActionTool extends BaseTool {
    * Override formatSuccessResponse to add case action specific formatting
    */
   formatSuccessResponse(operation, data, options = {}) {
-    const { caseID, actionID, viewType, excludeAdditionalActions } = options;
+    const { caseID, viewType, excludeAdditionalActions } = options;
+    
+    // Extract eTag from the top-level response if available
+    const responseETag = data.eTag;
     
     let response = `## ${operation}\n\n`;
     
@@ -150,10 +153,11 @@ export class GetCaseActionTool extends BaseTool {
       }
     }
 
-    // Display eTag information for future updates
-    if (data.etag) {
+    // Display eTag information for future updates (check both response and data locations)
+    const eTag = responseETag || (data.data && data.data.eTag) || data.etag;
+    if (eTag) {
       response += '\n### Update Information\n';
-      response += `- **ETag**: ${data.etag}\n`;
+      response += `- **ETag**: ${eTag}\n`;
       response += '- This eTag can be used for subsequent operations on this action\n';
     }
 

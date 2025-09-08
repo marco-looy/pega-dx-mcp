@@ -14,7 +14,7 @@ export class PerformCaseActionTool extends BaseTool {
   static getDefinition() {
     return {
       name: 'perform_case_action',
-      description: 'Perform an action on a Pega case, updating case data and progressing the workflow. Takes the case ID and action ID as parameters, along with optional content, page instructions, and attachments. Requires an eTag value from a previous get_case_action call. The API handles pre-processing logic, merges request data into the case, performs the action, and validates the results. If the action is a local action, the API stays at the current assignment. If it\'s a connector action, the API moves to the next assignment or provides a confirmation note if the workflow is complete.',
+      description: 'Perform an action on a Pega case, updating case data and progressing the workflow. Takes the case ID and action ID as parameters, along with optional content, page instructions, and attachments. If no eTag is provided, automatically fetches the latest eTag from the case action. For manual eTag management, provide an eTag value from a previous get_case_action call. The API handles pre-processing logic, merges request data into the case, performs the action, and validates the results.',
       inputSchema: {
         type: 'object',
         properties: {
@@ -28,7 +28,7 @@ export class PerformCaseActionTool extends BaseTool {
           },
           eTag: {
             type: 'string',
-            description: 'Required eTag unique value representing the most recent save date time (pxSaveDateTime) of the case. This must be equal to the eTag header from the response of the most recent case update request, or from a get_case_action request for this case action. Used for optimistic locking to prevent concurrent modification conflicts.'
+            description: 'Optional eTag unique value representing the most recent save date time (pxSaveDateTime) of the case. If not provided, the tool will automatically fetch the latest eTag from the case action. For manual eTag management, provide the eTag from a previous get_case_action request. Used for optimistic locking to prevent concurrent modification conflicts.'
           },
           content: {
             type: 'object',
@@ -64,7 +64,7 @@ export class PerformCaseActionTool extends BaseTool {
             description: 'Optional origin channel identifier for this service request. Indicates the source of the request for tracking and audit purposes. Examples: "Web", "Mobile", "WebChat". Default value is "Web" if not specified.'
           }
         },
-        required: ['caseID', 'actionID', 'eTag']
+        required: ['caseID', 'actionID']
       }
     };
   }
@@ -86,7 +86,7 @@ export class PerformCaseActionTool extends BaseTool {
     } = params;
 
     // Validate required parameters using base class
-    const requiredValidation = this.validateRequiredParams(params, ['caseID', 'actionID', 'eTag']);
+    const requiredValidation = this.validateRequiredParams(params, ['caseID', 'actionID']);
     if (requiredValidation) {
       return requiredValidation;
     }
@@ -106,8 +106,42 @@ export class PerformCaseActionTool extends BaseTool {
       };
     }
 
+    // Auto-fetch eTag if not provided
+    let finalETag = eTag;
+    let autoFetchedETag = false;
+    
+    if (!finalETag) {
+      try {
+        console.log(`Auto-fetching latest eTag for case action ${actionID} on case ${caseID}...`);
+        const caseActionResponse = await this.pegaClient.getCaseAction(caseID.trim(), actionID.trim(), {
+          viewType: 'none',
+          excludeAdditionalActions: true
+        });
+        
+        if (!caseActionResponse.success) {
+          return {
+            error: `Failed to auto-fetch eTag: ${caseActionResponse.error?.message || 'Unknown error'}`
+          };
+        }
+        
+        finalETag = caseActionResponse.eTag;
+        autoFetchedETag = true;
+        console.log(`Successfully auto-fetched eTag: ${finalETag}`);
+        
+        if (!finalETag) {
+          return {
+            error: 'Auto-fetch succeeded but no eTag was returned from get_case_action. This may indicate a server issue.'
+          };
+        }
+      } catch (error) {
+        return {
+          error: `Failed to auto-fetch eTag: ${error.message}`
+        };
+      }
+    }
+    
     // Validate eTag format (should be a timestamp-like string)
-    if (typeof eTag !== 'string' || eTag.trim().length === 0) {
+    if (typeof finalETag !== 'string' || finalETag.trim().length === 0) {
       return {
         error: 'Invalid eTag parameter. Must be a non-empty string representing case save date time.'
       };
@@ -128,14 +162,15 @@ export class PerformCaseActionTool extends BaseTool {
         if (originChannel) options.originChannel = originChannel;
 
         // Add eTag to options
-        options.eTag = eTag.trim();
+        options.eTag = finalETag.trim();
 
         return await this.pegaClient.performCaseAction(caseID.trim(), actionID.trim(), options);
       },
       { 
         caseID, 
         actionID, 
-        eTag, 
+        eTag: finalETag, 
+        autoFetchedETag,
         viewType, 
         skipRoboticAutomation,
         hasContent: !!content,
@@ -153,6 +188,7 @@ export class PerformCaseActionTool extends BaseTool {
       caseID, 
       actionID, 
       eTag, 
+      autoFetchedETag,
       viewType, 
       skipRoboticAutomation,
       hasContent,
@@ -168,7 +204,12 @@ export class PerformCaseActionTool extends BaseTool {
     response += '### Action Execution Summary\n';
     response += `- **Case ID**: ${caseID}\n`;
     response += `- **Action**: ${actionID}\n`;
-    response += `- **Original eTag**: ${eTag}\n`;
+    if (autoFetchedETag) {
+      response += `- **eTag**: ${eTag} (🔄 auto-fetched)\n`;
+      response += '- ✅ Latest eTag automatically retrieved\n';
+    } else {
+      response += `- **eTag**: ${eTag} (provided manually)\n`;
+    }
     if (hasContent) response += '- ✅ Case content updated\n';
     if (hasPageInstructions) response += '- ✅ Page instructions processed\n';
     if (hasAttachments) response += '- ✅ Attachments processed\n';
@@ -255,6 +296,9 @@ export class PerformCaseActionTool extends BaseTool {
     }
 
     response += '\n### Operation Notes\n';
+    if (autoFetchedETag) {
+      response += '- 🔄 Latest eTag automatically fetched for optimistic locking\n';
+    }
     response += '- ✅ Pre-processing actions executed successfully\n';
     response += '- ✅ Case data merged and validated\n';
     response += '- ✅ Optional action performed on case context\n';
@@ -265,6 +309,9 @@ export class PerformCaseActionTool extends BaseTool {
       response += '- ⚠️ Robotic automation was skipped as requested\n';
     }
 
+    if (autoFetchedETag) {
+      response += '\n**Auto-fetch Benefits**: No manual eTag management required - the tool automatically ensures proper optimistic locking.\n';
+    }
     response += '\n**Next Steps**: Use the new eTag for any further operations on this case. Check confirmationNote for workflow guidance.\n';
     
     return response;

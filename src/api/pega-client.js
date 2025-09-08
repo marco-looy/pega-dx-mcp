@@ -2593,8 +2593,27 @@ export class PegaAPIClient {
         return await this.handleErrorResponse(response);
       }
 
-      // Parse successful response
-      const data = await response.json();
+      // Parse successful response - handle both JSON and empty/text responses
+      let data;
+      const contentType = response.headers.get('content-type');
+      const contentLength = response.headers.get('content-length');
+      
+      // Check if response has content and is JSON
+      if (contentLength === '0' || !contentType || !contentType.includes('application/json')) {
+        // Handle empty response or non-JSON response (common for DELETE operations)
+        const textResponse = await response.text();
+        data = textResponse ? { message: textResponse } : { message: 'Operation completed successfully' };
+      } else {
+        // Handle JSON response
+        try {
+          data = await response.json();
+        } catch (jsonError) {
+          // Fallback for invalid JSON - treat as text
+          const textResponse = await response.text();
+          data = { message: textResponse || 'Operation completed successfully' };
+        }
+      }
+      
       const eTag = response.headers.get('etag');
       
       return {

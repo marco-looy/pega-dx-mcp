@@ -41,8 +41,10 @@
     "test:ping": "node tests/ping-service-test.js",
     "test:create": "node tests/mcp-create-case-test.js",
     "test:delete": "node tests/delete-case-test.js",
-    "test:casetypes": "node tests/get-case-types-test.js",
-    "test:bulk-action": "node tests/get-case-type-bulk-action-test.js"
+    "test:casetypes": "node tests/casetypes/get-case-types-test.js",
+    "test:bulk-action": "node tests/get-case-type-bulk-action-test.js",
+    "test:complete-workflow": "node tests/cases/complete-etag-workflow-test.js",
+    "test:auto-fetch": "node tests/cases/auto-fetch-etag-test.js"
   },
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.13.3",

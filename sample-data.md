@@ -114,25 +114,121 @@ This file contains sample data discovered during testing that can be reused for 
    - Purpose: Navigate case stages
 
 ### Sample eTag Values
-- eTag format: Varies by case and timestamp
-- Used for: Subsequent case operations requiring optimistic locking
-- Retrieved from: get_case_action response
-- **Note**: Raw eTag values not exposed in current MCP formatted responses
+- **eTag Format**: Contains `pxSaveDateTime` in ISO date-time format (per Pega docs)
+- **Source**: HTTP response header from `GET /cases/{caseID}/actions/{actionID}`
+- **Usage**: Included as `if-match` header in `PATCH /cases/{caseID}/actions/{actionID}`
+- **Validation**: API compares to current `pxSaveDateTime` for optimistic locking
+- **Error Handling**: HTTP 409 Conflict if eTag doesn't match current case state
+- **Current Limitation**: Raw eTag values not exposed in MCP formatted responses
 
 ### Case Action Testing Results
-**Last Updated**: 2025-09-05  
+**Last Updated**: 2025-09-08  
 **Source**: perform_case_action testing
 
-#### Testing Challenges
-- perform_case_action requires valid eTag from get_case_action
-- MCP formatted responses don't expose raw eTag values
-- Success scenarios limited by eTag dependency
+#### ✅ Successfully Resolved Testing Challenges
+- **eTag Integration**: Successfully implemented eTag extraction from get_case_action responses
+- **Complete Workflow**: Proven end-to-end workflow from case creation → eTag retrieval → action execution
+- **Manual Testing Validation**: All success scenarios now working perfectly
+
+#### Latest Test Results (2025-09-08)
+**Test Case**: ON6E5R-DIYRECIPE-WORK R-1027
+- **Created**: 2025-09-08T12:26:41.271Z with content {"RecipeName": "Manual Test Recipe", "Category": "Testing"}
+- **eTag Retrieved**: 20250908T122641.286 GMT
+- **Action Executed**: pyUpdateCaseDetails with content {"RecipeName": "🎉 SUCCESS! Manual Test Complete", "Category": "✅ VERIFIED"}
+- **Result**: ✅ SUCCESS - No 409 conflicts, case updated successfully
+- **Final Content**: RecipeName and Category fields updated as expected
 
 #### Validated Features
-- Excellent error handling with 412 PRECONDITION_FAILED responses
-- Comprehensive parameter validation (caseID, actionID, eTag required)
-- Clear troubleshooting guidance in error messages
-- Production-ready security with optimistic locking
+- ✅ Complete eTag workflow (get fresh eTag → use immediately = success)
+- ✅ Optimistic locking working correctly with no 409 conflicts
+- ✅ Content updates applied successfully to case fields
+- ✅ Comprehensive error handling with clear troubleshooting guidance
+- ✅ Production-ready security with proper eTag validation
+
+## Case Stage Information
+**Last Updated**: 2025-09-08  
+**Source**: get_case_stages testing
+
+### Recipe Collection Workflow Stages (7 total)
+1. **Recipe Intake** - Primary stage (not visited)
+2. **Classification** - Primary stage (not visited)  
+3. **Enhancement** - Primary stage (not visited)
+4. **Review** - Primary stage (not visited)
+5. **Publication** - Primary stage (not visited)
+6. **Archival** - Primary stage (not visited)
+7. **Approval Rejection** - Primary stage (not visited)
+
+### Stage Analysis Insights
+- All stages are Primary type (no alternate stages found)
+- New cases show all stages as "Not Visited" (expected behavior)
+- Tool provides hierarchical display: stages → processes → steps
+- Progress tracking includes completion percentages when applicable
+- Visual indicators: ✅ (visited) ⏸️ (not visited)
+
+## Case View Information
+**Last Updated**: 2025-09-08  
+**Source**: get_case_view testing
+
+### Available View Names (tested)
+- **pyDetails**: Standard case details view, includes case metadata and content
+- **CREATE**: Case creation view context with form structure
+- **pyWorkPage**: Work page view for case processing context
+
+### View Features Discovered
+- ✅ **pyUpgradeOnOpen Data Transform**: Executes automatically on view retrieval
+- ✅ **Rich Metadata**: Returns case type, status, stage, step, urgency, timestamps
+- ✅ **Case Content**: Displays configured case fields and values
+- ✅ **UI Resources**: Component structure and configuration for Constellation apps
+- ✅ **Custom Formatting**: Enhanced response formatting with detailed analysis
+
+### API Endpoint Pattern
+`GET /api/application/v2/cases/{caseID}/views/{viewID}`
+
+## Case Calculated Fields Information
+**Last Updated**: 2025-09-08  
+**Source**: get_case_view_calculated_fields testing
+
+### Calculated Fields Testing Results
+- **API Method**: POST (not GET)
+- **Endpoint**: `/api/application/v2/cases/{caseID}/views/{viewID}/calculated_fields`
+- **Field Filtering**: API automatically filters non-existent fields
+- **Complex Parameters**: Most complex parameter structure of all tools
+
+### Working Field Examples (Recipe Collection)
+- **RecipeName**: Regular case property, works as calculated field
+- **Category**: Case content field, successfully retrieved
+- **pxUpdateDateTime**: System property, returns timestamp values
+- **Fields with Dots**: `.RecipeName`, `.pyID` get filtered (not true calculated fields)
+
+### Field Discovery Insights
+- Regular case properties work as "calculated fields"
+- Field availability depends on the specific view
+- API provides clear feedback on which fields are filtered vs returned
+- Perfect tool for understanding field availability in views
+
+## Case Hierarchy Information
+**Last Updated**: 2025-09-08  
+**Source**: get_case_ancestors testing
+
+### Hierarchy Testing Results
+- **API Method**: GET
+- **Endpoint**: `/api/application/v2/cases/{caseID}/ancestors`
+- **Root Cases**: Return empty responses (no ancestors)
+- **Error Handling**: Clear 404 responses for invalid case IDs
+
+### Case Hierarchy Insights  
+- **Recipe Collection Cases**: Typically root cases with no parents
+- **Empty Responses**: Normal behavior for independently created cases
+- **HATEOAS Links**: Available for ancestor navigation when parents exist
+- **Access Control**: Respects user permissions for ancestor visibility
+
+### get_case_descendants Results
+- **API Method**: GET
+- **Endpoint**: `/api/application/v2/cases/{caseID}/descendants`
+- **Root Cases**: Return empty responses (no descendants)
+- **Recursive Traversal**: Designed to loop through all child cases
+- **Assignment Data**: Returns assignments and actions for each descendant (when present)
+- **Access Control**: Shows limited info for cases user cannot access
 
 ## Future Data Collection
 Additional sample data will be added here as we test more tools:
