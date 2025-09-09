@@ -275,6 +275,72 @@ This file contains sample data discovered during testing that can be reused for 
 - **Flexibility**: change_to_stage allows skipping stages and alternate navigation
 - **Use Cases**: change_to_stage ideal for complex workflow management
 
+## Optional Process Information
+**Last Updated**: 2025-09-09  
+**Source**: add_optional_process testing - LIVE TESTING COMPLETED
+
+### ✅ LIVE TESTED Optional Processes
+**Test Case**: ON6E5R-DIYRECIPE-WORK R-1059  
+**Status**: Live production testing completed successfully
+
+### Real Optional Process - TestOptionalProcess
+**Process Configuration**:
+- **Name**: "TestOptionalProcess"
+- **ID**: "TestOptionalProcess" 
+- **Type**: "Stage" (stage-specific optional process)
+- **API Endpoint**: `/cases/{caseID}/processes/TestOptionalProcess`
+
+**Live Testing Results**:
+- ✅ **Multiple Instances**: Supports multiple simultaneous instances with auto-suffixing (_1, _2, etc.)
+- ✅ **Assignment Creation**: Each call creates new assignment `ASSIGN-WORKLIST {caseID}!TESTOPTIONALPROCESS_{instance}`
+- ✅ **User Assignment**: Automatically assigns to calling user
+- ✅ **Action Available**: "ActionStubDraftMode" with submit/save/open links
+
+### Common Optional Process IDs (from documentation)
+**Case-wide Processes**:
+- **UpdateContactDetails**: Updates contact information across case
+- **UpdateAddress**: Updates address information
+
+**Stage-specific Processes**:
+- **TestOptionalProcess**: ✅ LIVE CONFIRMED - Stage-specific process for Recipe Intake stage
+- **UpdateAddress**: Available for specific stages only (context-dependent)
+
+### viewType Testing Results - LIVE CONFIRMED
+**ViewType Options**:
+- **"none"** (default): ✅ LIVE - Returns case info, creates assignment `TESTOPTIONALPROCESS`, no uiResources
+- **"form"**: ✅ LIVE - Returns form UI metadata, creates assignment `TESTOPTIONALPROCESS_1`, UI loaded 
+- **"page"**: ✅ LIVE - Returns full page UI metadata, creates assignment `TESTOPTIONALPROCESS_2`, full UI resources
+
+### Optional Process Response Structure - LIVE CONFIRMED
+**Response Elements**:
+- `data.caseInfo`: ✅ Case and related information (includes all assignments)
+- `assignments`: ✅ Array of all assignments including new optional process assignment
+- `availableProcesses`: ✅ Process remains available for future use
+- `uiResources`: ✅ UI metadata (varies by viewType) - "Root component: reference"
+
+### Process Discovery - LIVE CONFIRMED
+**How to Find Available Processes**:
+1. ✅ Use `get_case` tool to retrieve case details
+2. ✅ Look for `availableProcesses` array in response  
+3. ✅ Each process shows: name, ID, type (Case/Stage), and API links
+4. ✅ Process availability depends on current case stage and permissions
+5. ✅ **LIVE REQUIREMENT**: Process must be pre-configured in Pega system
+
+### Error Scenarios Tested - LIVE CONFIRMED
+- **Missing processID**: ✅ Proper validation with clear error message
+- **Invalid viewType**: ✅ Enum validation working correctly
+- **Non-existent process**: ✅ LIVE - 404 "Process not found for the given parameter processID"
+- **Locked case**: ✅ LIVE - 423 "Resource is locked by System Admin" 
+- **Non-existent case**: ✅ LIVE - 404 "Case not found"
+- **Access control**: Expected 500 Internal Server Error for insufficient permissions
+
+### LIVE Testing Insights - NEW DISCOVERIES
+- **✅ Multiple Instance Support**: Tool can add same process multiple times with automatic suffixing
+- **✅ Assignment Pattern**: `ASSIGN-WORKLIST {caseID}!{processID}_{instance}`
+- **✅ User Auto-Assignment**: Process automatically assigned to calling user
+- **✅ Case State Persistence**: Original assignments remain, optional process adds new ones
+- **✅ Immediate Availability**: Process can be used immediately after configuration
+
 ## Future Data Collection
 Additional sample data will be added here as we test more tools:
 - Assignment IDs from assignment tests  

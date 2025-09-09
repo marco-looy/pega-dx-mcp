@@ -89,5 +89,17 @@ Simple questions you can ask the MCP to perform tasks with each tool.
 - "Progress case R-1045 through the workflow to Classification stage"
 - "Navigate my case from Recipe Intake to the next stage in the sequence"
 
+## add_optional_process
+- "Add the UpdateContactDetails process to case ON6E5R-DIYRECIPE-WORK R-1056"
+- "Start the optional UpdateAddress process for my Recipe Collection case"
+- "What optional processes can I add to case R-1056?"
+- "Add a case-wide optional process with form view to see the UI metadata"
+
+## release_case_lock
+- "Release any locks on my Recipe Collection case ON6E5R-DIYRECIPE-WORK R-1060"
+- "Clean up cached data and unlock case R-1061"
+- "Cancel my case operation and release the pessimistic lock"
+- "Release the lock on case R-1060 and show me the updated case information"
+
 ---
 *More examples will be added as testing progresses*
