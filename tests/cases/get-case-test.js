@@ -1,4 +1,5 @@
 import { GetCaseTool } from '../../src/tools/cases/get-case.js';
+import 'dotenv/config';
 
 async function testGetCase() {
   console.log('\n📋 Testing Get Case Tool...\n');

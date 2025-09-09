@@ -1,4 +1,5 @@
 #!/usr/bin/env node
+import 'dotenv/config';
 
 import { BulkCasesPatchTool } from '../../src/tools/cases/bulk-cases-patch.js';
 import { BaseTool } from '../../src/registry/base-tool.js';

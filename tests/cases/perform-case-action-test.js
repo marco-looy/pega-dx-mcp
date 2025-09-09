@@ -1,4 +1,5 @@
 #!/usr/bin/env node
+import 'dotenv/config';
 
 import { PerformCaseActionTool } from '../../src/tools/cases/perform-case-action.js';
 import { BaseTool } from '../../src/registry/base-tool.js';

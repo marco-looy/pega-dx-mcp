@@ -1,4 +1,5 @@
 #!/usr/bin/env node
+import 'dotenv/config';
 
 import { GetDocumentTool } from '../../src/tools/documents/get-document.js';
 import { BaseTool } from '../../src/registry/base-tool.js';

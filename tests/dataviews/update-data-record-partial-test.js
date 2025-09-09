@@ -1,4 +1,5 @@
 #!/usr/bin/env node
+import 'dotenv/config';
 
 import { UpdateDataRecordPartialTool } from '../../src/tools/dataviews/update-data-record-partial.js';
 import { BaseTool } from '../../src/registry/base-tool.js';

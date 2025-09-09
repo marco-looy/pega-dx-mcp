@@ -1,4 +1,5 @@
 #!/usr/bin/env node
+import 'dotenv/config';
 
 import { GetDataObjectsTool } from '../../src/tools/dataviews/get-data-objects.js';
 import { BaseTool } from '../../src/registry/base-tool.js';

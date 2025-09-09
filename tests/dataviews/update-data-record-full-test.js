@@ -1,4 +1,5 @@
 #!/usr/bin/env node
+import 'dotenv/config';
 
 import { UpdateDataRecordFullTool } from '../../src/tools/dataviews/update-data-record-full.js';
 import { BaseTool } from '../../src/registry/base-tool.js';

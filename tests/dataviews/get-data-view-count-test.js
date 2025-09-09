@@ -1,4 +1,5 @@
 #!/usr/bin/env node
+import 'dotenv/config';
 
 import { GetDataViewCountTool } from '../../src/tools/dataviews/get-data-view-count.js';
 import { BaseTool } from '../../src/registry/base-tool.js';

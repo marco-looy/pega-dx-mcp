@@ -1,4 +1,5 @@
 #!/usr/bin/env node
+import 'dotenv/config';
 
 import { DeleteAttachmentTool } from '../../src/tools/attachments/delete-attachment.js';
 import { BaseTool } from '../../src/registry/base-tool.js';

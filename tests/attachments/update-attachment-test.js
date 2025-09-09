@@ -1,4 +1,5 @@
 #!/usr/bin/env node
+import 'dotenv/config';
 
 import { UpdateAttachmentTool } from '../../src/tools/attachments/update-attachment.js';
 import { BaseTool } from '../../src/registry/base-tool.js';

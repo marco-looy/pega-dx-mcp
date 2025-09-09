@@ -1,4 +1,5 @@
 import { GetAttachmentCategoriesTool } from '../../src/tools/attachments/get-attachment-categories.js';
+import 'dotenv/config';
 
 async function testGetAttachmentCategories() {
   console.log('🧪 Testing Get Attachment Categories Tool');

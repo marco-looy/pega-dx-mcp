@@ -1,4 +1,5 @@
 #!/usr/bin/env node
+import 'dotenv/config';
 
 import { GetCaseTypeActionTool } from '../../src/tools/casetypes/get-case-type-action.js';
 import { BaseTool } from '../../src/registry/base-tool.js';

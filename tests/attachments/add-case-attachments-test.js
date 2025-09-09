@@ -1,4 +1,5 @@
 import { AddCaseAttachmentsTool } from '../../src/tools/attachments/add-case-attachments.js';
+import 'dotenv/config';
 
 /**
  * Test suite for AddCaseAttachmentsTool

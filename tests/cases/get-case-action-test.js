@@ -1,4 +1,5 @@
 import { GetCaseActionTool } from '../../src/tools/cases/get-case-action.js';
+import 'dotenv/config';
 
 async function testGetCaseAction() {
   console.log('\n🔧 Testing Get Case Action Tool...\n');

@@ -1,4 +1,5 @@
 #!/usr/bin/env node
+import 'dotenv/config';
 
 import { DeleteParticipantTool } from '../../src/tools/participants/delete-participant.js';
 import { BaseTool } from '../../src/registry/base-tool.js';

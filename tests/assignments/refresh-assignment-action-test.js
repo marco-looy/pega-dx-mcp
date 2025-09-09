@@ -1,4 +1,5 @@
 import { RefreshAssignmentActionTool } from '../../src/tools/assignments/refresh-assignment-action.js';
+import 'dotenv/config';
 
 async function testRefreshAssignmentAction() {
   console.log('🧪 Testing Refresh Assignment Action Tool...\n');

@@ -1,4 +1,5 @@
 #!/usr/bin/env node
+import 'dotenv/config';
 
 import { GetParticipantTool } from '../../src/tools/participants/get-participant.js';
 import { BaseTool } from '../../src/registry/base-tool.js';

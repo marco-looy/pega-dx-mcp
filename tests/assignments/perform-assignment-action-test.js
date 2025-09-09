@@ -1,4 +1,5 @@
 import { PerformAssignmentActionTool } from '../../src/tools/assignments/perform-assignment-action.js';
+import 'dotenv/config';
 
 async function testPerformAssignmentAction() {
   console.log('\n🧪 Testing Perform Assignment Action Tool...\n');

@@ -1,4 +1,5 @@
 #!/usr/bin/env node
+import 'dotenv/config';
 
 import { spawn } from 'child_process';
 
@@ -45,8 +46,8 @@ async function testGetCaseViewTool() {
   server.stdin.write(JSON.stringify(listRequest) + '\n');
   await new Promise(resolve => setTimeout(resolve, 500));
 
-  // Test 2: Call get_case_view with sample parameters
-  console.log('2. Testing get_case_view tool with sample case and view...');
+  // Test 2: Call get_case_view with pyDetails view
+  console.log('2. Testing get_case_view tool with pyDetails view...');
   const caseViewRequest = {
     jsonrpc: '2.0',
     id: 2,
@@ -54,13 +55,31 @@ async function testGetCaseViewTool() {
     params: {
       name: 'get_case_view',
       arguments: {
-        caseID: 'ON6E5R-DIYRECIPE-WORK R-1008',
-        viewID: 'CREATE'
+        caseID: 'ON6E5R-DIYRECIPE-WORK R-1009',
+        viewID: 'pyDetails'
       }
     }
   };
 
   server.stdin.write(JSON.stringify(caseViewRequest) + '\n');
+  await new Promise(resolve => setTimeout(resolve, 2000));
+
+  // Test 2b: Test RecipeCollection view (user suggested)
+  console.log('2b. Testing get_case_view tool with RecipeCollection view...');
+  const recipeViewRequest = {
+    jsonrpc: '2.0',
+    id: 2.5,
+    method: 'tools/call',
+    params: {
+      name: 'get_case_view',
+      arguments: {
+        caseID: 'ON6E5R-DIYRECIPE-WORK R-1009',
+        viewID: 'RecipeCollection'
+      }
+    }
+  };
+
+  server.stdin.write(JSON.stringify(recipeViewRequest) + '\n');
   await new Promise(resolve => setTimeout(resolve, 2000));
 
   // Test 3: Test error handling with invalid parameters
@@ -102,6 +121,7 @@ async function testGetCaseViewTool() {
   // Parse responses
   let toolListResponse = null;
   let getCaseViewResponse = null;
+  let recipeViewResponse = null;
   let errorTestResponse = null;
   let notFoundTestResponse = null;
 
@@ -112,6 +132,7 @@ async function testGetCaseViewTool() {
         const parsed = JSON.parse(line);
         if (parsed.id === 1) toolListResponse = parsed;
         if (parsed.id === 2) getCaseViewResponse = parsed;
+        if (parsed.id === 2.5) recipeViewResponse = parsed;
         if (parsed.id === 3) errorTestResponse = parsed;
         if (parsed.id === 4) notFoundTestResponse = parsed;
       } catch (e) {
@@ -138,10 +159,10 @@ async function testGetCaseViewTool() {
   }
 
   // Test 2 Results
-  console.log('\n✅ Case View Retrieval Test:');
+  console.log('\n✅ pyDetails View Retrieval Test:');
   if (getCaseViewResponse) {
     if (getCaseViewResponse.result?.content?.[0]?.text) {
-      console.log('   ✅ Case view details retrieved successfully');
+      console.log('   ✅ pyDetails view retrieved successfully');
       const responseText = getCaseViewResponse.result.content[0].text;
       console.log('   📄 Response preview:');
       const previewLines = responseText.split('\n').slice(0, 5);
@@ -152,6 +173,26 @@ async function testGetCaseViewTool() {
     } else if (getCaseViewResponse.result?.error) {
       console.log('   ⚠️  Expected result (authentication or case access issue):');
       console.log(`   ${getCaseViewResponse.result.error}`);
+    } else {
+      console.log('   ❓ Unexpected response format');
+    }
+  }
+
+  // Test 2b Results
+  console.log('\n✅ RecipeCollection View Retrieval Test:');
+  if (recipeViewResponse) {
+    if (recipeViewResponse.result?.content?.[0]?.text) {
+      console.log('   ✅ RecipeCollection view retrieved successfully');
+      const responseText = recipeViewResponse.result.content[0].text;
+      console.log('   📄 Response preview:');
+      const previewLines = responseText.split('\n').slice(0, 5);
+      previewLines.forEach(line => console.log(`   ${line}`));
+      if (responseText.split('\n').length > 5) {
+        console.log('   ... (truncated)');
+      }
+    } else if (recipeViewResponse.result?.error) {
+      console.log('   ⚠️  Expected result (view may not exist for this case type):');
+      console.log(`   ${recipeViewResponse.result.error}`);
     } else {
       console.log('   ❓ Unexpected response format');
     }

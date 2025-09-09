@@ -1,4 +1,5 @@
 #!/usr/bin/env node
+import 'dotenv/config';
 
 import { RecalculateAssignmentFieldsTool } from '../../src/tools/assignments/recalculate-assignment-fields.js';
 import { BaseTool } from '../../src/registry/base-tool.js';

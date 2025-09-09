@@ -1,4 +1,5 @@
 #!/usr/bin/env node
+import 'dotenv/config';
 
 import { DeleteRelatedCaseTool } from '../../src/tools/related_cases/delete-related-case.js';
 import { BaseTool } from '../../src/registry/base-tool.js';

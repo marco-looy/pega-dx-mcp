@@ -1,4 +1,5 @@
 #!/usr/bin/env node
+import 'dotenv/config';
 
 import { GetParticipantRolesTool } from '../../src/tools/participants/get-participant-roles.js';
 import { BaseTool } from '../../src/registry/base-tool.js';

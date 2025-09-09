@@ -1,4 +1,5 @@
 #!/usr/bin/env node
+import 'dotenv/config';
 
 import { SaveAssignmentActionTool } from '../../src/tools/assignments/save-assignment-action.js';
 import { BaseTool } from '../../src/registry/base-tool.js';

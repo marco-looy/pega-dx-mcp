@@ -1,4 +1,5 @@
 #!/usr/bin/env node
+import 'dotenv/config';
 
 import { JumpToStepTool } from '../../src/tools/assignments/jump-to-step.js';
 import { BaseTool } from '../../src/registry/base-tool.js';

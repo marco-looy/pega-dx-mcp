@@ -1,4 +1,5 @@
 #!/usr/bin/env node
+import 'dotenv/config';
 
 import { UploadAttachmentTool } from '../../src/tools/attachments/upload-attachment.js';
 import fs from 'fs';

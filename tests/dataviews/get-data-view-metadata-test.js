@@ -1,4 +1,5 @@
 #!/usr/bin/env node
+import 'dotenv/config';
 
 import { GetDataViewMetadataTool } from '../../src/tools/dataviews/get-data-view-metadata.js';
 import { BaseTool } from '../../src/registry/base-tool.js';

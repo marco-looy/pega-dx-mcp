@@ -61,7 +61,7 @@ Simple questions you can ask the MCP to perform tasks with each tool.
 ## get_case_view
 - "Show me the pyDetails view for case ON6E5R-DIYRECIPE-WORK R-1008"
 - "Get the CREATE view information for my Recipe Collection case"
-- "Retrieve the pyWorkPage view for case R-1009 to see the UI structure"
+- "Retrieve the pyStages view for case ON6E5R-DIYRECIPE-WORK R-1009 to see the UI structure"
 
 ## get_case_view_calculated_fields
 - "Get calculated fields RecipeName and Category from pyDetails view for case ON6E5R-DIYRECIPE-WORK R-1038"

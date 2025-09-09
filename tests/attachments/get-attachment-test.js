@@ -1,4 +1,5 @@
 import { GetAttachmentTool } from '../../src/tools/attachments/get-attachment.js';
+import 'dotenv/config';
 
 /**
  * Test script for GetAttachmentTool

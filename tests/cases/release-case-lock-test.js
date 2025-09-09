@@ -1,4 +1,5 @@
 #!/usr/bin/env node
+import 'dotenv/config';
 
 import { ReleaseCaseLockTool } from '../../src/tools/cases/release-case-lock.js';
 import { BaseTool } from '../../src/registry/base-tool.js';

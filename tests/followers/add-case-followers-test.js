@@ -1,4 +1,5 @@
 #!/usr/bin/env node
+import 'dotenv/config';
 
 import { AddCaseFollowersTool } from '../../src/tools/followers/add-case-followers.js';
 import { BaseTool } from '../../src/registry/base-tool.js';

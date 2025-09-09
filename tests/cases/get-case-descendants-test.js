@@ -1,4 +1,5 @@
 #!/usr/bin/env node
+import 'dotenv/config';
 
 import { GetCaseDescendantsTool } from '../../src/tools/cases/get-case-descendants.js';
 import { BaseTool } from '../../src/registry/base-tool.js';

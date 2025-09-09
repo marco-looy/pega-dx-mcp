@@ -1,4 +1,5 @@
 #!/usr/bin/env node
+import 'dotenv/config';
 
 import { DeleteCaseTagTool } from '../../src/tools/tags/delete-case-tag.js';
 import { BaseTool } from '../../src/registry/base-tool.js';

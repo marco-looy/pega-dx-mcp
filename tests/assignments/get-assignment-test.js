@@ -1,4 +1,5 @@
 import { GetAssignmentTool } from '../../src/tools/assignments/get-assignment.js';
+import 'dotenv/config';
 
 /**
  * Test script for GetAssignmentTool

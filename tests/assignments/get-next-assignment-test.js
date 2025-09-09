@@ -1,4 +1,5 @@
 import { GetNextAssignmentTool } from '../../src/tools/assignments/get-next-assignment.js';
+import 'dotenv/config';
 
 async function testGetNextAssignment() {
   console.log('🧪 Testing GetNextAssignmentTool...\n');

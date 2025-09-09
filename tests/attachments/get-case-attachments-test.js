@@ -1,4 +1,5 @@
 import { GetCaseAttachmentsTool } from '../../src/tools/attachments/get-case-attachments.js';
+import 'dotenv/config';
 
 // Test the Get Case Attachments tool
 async function testGetCaseAttachments() {

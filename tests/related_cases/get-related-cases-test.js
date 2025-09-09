@@ -1,4 +1,5 @@
 #!/usr/bin/env node
+import 'dotenv/config';
 
 import { GetRelatedCasesTool } from '../../src/tools/related_cases/get-related-cases.js';
 import { BaseTool } from '../../src/registry/base-tool.js';

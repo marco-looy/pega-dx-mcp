@@ -1,4 +1,5 @@
 import { GetAssignmentActionTool } from '../../src/tools/assignments/get-assignment-action.js';
+import 'dotenv/config';
 
 /**
  * Test script for GetAssignmentActionTool

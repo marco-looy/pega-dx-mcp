@@ -1,4 +1,5 @@
 import { CreateCaseTool } from '../../src/tools/cases/create-case.js';
+import 'dotenv/config';
 import { PegaAPIClient } from '../../src/api/pega-client.js';
 
 /**

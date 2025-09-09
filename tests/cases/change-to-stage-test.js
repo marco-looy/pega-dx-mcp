@@ -1,4 +1,5 @@
 #!/usr/bin/env node
+import 'dotenv/config';
 
 import { ChangeToStageTool } from '../../src/tools/cases/change-to-stage.js';
 import { BaseTool } from '../../src/registry/base-tool.js';

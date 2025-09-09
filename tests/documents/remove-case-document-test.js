@@ -1,4 +1,5 @@
 #!/usr/bin/env node
+import 'dotenv/config';
 
 import { RemoveCaseDocumentTool } from '../../src/tools/documents/remove-case-document.js';
 import { BaseTool } from '../../src/registry/base-tool.js';

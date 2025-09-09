@@ -1,4 +1,5 @@
 #!/usr/bin/env node
+import 'dotenv/config';
 
 import { AddOptionalProcessTool } from '../../src/tools/cases/add-optional-process.js';
 import { BaseTool } from '../../src/registry/base-tool.js';

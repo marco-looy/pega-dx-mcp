@@ -1,4 +1,5 @@
 #!/usr/bin/env node
+import 'dotenv/config';
 
 import { PegaAPIClient } from '../src/api/pega-client.js';
 

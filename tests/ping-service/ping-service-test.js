@@ -1,4 +1,5 @@
 #!/usr/bin/env node
+import 'dotenv/config';
 
 import { PingServiceTool } from '../../src/tools/ping-service.js';
 

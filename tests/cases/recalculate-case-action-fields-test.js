@@ -1,4 +1,5 @@
 #!/usr/bin/env node
+import 'dotenv/config';
 
 import { RecalculateCaseActionFieldsTool } from '../../src/tools/cases/recalculate-case-action-fields.js';
 import { BaseTool } from '../../src/registry/base-tool.js';
