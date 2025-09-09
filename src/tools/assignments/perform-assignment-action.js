@@ -16,7 +16,7 @@ export class PerformAssignmentActionTool extends BaseTool {
   static getDefinition() {
     return {
       name: 'perform_assignment_action',
-      description: 'Perform an action on a Pega assignment, updating case data and progressing the workflow. Takes the assignment ID and action ID as path parameters, along with optional content, page instructions, and attachments. Requires an eTag value from a previous get_assignment_action call. The API handles pre-processing logic, merges request data into the case, performs the action, and validates the results. If the action is a local action, the API stays at the current assignment. If it\'s a connector action, the API moves to the next assignment or provides a confirmation note if the workflow is complete. Returns detailed case information, optional UI resources based on viewType parameter, and either next assignment information or a confirmation message.',
+      description: 'Perform an action on a Pega assignment, updating case data and progressing the workflow. Takes the assignment ID and action ID as path parameters, along with optional content, page instructions, and attachments. If no eTag is provided, automatically fetches the latest eTag from the assignment for seamless operation. The API handles pre-processing logic, merges request data into the case, performs the action, and validates the results. If the action is a local action, the API stays at the current assignment. If it\'s a connector action, the API moves to the next assignment or provides a confirmation note if the workflow is complete. Returns detailed case information, optional UI resources based on viewType parameter, and either next assignment information or a confirmation message.',
       inputSchema: {
         type: 'object',
         properties: {
@@ -30,7 +30,7 @@ export class PerformAssignmentActionTool extends BaseTool {
           },
           eTag: {
             type: 'string',
-            description: 'Required eTag unique value representing the most recent save date time (pxSaveDateTime) of the case. This must be equal to the eTag header from the response of the most recent case update request, or from a get_assignment_action request for this assignment. Used for optimistic locking to prevent concurrent modification conflicts.'
+            description: 'Optional eTag unique value representing the most recent save date time (pxSaveDateTime) of the case. If not provided, the tool will automatically fetch the latest eTag from the assignment. For manual eTag management, provide the eTag from a previous assignment operation. Used for optimistic locking to prevent concurrent modification conflicts.'
           },
           content: {
             type: 'object',
@@ -87,7 +87,7 @@ export class PerformAssignmentActionTool extends BaseTool {
             description: 'Optional origin channel identifier for this service request. Indicates the source of the request for tracking and audit purposes. Examples: "Web", "Mobile", "WebChat". Default value is "Web" if not specified.'
           }
         },
-        required: ['assignmentID', 'actionID', 'eTag']
+        required: ['assignmentID', 'actionID']
       }
     };
   }
@@ -99,7 +99,7 @@ export class PerformAssignmentActionTool extends BaseTool {
     const { assignmentID, actionID, eTag, content, pageInstructions, attachments, viewType, originChannel } = params;
 
     // Basic parameter validation using base class
-    const requiredValidation = this.validateRequiredParams(params, ['assignmentID', 'actionID', 'eTag']);
+    const requiredValidation = this.validateRequiredParams(params, ['assignmentID', 'actionID']);
     if (requiredValidation) {
       return requiredValidation;
     }
@@ -131,6 +131,49 @@ export class PerformAssignmentActionTool extends BaseTool {
       };
     }
 
+    // Auto-fetch eTag if not provided
+    let finalETag = eTag;
+    let autoFetchedETag = false;
+    
+    if (!finalETag) {
+      try {
+        console.log(`Auto-fetching latest eTag for assignment action on ${assignmentID}...`);
+        const assignmentResponse = await this.pegaClient.getAssignment(assignmentID.trim(), {
+          viewType: 'form'  // Use form view for eTag retrieval
+        });
+        
+        if (!assignmentResponse || !assignmentResponse.success) {
+          const errorMsg = `Failed to auto-fetch eTag: ${assignmentResponse?.error?.message || 'Unknown error'}`;
+          return {
+            error: errorMsg
+          };
+        }
+        
+        finalETag = assignmentResponse.eTag;
+        autoFetchedETag = true;
+        console.log(`Successfully auto-fetched eTag: ${finalETag}`);
+        
+        if (!finalETag) {
+          const errorMsg = 'Auto-fetch succeeded but no eTag was returned from get_assignment. This may indicate a server issue.';
+          return {
+            error: errorMsg
+          };
+        }
+      } catch (error) {
+        const errorMsg = `Failed to auto-fetch eTag: ${error.message}`;
+        return {
+          error: errorMsg
+        };
+      }
+    }
+    
+    // Validate eTag format (should be a timestamp-like string)
+    if (typeof finalETag !== 'string' || finalETag.trim().length === 0) {
+      return {
+        error: 'Invalid eTag parameter. Must be a non-empty string representing case save date time.'
+      };
+    }
+
     // Prepare request options
     const options = {};
     
@@ -145,7 +188,7 @@ export class PerformAssignmentActionTool extends BaseTool {
       const result = await this.pegaClient.performAssignmentAction(
         assignmentID,
         actionID,
-        eTag,
+        finalETag.trim(),
         options
       );
 

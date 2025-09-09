@@ -77,7 +77,7 @@ export class ChangeToStageTool extends BaseTool {
       try {
         console.log(`Auto-fetching latest eTag for stage change on case ${caseID}...`);
         const caseActionResponse = await this.pegaClient.getCaseAction(caseID.trim(), 'pyChangeStage', {
-          viewType: 'form',  // getCaseAction only accepts 'form' or 'page', not 'none'
+          viewType: 'none',
           excludeAdditionalActions: true
         });
         

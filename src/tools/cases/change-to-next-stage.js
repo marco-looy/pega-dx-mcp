@@ -14,7 +14,7 @@ export class ChangeToNextStageTool extends BaseTool {
   static getDefinition() {
     return {
       name: 'change_to_next_stage',
-      description: 'Navigate a Pega case to its next stage in the primary stage sequence. Cannot be used when case is in alternate stage or already in final stage.',
+      description: 'Navigate a Pega case to its next stage in the primary stage sequence. Cannot be used when case is in alternate stage or already in final stage. If no eTag is provided, automatically fetches the latest eTag from the case action for seamless operation.',
       inputSchema: {
         type: 'object',
         properties: {
@@ -24,7 +24,7 @@ export class ChangeToNextStageTool extends BaseTool {
           },
           eTag: {
             type: 'string',
-            description: 'eTag unique value representing the most recent save date time (pxSaveDateTime) of the case. Required for optimistic locking to prevent concurrent modifications. Obtained from previous case operations.'
+            description: 'Optional eTag unique value representing the most recent save date time (pxSaveDateTime) of the case. If not provided, the tool will automatically fetch the latest eTag from the case action. For manual eTag management, provide the eTag from a previous case operation. Used for optimistic locking to prevent concurrent modification conflicts.'
           },
           viewType: {
             type: 'string',
@@ -38,7 +38,7 @@ export class ChangeToNextStageTool extends BaseTool {
             default: true
           }
         },
-        required: ['caseID', 'eTag']
+        required: ['caseID']
       }
     };
   }
@@ -50,7 +50,7 @@ export class ChangeToNextStageTool extends BaseTool {
     const { caseID, eTag, viewType, cleanupProcesses } = params;
 
     // Validate required parameters using base class
-    const requiredValidation = this.validateRequiredParams(params, ['caseID', 'eTag']);
+    const requiredValidation = this.validateRequiredParams(params, ['caseID']);
     if (requiredValidation) {
       return requiredValidation;
     }
@@ -63,11 +63,55 @@ export class ChangeToNextStageTool extends BaseTool {
       return enumValidation;
     }
 
+    // Auto-fetch eTag if not provided
+    let finalETag = eTag;
+    let autoFetchedETag = false;
+    
+    if (!finalETag) {
+      try {
+        console.log(`Auto-fetching latest eTag for next stage change on case ${caseID}...`);
+        const caseActionResponse = await this.pegaClient.getCaseAction(caseID.trim(), 'pyChangeStage', {
+          viewType: 'form',  // getCaseAction only accepts 'form' or 'page', not 'none'
+          excludeAdditionalActions: true
+        });
+        
+        if (!caseActionResponse || !caseActionResponse.success) {
+          const errorMsg = `Failed to auto-fetch eTag: ${caseActionResponse?.error?.message || 'Unknown error'}`;
+          return {
+            error: errorMsg
+          };
+        }
+        
+        finalETag = caseActionResponse.eTag;
+        autoFetchedETag = true;
+        console.log(`Successfully auto-fetched eTag: ${finalETag}`);
+        
+        if (!finalETag) {
+          const errorMsg = 'Auto-fetch succeeded but no eTag was returned from get_case_action. This may indicate a server issue.';
+          return {
+            error: errorMsg
+          };
+        }
+      } catch (error) {
+        const errorMsg = `Failed to auto-fetch eTag: ${error.message}`;
+        return {
+          error: errorMsg
+        };
+      }
+    }
+    
+    // Validate eTag format (should be a timestamp-like string)
+    if (typeof finalETag !== 'string' || finalETag.trim().length === 0) {
+      return {
+        error: 'Invalid eTag parameter. Must be a non-empty string representing case save date time.'
+      };
+    }
+
     // Execute with standardized error handling
     return await this.executeWithErrorHandling(
-      `Change to Next Stage: ${caseID}`,
-      async () => await this.pegaClient.changeToNextStage(caseID.trim(), eTag.trim(), { viewType, cleanupProcesses }),
-      { viewType, cleanupProcesses }
+      `Change to Next Stage: ${caseID}${autoFetchedETag ? ' (auto-fetched eTag)' : ''}`,
+      async () => await this.pegaClient.changeToNextStage(caseID.trim(), finalETag.trim(), { viewType, cleanupProcesses }),
+      { viewType, cleanupProcesses, autoFetchedETag }
     );
   }
 }

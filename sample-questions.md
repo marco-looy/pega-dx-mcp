@@ -23,7 +23,7 @@ Simple questions you can ask the MCP to perform tasks with each tool.
 - "What's the current status of my Recipe Collection case?"
 
 ## get_case_action
-- "Show me the Edit details action for case R-1009"
+- "Show me the Edit details action for case ON6E5R-DIYRECIPE-WORK R-1009"
 - "What can I do with the pyUpdateCaseDetails action on my case?"
 - "Get the form metadata for the Change stage action on my Recipe Collection case"
 
@@ -47,6 +47,12 @@ Simple questions you can ask the MCP to perform tasks with each tool.
 - The eTag represents the exact moment (pxSaveDateTime) the case was last saved
 - Using a stale eTag will result in 409 Conflict errors
 - **Proven Pattern**: Fresh eTag → immediate use = 100% success rate
+
+## change_to_stage
+- "Move my case to the Classification stage"
+- "Navigate case R-1048 from Recipe Intake to Classification stage"
+- "Jump my Recipe Collection case to the Approval Rejection alternate stage"
+- "Help me change case R-1048 to stage PRIM2 using the proper eTag workflow"
 
 ## get_case_stages
 - "Show me the workflow stages for case ON6E5R-DIYRECIPE-WORK R-1009"

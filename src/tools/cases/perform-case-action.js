@@ -114,7 +114,7 @@ export class PerformCaseActionTool extends BaseTool {
       try {
         console.log(`Auto-fetching latest eTag for case action ${actionID} on case ${caseID}...`);
         const caseActionResponse = await this.pegaClient.getCaseAction(caseID.trim(), actionID.trim(), {
-          viewType: 'none',
+          viewType: 'form',  // getCaseAction only accepts 'form' or 'page', not 'none'
           excludeAdditionalActions: true
         });
         

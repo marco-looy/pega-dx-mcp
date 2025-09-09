@@ -82,16 +82,23 @@ export class ToolRegistry {
   async executeTool(toolName, params = {}) {
     this.ensureInitialized();
     
+    console.error(`[REGISTRY DEBUG] Executing tool: ${toolName} with params:`, JSON.stringify(params, null, 2));
+    
     const tool = this.getToolByName(toolName);
     if (!tool) {
+      console.error(`[REGISTRY DEBUG] Tool not found: ${toolName}`);
       return {
         error: `Unknown tool: ${toolName}. Available tools: ${Array.from(this.tools.keys()).join(', ')}`
       };
     }
 
+    console.error(`[REGISTRY DEBUG] Tool found, calling execute method...`);
     try {
-      return await tool.execute(params);
+      const result = await tool.execute(params);
+      console.error(`[REGISTRY DEBUG] Tool execution completed, result type:`, typeof result);
+      return result;
     } catch (error) {
+      console.error(`[REGISTRY DEBUG] Tool execution error:`, error);
       console.error(`Error executing tool ${toolName}:`, error);
       return {
         error: `Error executing tool ${toolName}: ${error.message}`

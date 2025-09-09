@@ -14,7 +14,7 @@ export class RecalculateCaseActionFieldsTool extends BaseTool {
   static getDefinition() {
     return {
       name: 'recalculate_case_action_fields',
-      description: 'Recalculate calculated fields & whens for the current case action form. Executes field calculations and when conditions based on current form state and user input. Supports recalculating specific fields and when conditions, merging content updates, and applying page instructions during the calculation process. The API validates case and action IDs, processes calculation requests, and returns updated field values and states.',
+      description: 'Recalculate calculated fields & whens for the current case action form. If no eTag is provided, automatically fetches the latest eTag from the case action for seamless operation. Executes field calculations and when conditions based on current form state and user input. Supports recalculating specific fields and when conditions, merging content updates, and applying page instructions during the calculation process. The API validates case and action IDs, processes calculation requests, and returns updated field values and states.',
       inputSchema: {
         type: 'object',
         properties: {
@@ -28,7 +28,7 @@ export class RecalculateCaseActionFieldsTool extends BaseTool {
           },
           eTag: {
             type: 'string',
-            description: 'Required eTag unique value representing the most recent save date time (pxSaveDateTime) of the case. This must be equal to the eTag header from the response of the most recent case update request, or from a get_case_action request for this case action. Used for optimistic locking to prevent concurrent modification conflicts.'
+            description: 'Optional eTag unique value representing the most recent save date time (pxSaveDateTime) of the case. If not provided, the tool will automatically fetch the latest eTag from the case action. For manual eTag management, provide the eTag from a previous case operation. Used for optimistic locking to prevent concurrent modification conflicts.'
           },
           calculations: {
             type: 'object',
@@ -91,7 +91,7 @@ export class RecalculateCaseActionFieldsTool extends BaseTool {
             description: 'Optional origin channel identifier for this service request. Indicates the source of the request for tracking and audit purposes. Examples: "Web", "Mobile", "WebChat". Default value is "Web" if not specified.'
           }
         },
-        required: ['caseID', 'actionID', 'eTag', 'calculations']
+        required: ['caseID', 'actionID', 'calculations']
       }
     };
   }
@@ -111,7 +111,7 @@ export class RecalculateCaseActionFieldsTool extends BaseTool {
     } = params;
 
     // Basic parameter validation using base class
-    const requiredValidation = this.validateRequiredParams(params, ['caseID', 'actionID', 'eTag', 'calculations']);
+    const requiredValidation = this.validateRequiredParams(params, ['caseID', 'actionID', 'calculations']);
     if (requiredValidation) {
       return requiredValidation;
     }
@@ -186,10 +186,47 @@ export class RecalculateCaseActionFieldsTool extends BaseTool {
       }
     }
 
-    // Validate eTag parameter
-    if (!eTag || typeof eTag !== 'string' || eTag.trim() === '') {
+    // Auto-fetch eTag if not provided
+    let finalETag = eTag;
+    let autoFetchedETag = false;
+    
+    if (!finalETag) {
+      try {
+        console.log(`Auto-fetching latest eTag for case action field recalculation on ${caseID}...`);
+        const caseActionResponse = await this.pegaClient.getCaseAction(caseID.trim(), actionID.trim(), {
+          viewType: 'form',  // Use form view for eTag retrieval
+          excludeAdditionalActions: true
+        });
+        
+        if (!caseActionResponse || !caseActionResponse.success) {
+          const errorMsg = `Failed to auto-fetch eTag: ${caseActionResponse?.error?.message || 'Unknown error'}`;
+          return {
+            error: errorMsg
+          };
+        }
+        
+        finalETag = caseActionResponse.eTag;
+        autoFetchedETag = true;
+        console.log(`Successfully auto-fetched eTag: ${finalETag}`);
+        
+        if (!finalETag) {
+          const errorMsg = 'Auto-fetch succeeded but no eTag was returned from get_case_action. This may indicate a server issue.';
+          return {
+            error: errorMsg
+          };
+        }
+      } catch (error) {
+        const errorMsg = `Failed to auto-fetch eTag: ${error.message}`;
+        return {
+          error: errorMsg
+        };
+      }
+    }
+    
+    // Validate eTag format (should be a timestamp-like string)
+    if (typeof finalETag !== 'string' || finalETag.trim().length === 0) {
       return {
-        error: 'Invalid eTag parameter. Must be a non-empty string obtained from a previous case action request.'
+        error: 'Invalid eTag parameter. Must be a non-empty string representing case save date time.'
       };
     }
 
@@ -216,11 +253,11 @@ export class RecalculateCaseActionFieldsTool extends BaseTool {
 
     // Execute the API call with error handling
     return await this.executeWithErrorHandling(
-      `Recalculating fields and whens for case action ${actionID} on case ${caseID}`,
+      `Recalculating fields and whens for case action ${actionID} on case ${caseID}${autoFetchedETag ? ' (auto-fetched eTag)' : ''}`,
       async () => await this.pegaClient.recalculateCaseActionFields(
         caseID.trim(), 
         actionID.trim(), 
-        eTag.trim(),
+        finalETag.trim(),
         calculations,
         {
           content,
@@ -236,7 +273,7 @@ export class RecalculateCaseActionFieldsTool extends BaseTool {
           originChannel
         }),
         formatErrorResponse: (error) => this.formatErrorResponse(caseID, actionID, error, {
-          eTag,
+          eTag: finalETag,
           calculations,
           content,
           pageInstructions,

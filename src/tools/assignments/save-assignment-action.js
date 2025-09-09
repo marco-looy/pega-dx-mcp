@@ -16,7 +16,7 @@ export class SaveAssignmentActionTool extends BaseTool {
   static getDefinition() {
     return {
       name: 'save_assignment_action',
-      description: 'Save assignment action form data without executing the action. Implements "Save for later" functionality that preserves form data in progress so changes will not be lost when returned to the assignment. Available for Connector actions like Collect info steps, screen flow assignments and customized approval steps. Required field validations are ignored - only server-side validations (dictionary validations) are performed. The saved form data can be retrieved later when the assignment is reopened for continued editing or action execution.',
+      description: 'Save assignment action form data without executing the action. Implements "Save for later" functionality that preserves form data in progress so changes will not be lost when returned to the assignment. If no eTag is provided, automatically fetches the latest eTag from the assignment for seamless operation. Available for Connector actions like Collect info steps, screen flow assignments and customized approval steps. Required field validations are ignored - only server-side validations (dictionary validations) are performed. The saved form data can be retrieved later when the assignment is reopened for continued editing or action execution.',
       inputSchema: {
         type: 'object',
         properties: {
@@ -30,7 +30,7 @@ export class SaveAssignmentActionTool extends BaseTool {
           },
           eTag: {
             type: 'string',
-            description: 'Required eTag unique value representing the most recent save date time (pxSaveDateTime) of the case. This must be equal to the eTag header from the response of the most recent case update request, or from a get_assignment_action request for this assignment. Used for optimistic locking to prevent concurrent modification conflicts.'
+            description: 'Optional eTag unique value representing the most recent save date time (pxSaveDateTime) of the case. If not provided, the tool will automatically fetch the latest eTag from the assignment. For manual eTag management, provide the eTag from a previous assignment operation. Used for optimistic locking to prevent concurrent modification conflicts.'
           },
           content: {
             type: 'object',
@@ -81,7 +81,7 @@ export class SaveAssignmentActionTool extends BaseTool {
             description: 'Optional origin channel identifier for this service request. Indicates the source of the save request for tracking and audit purposes. Examples: "Web", "Mobile", "WebChat". Default value is "Web" if not specified.'
           }
         },
-        required: ['assignmentID', 'actionID', 'eTag']
+        required: ['assignmentID', 'actionID']
       }
     };
   }
@@ -93,7 +93,7 @@ export class SaveAssignmentActionTool extends BaseTool {
     const { assignmentID, actionID, eTag, content, pageInstructions, attachments, originChannel } = params;
 
     // Basic parameter validation using base class
-    const requiredValidation = this.validateRequiredParams(params, ['assignmentID', 'actionID', 'eTag']);
+    const requiredValidation = this.validateRequiredParams(params, ['assignmentID', 'actionID']);
     if (requiredValidation) {
       return requiredValidation;
     }
@@ -117,6 +117,49 @@ export class SaveAssignmentActionTool extends BaseTool {
       };
     }
 
+    // Auto-fetch eTag if not provided
+    let finalETag = eTag;
+    let autoFetchedETag = false;
+    
+    if (!finalETag) {
+      try {
+        console.log(`Auto-fetching latest eTag for assignment save on ${assignmentID}...`);
+        const assignmentResponse = await this.pegaClient.getAssignment(assignmentID.trim(), {
+          viewType: 'form'  // Use form view for eTag retrieval
+        });
+        
+        if (!assignmentResponse || !assignmentResponse.success) {
+          const errorMsg = `Failed to auto-fetch eTag: ${assignmentResponse?.error?.message || 'Unknown error'}`;
+          return {
+            error: errorMsg
+          };
+        }
+        
+        finalETag = assignmentResponse.eTag;
+        autoFetchedETag = true;
+        console.log(`Successfully auto-fetched eTag: ${finalETag}`);
+        
+        if (!finalETag) {
+          const errorMsg = 'Auto-fetch succeeded but no eTag was returned from get_assignment. This may indicate a server issue.';
+          return {
+            error: errorMsg
+          };
+        }
+      } catch (error) {
+        const errorMsg = `Failed to auto-fetch eTag: ${error.message}`;
+        return {
+          error: errorMsg
+        };
+      }
+    }
+    
+    // Validate eTag format (should be a timestamp-like string)
+    if (typeof finalETag !== 'string' || finalETag.trim().length === 0) {
+      return {
+        error: 'Invalid eTag parameter. Must be a non-empty string representing case save date time.'
+      };
+    }
+
     // Prepare request options
     const options = {};
     
@@ -127,8 +170,8 @@ export class SaveAssignmentActionTool extends BaseTool {
 
     // Execute assignment action save via API client using error handling wrapper
     return await this.executeWithErrorHandling(
-      `Saving assignment action form data: ${assignmentID} -> ${actionID}`,
-      async () => await this.pegaClient.saveAssignmentAction(assignmentID, actionID, eTag, options)
+      `Saving assignment action form data: ${assignmentID} -> ${actionID}${autoFetchedETag ? ' (auto-fetched eTag)' : ''}`,
+      async () => await this.pegaClient.saveAssignmentAction(assignmentID, actionID, finalETag.trim(), options)
     );
   }
 

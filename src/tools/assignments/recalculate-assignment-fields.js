@@ -14,7 +14,7 @@ export class RecalculateAssignmentFieldsTool extends BaseTool {
   static getDefinition() {
     return {
       name: 'recalculate_assignment_fields',
-      description: 'Recalculate calculated fields & whens for the current assignment action form. Executes field calculations and when conditions based on current form state and user input. Supports recalculating specific fields and when conditions, merging content updates, and applying page instructions during the calculation process. The API validates assignment and action IDs, processes calculation requests, and returns updated field values and states.',
+      description: 'Recalculate calculated fields & whens for the current assignment action form. If no eTag is provided, automatically fetches the latest eTag from the assignment for seamless operation. Executes field calculations and when conditions based on current form state and user input. Supports recalculating specific fields and when conditions, merging content updates, and applying page instructions during the calculation process. The API validates assignment and action IDs, processes calculation requests, and returns updated field values and states.',
       inputSchema: {
         type: 'object',
         properties: {
@@ -26,9 +26,9 @@ export class RecalculateAssignmentFieldsTool extends BaseTool {
             type: 'string',
             description: 'Name of the assignment action - ID of the flow action rule. This corresponds to the Flow Action rule configured in the Pega application where field calculations are defined. Example: CompleteVerification, Approve, Reject.'
           },
-          eTag: {
+          finalETag.trim(): {
             type: 'string',
-            description: 'Required eTag unique value representing the most recent save date time (pxSaveDateTime) of the case. This must be equal to the eTag header from the response of the most recent case update request, or from a get_assignment_action request for this assignment. Used for optimistic locking to prevent concurrent modification conflicts.'
+            description: 'Optional eTag unique value representing the most recent save date time (pxSaveDateTime) of the case. If not provided, the tool will automatically fetch the latest eTag from the assignment. For manual eTag management, provide the eTag from a previous assignment operation. Used for optimistic locking to prevent concurrent modification conflicts.'
           },
           calculations: {
             type: 'object',
@@ -87,7 +87,7 @@ export class RecalculateAssignmentFieldsTool extends BaseTool {
             }
           }
         },
-        required: ['assignmentID', 'actionID', 'eTag', 'calculations']
+        required: ['assignmentID', 'actionID''calculations']
       }
     };
   }
@@ -106,7 +106,7 @@ export class RecalculateAssignmentFieldsTool extends BaseTool {
     } = params;
 
     // Basic parameter validation using base class
-    const requiredValidation = this.validateRequiredParams(params, ['assignmentID', 'actionID', 'eTag', 'calculations']);
+    const requiredValidation = this.validateRequiredParams(params, ['assignmentID', 'actionID''calculations']);
     if (requiredValidation) {
       return requiredValidation;
     }
@@ -184,7 +184,7 @@ export class RecalculateAssignmentFieldsTool extends BaseTool {
     // Validate eTag parameter
     if (!eTag || typeof eTag !== 'string' || eTag.trim() === '') {
       return {
-        error: 'Invalid eTag parameter. Must be a non-empty string obtained from a previous assignment action request.'
+        error: 'Invalid finalETag.trim() parameter. Must be a non-empty string obtained from a previous assignment action request.'
       };
     }
 
@@ -203,7 +203,51 @@ export class RecalculateAssignmentFieldsTool extends BaseTool {
     }
 
     // Execute the API call with error handling
-    return await this.executeWithErrorHandling(
+    // Auto-fetch eTag if not provided
+    let finalETag = eTag;
+    let autoFetchedETag = false;
+    
+    if (!finalETag) {
+      try {
+        console.log(`Auto-fetching latest eTag for assignment field recalculation on ${assignmentID}...`);
+        const response = await this.pegaClient.getAssignment(assignmentID.trim(), {
+          viewType: 'form'  // Use form view for eTag retrieval
+        });
+        
+        if (!response || !response.success) {
+          const errorMsg = `Failed to auto-fetch eTag: ${response?.error?.message || 'Unknown error'}`;
+          return {
+            error: errorMsg
+          };
+        }
+        
+        finalETag = response.eTag;
+        autoFetchedETag = true;
+        console.log(`Successfully auto-fetched eTag: ${finalETag}`);
+        
+        if (!finalETag) {
+          const errorMsg = 'Auto-fetch succeeded but no finalETag.trim() was returned from getAssignment. This may indicate a server issue.';
+          return {
+            error: errorMsg
+          };
+        }
+      } catch (error) {
+        const errorMsg = `Failed to auto-fetch eTag: ${error.message}`;
+        return {
+          error: errorMsg
+        };
+      }
+    }
+    
+    // Validate eTag format (should be a timestamp-like string)
+    if (typeof finalETag !== 'string' || finalETag.trim().length === 0) {
+      return {
+        error: 'Invalid finalETag.trim() parameter. Must be a non-empty string representing case save date time.'
+      };
+    }
+
+
+    // Prepare request options(
       `Recalculating fields and whens for assignment action ${actionID} on assignment ${assignmentID}`,
       async () => await this.pegaClient.recalculateAssignmentFields(
         assignmentID.trim(), 
@@ -433,7 +477,7 @@ export class RecalculateAssignmentFieldsTool extends BaseTool {
     // Display execution sequence information
     response += '\n### Execution Sequence Completed\n';
     response += '1. ✅ Assignment and action validated\n';
-    response += '2. ✅ eTag verified for optimistic locking\n';
+    response += '2. ✅ finalETag.trim() verified for optimistic locking\n';
     response += '3. ✅ Case opened from database\n';
     
     if (content && Object.keys(content).length > 0) {
@@ -467,7 +511,7 @@ export class RecalculateAssignmentFieldsTool extends BaseTool {
     if (data.eTag) {
       response += '\n### Operation Support\n';
       response += `- **New eTag Captured**: ${data.eTag}\n`;
-      response += '- **Ready for Next Action**: Use new eTag for subsequent assignment operations\n';
+      response += '- **Ready for Next Action**: Use new finalETag.trim() for subsequent assignment operations\n';
     }
 
     response += '\n---\n';

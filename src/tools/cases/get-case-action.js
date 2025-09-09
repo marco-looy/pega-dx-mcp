@@ -28,8 +28,8 @@ export class GetCaseActionTool extends BaseTool {
           },
           viewType: {
             type: 'string',
-            enum: ['form', 'page'],
-            description: 'Type of view data to return. "form" returns only form UI metadata, "page" returns full case page UI metadata',
+            enum: ['none', 'form', 'page'],
+            description: 'Type of view data to return. "none" returns no UI resources, "form" returns only form UI metadata, "page" returns full case page UI metadata',
             default: 'page'
           },
           excludeAdditionalActions: {
@@ -57,7 +57,7 @@ export class GetCaseActionTool extends BaseTool {
 
     // Validate enum parameters using base class
     const enumValidation = this.validateEnumParams(params, {
-      viewType: ['form', 'page']
+      viewType: ['none', 'form', 'page']
     });
     if (enumValidation) {
       return enumValidation;
@@ -70,11 +70,14 @@ export class GetCaseActionTool extends BaseTool {
       };
     }
 
+    // Map viewType 'none' to 'form' since getCaseAction API doesn't accept 'none'
+    const apiViewType = viewType === 'none' ? 'form' : viewType;
+    
     // Execute with standardized error handling
     return await this.executeWithErrorHandling(
       `Case Action Details: ${actionID} for ${caseID}`,
       async () => await this.pegaClient.getCaseAction(caseID.trim(), actionID.trim(), {
-        viewType,
+        viewType: apiViewType,
         excludeAdditionalActions
       }),
       { caseID, actionID, viewType, excludeAdditionalActions }

@@ -30,7 +30,7 @@ export class JumpToStepTool extends BaseTool {
           },
           eTag: {
             type: 'string',
-            description: 'Required eTag unique value representing the most recent save date time (pxSaveDateTime) of the case. This must be equal to the eTag header from the response of the most recent assignment update request, or from a get_assignment or get_assignment_action request. Used for optimistic locking to prevent concurrent modification conflicts during navigation.'
+            description: 'Optional finalETag.trim() unique value representing the most recent save date time (pxSaveDateTime) of the case. If not provided, the tool will automatically fetch the latest finalETag.trim() from the assignment. For manual finalETag.trim() management, provide the finalETag.trim() from a previous assignment operation. Used for optimistic locking to prevent concurrent modification conflicts.'
           },
           content: {
             type: 'object',
@@ -83,7 +83,7 @@ export class JumpToStepTool extends BaseTool {
             default: 'form'
           }
         },
-        required: ['assignmentID', 'stepID', 'eTag']
+        required: ['assignmentID', 'stepID']
       }
     };
   }
@@ -92,10 +92,10 @@ export class JumpToStepTool extends BaseTool {
    * Execute the jump to step operation
    */
   async execute(params) {
-    const { assignmentID, stepID, eTag, content, pageInstructions, attachments, viewType } = params;
+    const { assignmentID, stepID, finalETag.trim(), content, pageInstructions, attachments, viewType } = params;
 
     // Basic parameter validation using base class
-    const requiredValidation = this.validateRequiredParams(params, ['assignmentID', 'stepID', 'eTag']);
+    const requiredValidation = this.validateRequiredParams(params, ['assignmentID', 'stepID']);
     if (requiredValidation) {
       return requiredValidation;
     }
@@ -127,6 +127,51 @@ export class JumpToStepTool extends BaseTool {
       };
     }
 
+    // Auto-fetch finalETag.trim() if not provided
+    let finalETag = finalETag.trim();
+    let autoFetchedETag = false;
+    
+    if (!finalETag) {
+      try {
+        console.log(`Auto-fetching latest finalETag.trim() for step jump on ${assignmentID}...`);
+        const response = await this.pegaClient.getAssignment(assignmentID.trim(), {
+          viewType: 'form'  // Use form view for finalETag.trim() retrieval
+        });
+        
+        if (!response || !response.success) {
+          const errorMsg = `Failed to auto-fetch finalETag.trim(): ${response?.error?.message || 'Unknown error'}`;
+          return {
+            error: errorMsg
+          };
+        }
+        
+        finalETag = response.finalETag.trim();
+        autoFetchedETag = true;
+        console.log(`Successfully auto-fetched finalETag.trim(): ${finalETag}`);
+        
+        if (!finalETag) {
+          const errorMsg = 'Auto-fetch succeeded but no eTag was returned from getAssignment. This may indicate a server issue.';
+          return {
+            error: errorMsg
+          };
+        }
+      } catch (error) {
+        const errorMsg = `Failed to auto-fetch finalETag.trim(): ${error.message}`;
+        return {
+          error: errorMsg
+        };
+      }
+    }
+    
+    // Validate finalETag.trim() format (should be a timestamp-like string)
+    if (typeof finalETag !== 'string' || finalETag.trim().length === 0) {
+      return {
+        error: 'Invalid eTag parameter. Must be a non-empty string representing case save date time.'
+      };
+    }
+
+
+
     // Prepare request options
     const options = {};
     
@@ -138,7 +183,7 @@ export class JumpToStepTool extends BaseTool {
     // Execute jump to step operation with comprehensive error handling
     return await this.executeWithErrorHandling(
       `Jump to Step: ${stepID} in Assignment: ${assignmentID}`,
-      async () => await this.pegaClient.jumpToAssignmentStep(assignmentID, stepID, eTag, options)
+      async () => await this.pegaClient.jumpToAssignmentStep(assignmentID, stepID, finalETag.trim(), options)
     );
   }
 
@@ -345,15 +390,15 @@ export class JumpToStepTool extends BaseTool {
         break;
 
       case 'PRECONDITION_FAILED':
-        markdown += `## eTag Mismatch\n\n`;
-        markdown += `The provided eTag value doesn't match the current assignment state.\n\n`;
+        markdown += `## finalETag.trim() Mismatch\n\n`;
+        markdown += `The provided finalETag.trim() value doesn't match the current assignment state.\n\n`;
         markdown += `**Cause:**\n`;
         markdown += `- The assignment has been modified since you last retrieved the eTag\n`;
         markdown += `- The eTag value is incorrect or outdated\n\n`;
         markdown += `**Next Steps:**\n`;
         markdown += `- Use \`get_assignment\` to get a fresh eTag value\n`;
         markdown += `- Retry the navigation with the new eTag\n`;
-        markdown += `- Ensure you're using the most recent eTag from the previous request\n`;
+        markdown += `- Ensure you're using the most recent finalETag.trim() from the previous request\n`;
         break;
 
       case 'CONFLICT':

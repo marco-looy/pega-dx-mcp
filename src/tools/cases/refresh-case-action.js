@@ -14,7 +14,7 @@ export class RefreshCaseActionTool extends BaseTool {
   static getDefinition() {
     return {
       name: 'refresh_case_action',
-      description: 'Refresh case action form data with updated values after property changes, execute Data Transforms, and handle table row operations in modals. Supports form refresh settings configured in Flow Action rules, generative AI form filling, and embedded list operations with comprehensive validation and preprocessing execution. The API validates case and action IDs, retrieves view data, and returns information about fields affected by the refresh action. Supports Pega Infinity \'25 features including table row operations in modals.',
+      description: 'Refresh case action form data with updated values after property changes, execute Data Transforms, and handle table row operations in modals. If no eTag is provided, automatically fetches the latest eTag from the case action for seamless operation. Supports form refresh settings configured in Flow Action rules, generative AI form filling, and embedded list operations with comprehensive validation and preprocessing execution. The API validates case and action IDs, retrieves view data, and returns information about fields affected by the refresh action. Supports Pega Infinity \'25 features including table row operations in modals.',
       inputSchema: {
         type: 'object',
         properties: {
@@ -28,7 +28,7 @@ export class RefreshCaseActionTool extends BaseTool {
           },
           eTag: {
             type: 'string',
-            description: 'Required eTag unique value representing the most recent save date time (pxSaveDateTime) of the case. This must be equal to the eTag header from the response of the most recent case update request, or from a get_case_action request for this case action. Used for optimistic locking to prevent concurrent modification conflicts.'
+            description: 'Optional eTag unique value representing the most recent save date time (pxSaveDateTime) of the case. If not provided, the tool will automatically fetch the latest eTag from the case action. For manual eTag management, provide the eTag from a previous case operation. Used for optimistic locking to prevent concurrent modification conflicts.'
           },
           refreshFor: {
             type: 'string',
@@ -71,7 +71,7 @@ export class RefreshCaseActionTool extends BaseTool {
             description: 'Optional origin channel identifier for this service request. Indicates the source of the request for tracking and audit purposes. Examples: "Web", "Mobile", "WebChat". Default value is "Web" if not specified.'
           }
         },
-        required: ['caseID', 'actionID', 'eTag']
+        required: ['caseID', 'actionID']
       }
     };
   }
@@ -96,7 +96,7 @@ export class RefreshCaseActionTool extends BaseTool {
     } = params;
 
     // Basic parameter validation using base class
-    const requiredValidation = this.validateRequiredParams(params, ['caseID', 'actionID', 'eTag']);
+    const requiredValidation = this.validateRequiredParams(params, ['caseID', 'actionID']);
     if (requiredValidation) {
       return requiredValidation;
     }
@@ -143,10 +143,47 @@ export class RefreshCaseActionTool extends BaseTool {
       }
     }
 
-    // Validate eTag parameter
-    if (!eTag || typeof eTag !== 'string' || eTag.trim() === '') {
+    // Auto-fetch eTag if not provided
+    let finalETag = eTag;
+    let autoFetchedETag = false;
+    
+    if (!finalETag) {
+      try {
+        console.log(`Auto-fetching latest eTag for case action refresh on ${caseID}...`);
+        const caseActionResponse = await this.pegaClient.getCaseAction(caseID.trim(), actionID.trim(), {
+          viewType: 'form',  // Use form view for eTag retrieval
+          excludeAdditionalActions: true
+        });
+        
+        if (!caseActionResponse || !caseActionResponse.success) {
+          const errorMsg = `Failed to auto-fetch eTag: ${caseActionResponse?.error?.message || 'Unknown error'}`;
+          return {
+            error: errorMsg
+          };
+        }
+        
+        finalETag = caseActionResponse.eTag;
+        autoFetchedETag = true;
+        console.log(`Successfully auto-fetched eTag: ${finalETag}`);
+        
+        if (!finalETag) {
+          const errorMsg = 'Auto-fetch succeeded but no eTag was returned from get_case_action. This may indicate a server issue.';
+          return {
+            error: errorMsg
+          };
+        }
+      } catch (error) {
+        const errorMsg = `Failed to auto-fetch eTag: ${error.message}`;
+        return {
+          error: errorMsg
+        };
+      }
+    }
+    
+    // Validate eTag format (should be a timestamp-like string)
+    if (typeof finalETag !== 'string' || finalETag.trim().length === 0) {
       return {
-        error: 'Invalid eTag parameter. Must be a non-empty string obtained from a previous case action request.'
+        error: 'Invalid eTag parameter. Must be a non-empty string representing case save date time.'
       };
     }
 
@@ -173,11 +210,11 @@ export class RefreshCaseActionTool extends BaseTool {
 
     // Execute the API call with error handling
     return await this.executeWithErrorHandling(
-      `Refreshing case action ${actionID} for case ${caseID}`,
+      `Refreshing case action ${actionID} for case ${caseID}${autoFetchedETag ? ' (auto-fetched eTag)' : ''}`,
       async () => await this.pegaClient.refreshCaseAction(
         caseID.trim(), 
         actionID.trim(), 
-        eTag.trim(),
+        finalETag.trim(),
         {
           refreshFor: refreshFor?.trim(),
           fillFormWithAI,

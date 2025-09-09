@@ -247,6 +247,34 @@ This file contains sample data discovered during testing that can be reused for 
 - **Automatic Updates**: Assignments, processes, and stage status update automatically
 - **Error Handling**: Clear 404/409/412 responses for invalid cases/eTags/conflicts
 
+## change_to_stage Testing Information
+**Last Updated**: 2025-09-09  
+**Source**: change_to_stage testing
+
+### Successfully Tested Stage Changes
+**Test Case**: ON6E5R-DIYRECIPE-WORK R-1048
+
+#### Primary Stage Navigation (PRIM0 → PRIM1)
+- **From**: Recipe Intake (PRIM0) → Classification (PRIM1)
+- **Assignment Change**: Enter Recipe Details → Categorize Recipe
+- **Process Change**: RecipeIntake_Flow → Classification_Flow
+- **Stage Status**: PRIM0 completed, PRIM1 active
+- **Result**: ✅ SUCCESS
+
+#### Alternate Stage Navigation (PRIM1 → ALT1)
+- **From**: Classification (PRIM1) → Approval Rejection (ALT1)
+- **Status Change**: New → Resolved-Rejected
+- **Resolution**: Case automatically resolved
+- **Assignments**: Removed (resolved case)
+- **Available Actions**: Only "Reopen" action remains
+- **Result**: ✅ SUCCESS
+
+### change_to_stage vs change_to_next_stage Comparison
+- **change_to_stage**: Navigate to ANY valid stage (primary/alternate)
+- **change_to_next_stage**: Only navigate to next sequential primary stage
+- **Flexibility**: change_to_stage allows skipping stages and alternate navigation
+- **Use Cases**: change_to_stage ideal for complex workflow management
+
 ## Future Data Collection
 Additional sample data will be added here as we test more tools:
 - Assignment IDs from assignment tests  

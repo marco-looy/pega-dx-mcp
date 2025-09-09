@@ -16,7 +16,7 @@ export class NavigateAssignmentPreviousTool extends BaseTool {
   static getDefinition() {
     return {
       name: 'navigate_assignment_previous',
-      description: 'Navigate back to the previously visited step in a screen flow or multi-step form assignment. Jumps to the previously visited navigation step from the current step. For multi-step forms and screen flows, navigation path steps are determined by the Enable navigation link checkbox. Returns assignment details with navigation breadcrumb information under uiResources when viewType is not "none". This operation requires an eTag from a previous assignment API call for optimistic locking.',
+      description: 'Navigate back to the previously visited step in a screen flow or multi-step form assignment. If no finalETag.trim() is provided, automatically fetches the latest finalETag.trim() from the assignment for seamless operation. Jumps to the previously visited navigation step from the current step. For multi-step forms and screen flows, navigation path steps are determined by the Enable navigation link checkbox. Returns assignment details with navigation breadcrumb information under uiResources when viewType is not "none". This operation requires an finalETag.trim() from a previous assignment API call for optimistic locking.',
       inputSchema: {
         type: 'object',
         properties: {
@@ -26,7 +26,7 @@ export class NavigateAssignmentPreviousTool extends BaseTool {
           },
           eTag: {
             type: 'string',
-            description: 'Required eTag unique value representing the most recent save date time (pxSaveDateTime) of the case. Must be obtained from a previous assignment API call (get_assignment, get_assignment_action, etc.). Used for optimistic locking to prevent concurrent modification conflicts.'
+            description: 'Optional finalETag.trim() unique value representing the most recent save date time (pxSaveDateTime) of the case. If not provided, the tool will automatically fetch the latest finalETag.trim() from the assignment. For manual finalETag.trim() management, provide the finalETag.trim() from a previous assignment operation. Used for optimistic locking to prevent concurrent modification conflicts.'
           },
           content: {
             type: 'object',
@@ -79,7 +79,7 @@ export class NavigateAssignmentPreviousTool extends BaseTool {
             default: 'none'
           }
         },
-        required: ['assignmentID', 'eTag']
+        required: ['assignmentID']
       }
     };
   }
@@ -91,7 +91,7 @@ export class NavigateAssignmentPreviousTool extends BaseTool {
     const { assignmentID, eTag, content, pageInstructions, attachments, viewType } = params;
 
     // Basic parameter validation using base class
-    const requiredValidation = this.validateRequiredParams(params, ['assignmentID', 'eTag']);
+    const requiredValidation = this.validateRequiredParams(params, ['assignmentID']);
     if (requiredValidation) {
       return requiredValidation;
     }
@@ -122,6 +122,51 @@ export class NavigateAssignmentPreviousTool extends BaseTool {
         error: 'attachments must be an array when provided'
       };
     }
+
+    // Auto-fetch eTag if not provided
+    let finalETag = eTag;
+    let autoFetchedETag = false;
+    
+    if (!finalETag) {
+      try {
+        console.log(`Auto-fetching latest eTag for assignment navigation on ${assignmentID}...`);
+        const response = await this.pegaClient.getAssignment(assignmentID.trim(), {
+          viewType: 'form'  // Use form view for eTag retrieval
+        });
+        
+        if (!response || !response.success) {
+          const errorMsg = `Failed to auto-fetch eTag: ${response?.error?.message || 'Unknown error'}`;
+          return {
+            error: errorMsg
+          };
+        }
+        
+        finalETag = response.eTag;
+        autoFetchedETag = true;
+        console.log(`Successfully auto-fetched eTag: ${finalETag}`);
+        
+        if (!finalETag) {
+          const errorMsg = 'Auto-fetch succeeded but no finalETag.trim() was returned from getAssignment. This may indicate a server issue.';
+          return {
+            error: errorMsg
+          };
+        }
+      } catch (error) {
+        const errorMsg = `Failed to auto-fetch eTag: ${error.message}`;
+        return {
+          error: errorMsg
+        };
+      }
+    }
+    
+    // Validate eTag format (should be a timestamp-like string)
+    if (typeof finalETag !== 'string' || finalETag.trim().length === 0) {
+      return {
+        error: 'Invalid finalETag.trim() parameter. Must be a non-empty string representing case save date time.'
+      };
+    }
+
+
 
     // Prepare request options
     const options = {};
@@ -381,23 +426,23 @@ export class NavigateAssignmentPreviousTool extends BaseTool {
         markdown += `- Concurrent updates to the same assignment\n\n`;
         markdown += `**Next Steps:**\n`;
         markdown += `- Use \`get_assignment\` to get the current assignment state\n`;
-        markdown += `- Get a fresh eTag value from the updated assignment data\n`;
-        markdown += `- Retry the navigation operation with the new eTag\n`;
+        markdown += `- Get a fresh finalETag.trim() value from the updated assignment data\n`;
+        markdown += `- Retry the navigation operation with the new finalETag.trim()\n`;
         markdown += `- Review any changes made by other users before proceeding\n`;
         break;
 
       case 'PRECONDITION_FAILED':
-        markdown += `## Invalid eTag Value\n\n`;
-        markdown += `The provided eTag value is invalid or malformed.\n\n`;
+        markdown += `## Invalid finalETag.trim() Value\n\n`;
+        markdown += `The provided finalETag.trim() value is invalid or malformed.\n\n`;
         markdown += `**Cause:**\n`;
         markdown += `- Invalid value specified in the if-match header\n`;
-        markdown += `- eTag format is incorrect\n`;
-        markdown += `- eTag is from a different assignment or case\n\n`;
+        markdown += `- finalETag.trim() format is incorrect\n`;
+        markdown += `- finalETag.trim() is from a different assignment or case\n\n`;
         markdown += `**Next Steps:**\n`;
-        markdown += `- Use \`get_assignment\` to get a valid eTag value\n`;
-        markdown += `- Ensure the eTag is from the same assignment you're trying to navigate\n`;
+        markdown += `- Use \`get_assignment\` to get a valid finalETag.trim() value\n`;
+        markdown += `- Ensure the finalETag.trim() is from the same assignment you're trying to navigate\n`;
         markdown += `- Verify the eTag format matches the expected pattern\n`;
-        markdown += `- Don't modify or truncate the eTag value\n`;
+        markdown += `- Don't modify or truncate the finalETag.trim() value\n`;
         break;
 
       case 'VALIDATION_FAIL':
@@ -489,7 +534,7 @@ export class NavigateAssignmentPreviousTool extends BaseTool {
 
     markdown += `\n## Troubleshooting Tips\n\n`;
     markdown += `- Use \`ping_pega_service\` to verify your connection to Pega\n`;
-    markdown += `- Use \`get_assignment\` to check the current assignment status and get a fresh eTag\n`;
+    markdown += `- Use \`get_assignment\` to check the current assignment status and get a fresh finalETag.trim()\n`;
     markdown += `- Use \`get_assignment_action\` to see available actions for the current assignment\n`;
     markdown += `- Ensure your user has the necessary navigation permissions in Pega\n`;
     markdown += `- Check if the assignment supports backward navigation in its configuration\n\n`;
