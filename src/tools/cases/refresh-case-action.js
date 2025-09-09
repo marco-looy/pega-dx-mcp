@@ -208,10 +208,9 @@ export class RefreshCaseActionTool extends BaseTool {
       };
     }
 
-    // Execute the API call with error handling
-    return await this.executeWithErrorHandling(
-      `Refreshing case action ${actionID} for case ${caseID}${autoFetchedETag ? ' (auto-fetched eTag)' : ''}`,
-      async () => await this.pegaClient.refreshCaseAction(
+    // Execute the API call directly and handle custom formatting
+    try {
+      const apiResult = await this.pegaClient.refreshCaseAction(
         caseID.trim(), 
         actionID.trim(), 
         finalETag.trim(),
@@ -226,31 +225,51 @@ export class RefreshCaseActionTool extends BaseTool {
           interestPageActionID: interestPageActionID?.trim(),
           originChannel
         }
-      ),
-      {
-        formatSuccessResponse: (data, eTag) => this.formatSuccessResponse(caseID, actionID, data, eTag, {
-          refreshFor,
-          fillFormWithAI,
-          operation,
-          content,
-          pageInstructions,
-          contextData,
-          interestPage,
-          interestPageActionID,
-          originChannel
-        }),
-        formatErrorResponse: (error) => this.formatErrorResponse(caseID, actionID, error, {
-          eTag,
-          refreshFor,
-          fillFormWithAI,
-          operation,
-          interestPage,
-          interestPageActionID,
-          contextData,
-          originChannel
-        })
+      );
+      
+      if (apiResult.success) {
+        return {
+          content: [
+            {
+              type: 'text',
+              text: this.formatSuccessResponse(caseID, actionID, apiResult.data, apiResult.eTag, {
+                refreshFor,
+                fillFormWithAI,
+                operation,
+                content,
+                pageInstructions,
+                contextData,
+                interestPage,
+                interestPageActionID,
+                originChannel
+              })
+            }
+          ]
+        };
+      } else {
+        return {
+          content: [
+            {
+              type: 'text',
+              text: this.formatErrorResponse(caseID, actionID, apiResult.error, {
+                eTag: finalETag,
+                refreshFor,
+                fillFormWithAI,
+                operation,
+                interestPage,
+                interestPageActionID,
+                contextData,
+                originChannel
+              })
+            }
+          ]
+        };
       }
-    );
+    } catch (error) {
+      return {
+        error: `Unexpected error during refreshing case action ${actionID} for case ${caseID}: ${error.message}`
+      };
+    }
   }
 
   /**
