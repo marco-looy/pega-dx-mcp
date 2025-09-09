@@ -162,6 +162,30 @@ export class BaseTool {
   formatDataSection(data) {
     let section = '';
     
+    // Handle direct array responses (like ancestors)
+    if (Array.isArray(data)) {
+      if (data.length === 0) {
+        section += '### Result\n';
+        section += '- No data found\n\n';
+      } else {
+        section += this.formatObjectAsKeyValue('Data', data);
+      }
+      return section;
+    }
+    
+    // Handle direct object responses (like descendants with childCases)
+    if (data && typeof data === 'object' && !data.data && !data.uiResources && !data.etag) {
+      // Check if it's an empty object
+      if (Object.keys(data).length === 0) {
+        section += '### Result\n';
+        section += '- No data found\n\n';
+      } else {
+        section += this.formatObjectAsKeyValue('Data', data);
+      }
+      return section;
+    }
+    
+    // Handle standard nested data structure (existing behavior)
     if (data.data) {
       section += this.formatObjectAsKeyValue('Data', data.data);
     }

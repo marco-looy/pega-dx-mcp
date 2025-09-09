@@ -230,6 +230,23 @@ This file contains sample data discovered during testing that can be reused for 
 - **Assignment Data**: Returns assignments and actions for each descendant (when present)
 - **Access Control**: Shows limited info for cases user cannot access
 
+## Stage Navigation Information  
+**Last Updated**: 2025-09-09  
+**Source**: change_to_next_stage testing
+
+### Successfully Tested Stage Transitions
+- **Case**: ON6E5R-DIYRECIPE-WORK R-1045
+- **Transition**: PRIM0 (Recipe Intake) → PRIM1 (Classification)
+- **Result**: ✅ SUCCESS - Complete workflow progression
+- **Assignment Change**: Enter Recipe Details → Categorize Recipe
+- **Process Change**: RecipeIntake_Flow → Classification_Flow
+
+### Stage Navigation Insights
+- **eTag Management**: Critical for optimistic locking - must use fresh eTag
+- **Sequential Navigation**: Cannot skip stages, must follow primary sequence
+- **Automatic Updates**: Assignments, processes, and stage status update automatically
+- **Error Handling**: Clear 404/409/412 responses for invalid cases/eTags/conflicts
+
 ## Future Data Collection
 Additional sample data will be added here as we test more tools:
 - Assignment IDs from assignment tests  

@@ -78,5 +78,10 @@ Simple questions you can ask the MCP to perform tasks with each tool.
 - "Get the child cases for my Recipe Collection case"
 - "List all sub-cases descending from case R-1038 with their assignments"
 
+## change_to_next_stage
+- "Move my Recipe Collection case ON6E5R-DIYRECIPE-WORK R-1045 to the next stage"
+- "Progress case R-1045 through the workflow to Classification stage"
+- "Navigate my case from Recipe Intake to the next stage in the sequence"
+
 ---
 *More examples will be added as testing progresses*
