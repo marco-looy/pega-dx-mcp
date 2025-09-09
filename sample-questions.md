@@ -101,5 +101,17 @@ Simple questions you can ask the MCP to perform tasks with each tool.
 - "Cancel my case operation and release the pessimistic lock"
 - "Release the lock on case R-1060 and show me the updated case information"
 
+## refresh_case_action
+- "Refresh the pyUpdateCaseDetails form for case ON6E5R-DIYRECIPE-WORK R-1063 with updated RecipeName and Category"
+- "Execute Data Transform refresh for RecipeName property on my Recipe Collection case"
+- "Refresh my case action form in context data mode for better performance"
+- "Update case fields and refresh the form to see the latest field states"
+
+## recalculate_case_action_fields
+- "Recalculate the RecipeName and Category fields for case ON6E5R-DIYRECIPE-WORK R-1063 using pyUpdateCaseDetails action"
+- "Evaluate calculated fields with content merging for my Recipe Collection case"
+- "Calculate field values and when conditions for my case action form"
+- "Recalculate specific fields using the content context and see the updated values"
+
 ---
 *More examples will be added as testing progresses*

@@ -251,10 +251,9 @@ export class RecalculateCaseActionFieldsTool extends BaseTool {
       };
     }
 
-    // Execute the API call with error handling
-    return await this.executeWithErrorHandling(
-      `Recalculating fields and whens for case action ${actionID} on case ${caseID}${autoFetchedETag ? ' (auto-fetched eTag)' : ''}`,
-      async () => await this.pegaClient.recalculateCaseActionFields(
+    // Execute the API call directly and handle custom formatting
+    try {
+      const apiResult = await this.pegaClient.recalculateCaseActionFields(
         caseID.trim(), 
         actionID.trim(), 
         finalETag.trim(),
@@ -264,23 +263,43 @@ export class RecalculateCaseActionFieldsTool extends BaseTool {
           pageInstructions,
           originChannel
         }
-      ),
-      {
-        formatSuccessResponse: (data, eTag) => this.formatSuccessResponse(caseID, actionID, data, eTag, {
-          calculations,
-          content,
-          pageInstructions,
-          originChannel
-        }),
-        formatErrorResponse: (error) => this.formatErrorResponse(caseID, actionID, error, {
-          eTag: finalETag,
-          calculations,
-          content,
-          pageInstructions,
-          originChannel
-        })
+      );
+      
+      if (apiResult.success) {
+        return {
+          content: [
+            {
+              type: 'text',
+              text: this.formatSuccessResponse(caseID, actionID, apiResult.data, apiResult.eTag, {
+                calculations,
+                content,
+                pageInstructions,
+                originChannel
+              })
+            }
+          ]
+        };
+      } else {
+        return {
+          content: [
+            {
+              type: 'text',
+              text: this.formatErrorResponse(caseID, actionID, apiResult.error, {
+                eTag: finalETag,
+                calculations,
+                content,
+                pageInstructions,
+                originChannel
+              })
+            }
+          ]
+        };
       }
-    );
+    } catch (error) {
+      return {
+        error: `Unexpected error during recalculating fields and whens for case action ${actionID} on case ${caseID}: ${error.message}`
+      };
+    }
   }
 
   /**

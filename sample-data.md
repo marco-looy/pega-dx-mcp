@@ -341,6 +341,32 @@ This file contains sample data discovered during testing that can be reused for 
 - **✅ Case State Persistence**: Original assignments remain, optional process adds new ones
 - **✅ Immediate Availability**: Process can be used immediately after configuration
 
+## Case Action Refresh Information
+**Last Updated**: 2025-09-09  
+**Source**: refresh_case_action testing
+
+### Successfully Tested Case Action Refresh
+- **Test Case**: ON6E5R-DIYRECIPE-WORK R-1063
+- **Action**: pyUpdateCaseDetails
+- **Content Updates**: RecipeName and Category fields successfully updated
+- **RefreshFor Testing**: Property-specific Data Transform execution confirmed
+- **ContextData Mode**: Performance optimization working (context data only)
+
+### refresh_case_action Features Confirmed
+- **Auto-eTag Management**: Seamless operation without manual eTag handling
+- **Content Merging**: Successfully updates case fields during refresh
+- **Data Transform Integration**: refreshFor parameter triggers specific transforms  
+- **Performance Optimization**: contextData parameter for improved response time
+- **Field State Management**: Required, Disabled, and Visibility conditions evaluated
+- **UI Resource Updates**: Form metadata and field states properly refreshed
+
+### Response Structure Elements
+- **Execution Sequence**: Step-by-step operation tracking (8 steps)
+- **Case Information**: Current case state and metadata
+- **Updated Content**: Field values after refresh operation  
+- **UI Resources**: Form metadata with 18+ field configurations
+- **Performance Info**: Context data optimization when enabled
+
 ## Future Data Collection
 Additional sample data will be added here as we test more tools:
 - Assignment IDs from assignment tests  
