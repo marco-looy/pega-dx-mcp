@@ -143,6 +143,47 @@ export class RefreshAssignmentActionTool extends BaseTool {
       };
     }
 
+    // Auto-fetch eTag if not provided (required for refresh operations)
+    let finalETag = undefined; // refresh_assignment_action doesn't accept eTag parameter yet
+    let autoFetchedETag = false;
+    
+    try {
+      console.log(`Auto-fetching latest eTag for assignment refresh on ${assignmentID}...`);
+      const assignmentResponse = await this.pegaClient.getAssignment(assignmentID.trim(), {
+        viewType: 'form'  // Use form view for eTag retrieval
+      });
+      
+      if (!assignmentResponse || !assignmentResponse.success) {
+        const errorMsg = `Failed to auto-fetch eTag: ${assignmentResponse?.error?.message || 'Unknown error'}`;
+        return {
+          error: errorMsg
+        };
+      }
+      
+      finalETag = assignmentResponse.eTag;
+      autoFetchedETag = true;
+      console.log(`Successfully auto-fetched eTag: ${finalETag}`);
+      
+      if (!finalETag) {
+        const errorMsg = 'Auto-fetch succeeded but no eTag was returned from get_assignment. This may indicate a server issue.';
+        return {
+          error: errorMsg
+        };
+      }
+    } catch (error) {
+      const errorMsg = `Failed to auto-fetch eTag: ${error.message}`;
+      return {
+        error: errorMsg
+      };
+    }
+    
+    // Validate eTag format (should be a timestamp-like string)
+    if (typeof finalETag !== 'string' || finalETag.trim().length === 0) {
+      return {
+        error: 'Invalid eTag parameter. Must be a non-empty string representing case save date time.'
+      };
+    }
+
     try {
       // Call Pega API to refresh assignment action
       const result = await this.pegaClient.refreshAssignmentAction(
@@ -155,7 +196,8 @@ export class RefreshAssignmentActionTool extends BaseTool {
           interestPage: interestPage?.trim(),
           interestPageActionID: interestPageActionID?.trim(),
           content,
-          pageInstructions
+          pageInstructions,
+          eTag: finalETag
         }
       );
 
@@ -171,7 +213,8 @@ export class RefreshAssignmentActionTool extends BaseTool {
                 interestPage,
                 interestPageActionID,
                 content,
-                pageInstructions
+                pageInstructions,
+                autoFetchedETag
               })
             }
           ]
@@ -203,7 +246,7 @@ export class RefreshAssignmentActionTool extends BaseTool {
    * Format successful response for display
    */
   formatSuccessResponse(assignmentID, actionID, data, eTag, options) {
-    const { refreshFor, fillFormWithAI, operation, interestPage, interestPageActionID, content, pageInstructions } = options;
+    const { refreshFor, fillFormWithAI, operation, interestPage, interestPageActionID, content, pageInstructions, autoFetchedETag } = options;
     
     let response = `## Assignment Action Refresh Results: ${actionID}\n\n`;
     response += `**Assignment ID**: ${assignmentID}\n`;
@@ -447,6 +490,9 @@ export class RefreshAssignmentActionTool extends BaseTool {
     if (eTag) {
       response += '\n### Operation Support\n';
       response += `- **eTag Captured**: ${eTag}\n`;
+      if (autoFetchedETag) {
+        response += '- **Auto-eTag Management**: ✅ Automatically retrieved latest eTag from assignment\n';
+      }
       response += '- **Ready for Assignment Action**: Use captured eTag for subsequent PATCH operations\n';
     }
 

@@ -528,6 +528,51 @@ This file contains sample data discovered during testing that can be reused for 
 4. **Complete Response Data**: Rich case information, next steps, available actions included
 5. **Production-Grade Error Handling**: Professional error responses with clear troubleshooting
 
+## Assignment Action Refresh Information
+**Last Updated**: 2025-09-10  
+**Source**: refresh_assignment_action testing
+
+### Successfully Tested Assignment Refresh Operations
+- **Test Case**: ON6E5R-DIYRECIPE-WORK R-1068
+- **Assignment ID**: `ASSIGN-WORKLIST ON6E5R-DIYRECIPE-WORK R-1068!RECIPEINTAKE_FLOW`
+- **Action ID**: `EnterRecipeDetails`
+- **Auto-eTag**: Successfully implemented and working seamlessly
+- **Result**: ✅ SUCCESS - Complete form refresh functionality working
+
+### refresh_assignment_action Features Confirmed
+- **Auto-eTag Management**: ✅ PERFECT - No manual eTag handling required
+- **Form Content Updates**: ✅ VERIFIED - Case fields refreshed correctly during operation
+- **Property-Triggered Refresh**: ✅ CONFIRMED - refreshFor parameter triggers Data Transform execution
+- **AI Form Filling**: ✅ WORKING - fillFormWithAI populates empty fields (Cuisine: "Italian")
+- **Data Transform Integration**: ✅ CONFIRMED - Form refresh settings and pyRefreshData executed
+- **UI Resource Updates**: ✅ VERIFIED - Field states and metadata properly refreshed
+
+### Critical Bug Fixed
+- **Issue**: Missing auto-eTag functionality made tool completely non-functional
+- **Resolution**: Implemented auto-eTag management matching save_assignment_action pattern
+- **Files Modified**: pega-client.js (if-match header) + refresh-assignment-action.js (auto-eTag fetch)
+- **Impact**: Tool now fully production-ready with seamless operation
+
+### Assignment Refresh Response Structure
+- **Auto-eTag Management**: Uses internal `GET /assignments/{assignmentID}?viewType=form` to fetch eTag
+- **Content Merging**: User values take precedence over Data Transform values
+- **Execution Sequence**: 4-5 steps depending on refreshFor parameter usage
+- **Field Limitation**: Only visible and editable fields can be effectively updated
+- **UI Resources**: Form metadata with field counts and component information
+
+### RefreshFor Parameter Testing
+- **Property**: RecipeName
+- **Behavior**: Triggers specific Data Transform execution before pyRefreshData
+- **Execution Steps**: Adds step 4 "Refresh Data Transform executed for property: RecipeName"
+- **Use Case**: Property change events in form refresh settings
+
+### fillFormWithAI Parameter Testing
+- **Requirement**: EnableGenerativeAI toggle must be enabled in Pega system
+- **Behavior**: AI fills empty form fields with contextually appropriate values
+- **Example**: Cuisine field auto-populated with "Italian" for recipe context
+- **Field Preservation**: Existing field values remain unchanged
+- **Integration**: Works seamlessly with other refresh operations
+
 ## Future Data Collection
 Additional sample data will be added here as we test more tools:
 - Data view examples from data view tests

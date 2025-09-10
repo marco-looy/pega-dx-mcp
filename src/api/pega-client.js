@@ -721,11 +721,15 @@ export class PegaAPIClient {
       requestBody.interestPageActionID = interestPageActionID;
     }
 
-    // Prepare headers - Note: This endpoint typically requires if-match header with eTag
-    // However, for refresh operations, eTag might not always be required depending on configuration
+    // Prepare headers - eTag is required for assignment refresh operations
     const headers = {
       'x-origin-channel': 'Web'
     };
+    
+    // Add if-match header with eTag if provided
+    if (eTag) {
+      headers['if-match'] = eTag;
+    }
 
     return await this.makeRequest(url, {
       method: 'PATCH',
