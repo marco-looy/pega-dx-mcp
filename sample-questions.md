@@ -113,5 +113,17 @@ Simple questions you can ask the MCP to perform tasks with each tool.
 - "Calculate field values and when conditions for my case action form"
 - "Recalculate specific fields using the content context and see the updated values"
 
+## get_assignment
+- "Show me the details of assignment ASSIGN-WORKLIST ON6E5R-DIYRECIPE-WORK R-1009!RECIPEINTAKE_FLOW"
+- "Get information about my Recipe Collection assignment with form view"
+- "What's the current status and context of my Enter Recipe Details assignment?"
+- "Show me the assignment details with UI metadata for the pyWorkPage view"
+
+## get_assignment_action
+- "Get the EnterRecipeDetails action metadata for assignment ASSIGN-WORKLIST ON6E5R-DIYRECIPE-WORK R-1009!RECIPEINTAKE_FLOW"
+- "Show me the form structure for my assignment action with page view"
+- "What UI resources are available for the EnterRecipeDetails action on my assignment?"
+- "Get assignment action details with optimized response (exclude additional case actions)"
+
 ---
 *More examples will be added as testing progresses*

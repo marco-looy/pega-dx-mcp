@@ -367,8 +367,62 @@ This file contains sample data discovered during testing that can be reused for 
 - **UI Resources**: Form metadata with 18+ field configurations
 - **Performance Info**: Context data optimization when enabled
 
+## Case Type Action Information
+**Last Updated**: 2025-09-10  
+**Source**: get_case_type_action testing
+
+### Successfully Tested Case Type Actions
+**Case Type**: ON6E5R-DIYRecipe-Work-RecipeCollection
+
+#### pyUpdateCaseDetails Action
+- **View Name**: pyEdit (Case editing interface)
+- **Available Fields**: 19 (including RecipeName, Category, PreparationTime, etc.)
+- **Available Views**: 4 (pyEdit, Edit_IngredientList, Edit_Recipe, Edit_CookingInstructions)
+- **Data Sources**: 9 (including D_IngredientList, D_Recipe, D_RecipeList)
+- **Actions**: Submit, Cancel, Fill form with AI
+
+#### pyChangeStage Action  
+- **View Name**: pyChangeCaseStage (Stage navigation interface)
+- **Available Fields**: 5 (pyChangeToOtherStage, pyGotoStage, pyAuditNote, etc.)
+- **Available Views**: 1 (pyChangeCaseStage)
+- **Data Sources**: 1 (D_pyAvailableCaseStages)
+- **Actions**: Submit, Cancel, Fill form with AI
+
+### get_case_type_action Testing Insights
+- **Metadata Richness**: Provides comprehensive UI metadata without requiring actual case instances
+- **Field Discovery**: Reveals all available form fields and their types/labels
+- **View Structure**: Shows UI component organization and data source connections
+- **Action Configuration**: Lists available user actions and their IDs
+- **Error Handling**: Clear 404 responses for invalid case types or action IDs
+- **Perfect for**: Understanding case type capabilities before case creation
+
+## Assignment Information
+**Last Updated**: 2025-09-10  
+**Source**: get_assignment testing
+
+### Successfully Tested Assignment
+- **Assignment ID**: `ASSIGN-WORKLIST ON6E5R-DIYRECIPE-WORK R-1009!RECIPEINTAKE_FLOW`
+- **Associated Case**: ON6E5R-DIYRECIPE-WORK R-1009 (Recipe Collection)
+- **Process**: RecipeIntake_Flow
+- **Case Status**: New
+- **Assignment Status**: Active
+
+### Assignment API Features Confirmed
+- **ViewType Support**: Both 'page' (6 fields) and 'form' (5 fields) views working
+- **PageName Support**: Specific page targeting (e.g., 'pyWorkPage' returns 2 fields)
+- **Case Integration**: Full case information returned with assignment details
+- **UI Metadata**: Rich form structure and field information
+- **Error Handling**: Clear 404 responses for invalid assignment IDs
+
+### Assignment Response Structure
+- **Case Information**: ID, type, status, stage, step, urgency, timestamps
+- **UI Resources**: View type, root component type, form field count
+- **Assignment Details**: Would include instructions, assigned to, due date when available
+- **Available Actions**: Assignment actions (context-dependent)
+- **eTag Information**: For subsequent operations (when present)
+
 ## Future Data Collection
 Additional sample data will be added here as we test more tools:
-- Assignment IDs from assignment tests  
+- More assignment IDs from additional assignment tests  
 - Data view examples from data view tests
 - Participant information from participant tests

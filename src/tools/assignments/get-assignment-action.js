@@ -287,11 +287,12 @@ export class GetAssignmentActionTool extends BaseTool {
   /**
    * Format error response for display
    */
-  formatErrorResponse(assignmentID, actionID, error) {
-    let response = `## Error retrieving assignment action: ${actionID}\n\n`;
+  formatErrorResponse(operation, error, options = {}) {
+    const { assignmentID, actionID } = options;
+    let response = `## Error retrieving assignment action: ${actionID || 'Unknown'}\n\n`;
     
-    response += `**Assignment ID**: ${assignmentID}\n`;
-    response += `**Action ID**: ${actionID}\n`;
+    response += `**Assignment ID**: ${assignmentID || 'Unknown'}\n`;
+    response += `**Action ID**: ${actionID || 'Unknown'}\n`;
     response += `**Error Type**: ${error.type}\n`;
     response += `**Message**: ${error.message}\n`;
     
