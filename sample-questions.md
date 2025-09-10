@@ -153,5 +153,14 @@ Simple questions you can ask the MCP to perform tasks with each tool.
 - "Refresh assignment ASSIGN-WORKLIST ON6E5R-DIYRECIPE-WORK R-1068!RECIPEINTAKE_FLOW with EnterRecipeDetails action"
 - "Fill my assignment form with AI-generated sample values using generative AI"
 
+## navigate_assignment_previous
+- "Navigate back to the previous step in assignment ASSIGN-WORKLIST ON6E5R-DIYRECIPE-WORK R-1069!RECIPEINTAKE_FLOW"
+- "Go back one step in my multi-step Recipe Collection assignment"  
+- "I'm on step 2 and need to go back to step 1 to update something"
+- "Navigate to the previous assignment step with content updates for RecipeName and Category"
+
+### 💡 Tip: Multi-Step Navigation Success
+**For navigation to work, you must be on step 2 or later** - there's no previous step from step 1! The tool automatically handles eTag management and works perfectly when there's actually a previous step to navigate to. Content updates work seamlessly when combined with valid navigation.
+
 ---
 *More examples will be added as testing progresses*

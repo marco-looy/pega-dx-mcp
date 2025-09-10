@@ -180,7 +180,7 @@ export class NavigateAssignmentPreviousTool extends BaseTool {
       // Execute navigation via API client
       const result = await this.pegaClient.navigateAssignmentPrevious(
         assignmentID,
-        eTag,
+        finalETag,
         options
       );
 

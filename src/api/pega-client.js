@@ -2146,7 +2146,7 @@ export class PegaAPIClient {
     return await this.makeRequest(url, {
       method: 'PATCH',
       headers: headers,
-      body: Object.keys(requestBody).length > 0 ? JSON.stringify(requestBody) : undefined
+      body: JSON.stringify(requestBody)
     });
   }
 

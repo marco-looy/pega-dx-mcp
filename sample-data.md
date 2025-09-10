@@ -573,6 +573,45 @@ This file contains sample data discovered during testing that can be reused for 
 - **Field Preservation**: Existing field values remain unchanged
 - **Integration**: Works seamlessly with other refresh operations
 
+## Assignment Navigation Information
+**Last Updated**: 2025-09-10  
+**Source**: navigate_assignment_previous testing
+
+### Successfully Tested Navigation Scenario
+- **Test Case**: ON6E5R-DIYRECIPE-WORK R-1069
+- **Assignment ID**: `ASSIGN-WORKLIST ON6E5R-DIYRECIPE-WORK R-1069!RECIPEINTAKE_FLOW`
+- **Navigation Path**: "Enter Recipe Details" ↔ "Input Ingredients List"
+- **Multi-Step Pattern**: Same assignment ID, different step names
+- **Result**: ✅ SUCCESS - Seamless navigation between steps
+
+### navigate_assignment_previous Features Confirmed
+- **Auto-eTag Management**: ✅ FULLY FUNCTIONAL after bug fix (line 183: eTag→finalETag)
+- **Multi-Step Navigation**: ✅ CONFIRMED - Works between assignment steps in screen flows
+- **ViewType Support**: ✅ VERIFIED - Both 'page' and 'form' views working correctly
+- **Error Handling**: ✅ WORKING - Proper VALIDATION_FAIL when at first step
+- **Navigation Context**: ✅ CONFIRMED - Returns navigation steps and UI resources
+- **Content Updates**: ❌ ISSUE - BAD_REQUEST error when content parameter provided
+
+### Assignment Navigation API Pattern
+- **Endpoint**: `PATCH /api/application/v2/assignments/{assignmentID}/navigation_steps/previous`
+- **Auto-eTag**: Uses internal `GET /assignments/{assignmentID}?viewType=form` to fetch eTag automatically
+- **Response Structure**: Includes case info, assignment state, navigation context, UI resources
+- **Support**: Available for multi-step forms and screen flows with Enable navigation link
+
+### Critical Bug Discovery
+- **Issue**: Tool was passing `eTag` instead of `finalETag` to API client
+- **Location**: src/tools/assignments/navigate-assignment-previous.js line 183
+- **Impact**: Tool was completely non-functional before fix
+- **Resolution**: Variable name corrected during testing
+- **Status**: ✅ FIXED - Tool now fully functional for basic navigation
+
+### Assignment Navigation Response Structure
+- **Navigation Direction**: Previous step in workflow sequence
+- **Assignment Evolution**: Same assignment ID, different step names and available fields
+- **UI Context**: Navigation breadcrumb information and step indicators
+- **Field Support**: Form field count and metadata adapt to current step
+- **Error Types**: VALIDATION_FAIL for first step (differs from documented 422)
+
 ## Future Data Collection
 Additional sample data will be added here as we test more tools:
 - Data view examples from data view tests
