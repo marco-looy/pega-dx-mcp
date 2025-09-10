@@ -168,11 +168,28 @@ export class SaveAssignmentActionTool extends BaseTool {
     if (attachments) options.attachments = attachments;
     if (originChannel) options.originChannel = originChannel;
 
-    // Execute assignment action save via API client using error handling wrapper
-    return await this.executeWithErrorHandling(
-      `Saving assignment action form data: ${assignmentID} -> ${actionID}${autoFetchedETag ? ' (auto-fetched eTag)' : ''}`,
-      async () => await this.pegaClient.saveAssignmentAction(assignmentID, actionID, finalETag.trim(), options)
-    );
+    try {
+      // Execute assignment action save via API client
+      const result = await this.pegaClient.saveAssignmentAction(
+        assignmentID,
+        actionID,
+        finalETag.trim(),
+        options
+      );
+
+      // Check if API call was successful
+      if (result.success) {
+        // Format and return successful response
+        return this.formatSuccessResponse(result.data, params);
+      } else {
+        // Format and return error response from API
+        return this.formatErrorResponse(result.error);
+      }
+
+    } catch (error) {
+      // Format and return error response
+      return this.formatErrorResponse(error);
+    }
   }
 
   /**

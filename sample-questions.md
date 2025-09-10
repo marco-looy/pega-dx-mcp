@@ -2,6 +2,11 @@
 
 Simple questions you can ask the MCP to perform tasks with each tool.
 
+## save_assignment_action
+- "Can you save the current form data in my assignment without submitting it?"
+- "I need to save my work in progress on this assignment and come back to it later"
+- "Save the recipe details I've entered so far without completing the assignment"
+
 ## ping_pega_service
 - "Can you check if I have a valid connection to my Pega application?"
 - "Test my Pega authentication setup"
@@ -124,6 +129,19 @@ Simple questions you can ask the MCP to perform tasks with each tool.
 - "Show me the form structure for my assignment action with page view"
 - "What UI resources are available for the EnterRecipeDetails action on my assignment?"
 - "Get assignment action details with optimized response (exclude additional case actions)"
+
+## get_next_assignment
+- "What's the next assignment I should work on?"
+- "Get my next work assignment with form view metadata"
+- "Show me the next assignment with UI resources for the pyWorkPage"
+- "Do I have any assignments waiting for me to work on?"
+
+## perform_assignment_action
+- "Execute the EnterRecipeDetails action on assignment ASSIGN-WORKLIST ON6E5R-DIYRECIPE-WORK R-1009!RECIPEINTAKE_FLOW"
+- "Perform my assignment action and update RecipeName to 'Updated Chocolate Chip Cookies'"
+- "Complete my Recipe Details assignment with updated Category and Cuisine fields"
+- "Execute assignment action with content updates and progress the workflow to the next step"
+- "Run my assignment action without providing eTag (let the tool handle it automatically)"
 
 ---
 *More examples will be added as testing progresses*

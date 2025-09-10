@@ -38,10 +38,12 @@ export class GetNextAssignmentTool extends BaseTool {
    * Execute the get next assignment operation
    */
   async execute(params) {
-    const { viewType = 'page', pageName } = params;
+    // Handle null/undefined params
+    const safeParams = params || {};
+    const { viewType = 'page', pageName } = safeParams;
 
     // Validate enum parameters using base class
-    const enumValidation = this.validateEnumParams(params, {
+    const enumValidation = this.validateEnumParams(safeParams, {
       viewType: ['form', 'page']
     });
     if (enumValidation) {
@@ -145,11 +147,11 @@ export class GetNextAssignmentTool extends BaseTool {
   /**
    * Format error response for display
    */
-  formatErrorResponse(error) {
+  formatErrorResponse(operation, error, options = {}) {
     let response = `## Next Assignment Request Result\n\n`;
     
     // Handle the special case of no assignments available (404)
-    if (error.type === 'NOT_FOUND') {
+    if (error && error.type === 'NOT_FOUND') {
       response += `**Status**: No assignments currently available\n`;
       response += `**Message**: ${error.message}\n\n`;
       response += '### What This Means\n';
@@ -161,19 +163,19 @@ export class GetNextAssignmentTool extends BaseTool {
       response += '2. Contact your supervisor if you expected assignments to be available\n';
       response += '3. Use `get_case_types` to see what case types you can create\n';
     } else {
-      response += `**Error Type**: ${error.type}\n`;
-      response += `**Message**: ${error.message}\n`;
+      response += `**Error Type**: ${error ? error.type : 'undefined'}\n`;
+      response += `**Message**: ${error ? error.message : 'undefined'}\n`;
       
-      if (error.details) {
+      if (error && error.details) {
         response += `**Details**: ${error.details}\n`;
       }
       
-      if (error.status) {
+      if (error && error.status) {
         response += `**HTTP Status**: ${error.status} ${error.statusText}\n`;
       }
 
       // Add specific guidance based on error type
-      switch (error.type) {
+      switch (error ? error.type : null) {
         case 'FORBIDDEN':
           response += '\n**Suggestion**: Check if you have the necessary permissions to access assignments in this application.\n';
           break;
@@ -191,7 +193,7 @@ export class GetNextAssignmentTool extends BaseTool {
           break;
       }
 
-      if (error.errorDetails && error.errorDetails.length > 0) {
+      if (error && error.errorDetails && error.errorDetails.length > 0) {
         response += '\n### Additional Error Details\n';
         error.errorDetails.forEach((detail, index) => {
           response += `${index + 1}. ${detail.localizedValue || detail.message}\n`;
