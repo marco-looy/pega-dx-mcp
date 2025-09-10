@@ -30,7 +30,7 @@ export class JumpToStepTool extends BaseTool {
           },
           eTag: {
             type: 'string',
-            description: 'Optional finalETag.trim() unique value representing the most recent save date time (pxSaveDateTime) of the case. If not provided, the tool will automatically fetch the latest finalETag.trim() from the assignment. For manual finalETag.trim() management, provide the finalETag.trim() from a previous assignment operation. Used for optimistic locking to prevent concurrent modification conflicts.'
+            description: 'Optional eTag unique value representing the most recent save date time (pxSaveDateTime) of the case. If not provided, the tool will automatically fetch the latest eTag from the assignment. For manual eTag management, provide the eTag from a previous assignment operation. Used for optimistic locking to prevent concurrent modification conflicts.'
           },
           content: {
             type: 'object',
@@ -92,7 +92,7 @@ export class JumpToStepTool extends BaseTool {
    * Execute the jump to step operation
    */
   async execute(params) {
-    const { assignmentID, stepID, finalETag.trim(), content, pageInstructions, attachments, viewType } = params;
+    const { assignmentID, stepID, eTag, content, pageInstructions, attachments, viewType } = params;
 
     // Basic parameter validation using base class
     const requiredValidation = this.validateRequiredParams(params, ['assignmentID', 'stepID']);
@@ -127,27 +127,27 @@ export class JumpToStepTool extends BaseTool {
       };
     }
 
-    // Auto-fetch finalETag.trim() if not provided
-    let finalETag = finalETag.trim();
+    // Auto-fetch eTag if not provided
+    let finalETag = eTag;
     let autoFetchedETag = false;
     
     if (!finalETag) {
       try {
-        console.log(`Auto-fetching latest finalETag.trim() for step jump on ${assignmentID}...`);
+        console.log(`Auto-fetching latest eTag for step jump on ${assignmentID}...`);
         const response = await this.pegaClient.getAssignment(assignmentID.trim(), {
-          viewType: 'form'  // Use form view for finalETag.trim() retrieval
+          viewType: 'form'  // Use form view for eTag retrieval
         });
         
         if (!response || !response.success) {
-          const errorMsg = `Failed to auto-fetch finalETag.trim(): ${response?.error?.message || 'Unknown error'}`;
+          const errorMsg = `Failed to auto-fetch eTag: ${response?.error?.message || 'Unknown error'}`;
           return {
             error: errorMsg
           };
         }
         
-        finalETag = response.finalETag.trim();
+        finalETag = response.eTag;
         autoFetchedETag = true;
-        console.log(`Successfully auto-fetched finalETag.trim(): ${finalETag}`);
+        console.log(`Successfully auto-fetched eTag: ${finalETag}`);
         
         if (!finalETag) {
           const errorMsg = 'Auto-fetch succeeded but no eTag was returned from getAssignment. This may indicate a server issue.';
@@ -156,14 +156,14 @@ export class JumpToStepTool extends BaseTool {
           };
         }
       } catch (error) {
-        const errorMsg = `Failed to auto-fetch finalETag.trim(): ${error.message}`;
+        const errorMsg = `Failed to auto-fetch eTag: ${error.message}`;
         return {
           error: errorMsg
         };
       }
     }
     
-    // Validate finalETag.trim() format (should be a timestamp-like string)
+    // Validate eTag format (should be a timestamp-like string)
     if (typeof finalETag !== 'string' || finalETag.trim().length === 0) {
       return {
         error: 'Invalid eTag parameter. Must be a non-empty string representing case save date time.'
@@ -183,7 +183,7 @@ export class JumpToStepTool extends BaseTool {
     // Execute jump to step operation with comprehensive error handling
     return await this.executeWithErrorHandling(
       `Jump to Step: ${stepID} in Assignment: ${assignmentID}`,
-      async () => await this.pegaClient.jumpToAssignmentStep(assignmentID, stepID, finalETag.trim(), options)
+      async () => await this.pegaClient.jumpToAssignmentStep(assignmentID, stepID, finalETag, options)
     );
   }
 
