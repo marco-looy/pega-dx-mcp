@@ -54,8 +54,14 @@ export class BaseTool {
   validateRequiredParams(params, required) {
     for (const param of required) {
       if (!params[param] || (typeof params[param] === 'string' && params[param].trim() === '')) {
+        // Return proper MCP error response format
         return {
-          error: `Invalid ${param} parameter. ${param} is required and must be a non-empty string.`
+          content: [
+            {
+              type: 'text',
+              text: `## Parameter Validation Error\n\n**Error**: Invalid ${param} parameter.\n\n**Details**: ${param} is required and must be a non-empty string.\n\n**Solution**: Please provide a valid ${param} value and try again.`
+            }
+          ]
         };
       }
     }
@@ -71,8 +77,14 @@ export class BaseTool {
   validateEnumParams(params, enums) {
     for (const [param, validValues] of Object.entries(enums)) {
       if (params[param] && !validValues.includes(params[param])) {
+        // Return proper MCP error response format
         return {
-          error: `Invalid ${param} parameter. Must be one of: ${validValues.join(', ')}.`
+          content: [
+            {
+              type: 'text',
+              text: `## Parameter Validation Error\n\n**Error**: Invalid ${param} parameter.\n\n**Details**: Must be one of: ${validValues.join(', ')}.\n\n**Provided**: ${params[param]}\n\n**Solution**: Please use one of the valid values and try again.`
+            }
+          ]
         };
       }
     }

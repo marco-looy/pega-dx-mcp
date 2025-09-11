@@ -834,8 +834,64 @@ This file contains sample data discovered during testing that can be reused for 
 - **Response Time**: 1.0-1.5 seconds consistently
 - **Error Handling**: 404 NOT_FOUND for invalid case IDs with detailed troubleshooting
 
+## Get Attachment Information
+**Last Updated**: 2025-09-11  
+**Source**: get_attachment testing
+
+### Successfully Tested Attachment Content Retrieval
+**Test Case**: ON6E5R-DIYRECIPE-WORK R-1009 (7 attachments)
+
+#### File Attachment Content (Base64)
+**test-upload.txt**:
+- **Attachment ID**: `LINK-ATTACHMENT ON6E5R-DIYRECIPE-WORK R-1009!20250911T095425.822 GMT`
+- **Content Type**: File (Base64 encoded)
+- **Size**: 189 bytes (estimated from base64)
+- **Base64 Content**: `VGhpcyBpcyBhIHRlc3QgZmlsZSBmb3IgdXBsb2FkX2F0dGFjaG1lbnQgdGVzdGluZy4K...`
+- **Decoded Content**: "This is a test file for upload_attachment testing..."
+
+**test-attachment-1.txt**:
+- **Attachment ID**: `LINK-ATTACHMENT ON6E5R-DIYRECIPE-WORK R-1009!20250911T104712.747 GMT`  
+- **Content Type**: File (Base64 encoded)
+- **Size**: 51 bytes (estimated from base64)
+- **Base64 Content**: `VGVzdCBmaWxlIGNvbnRlbnQgZm9yIGFkZF9jYXNlX2F0dGFjaG1lbnRzIHRlc3RpbmcK`
+- **Decoded Content**: "Test file content for add_case_attachments testing"
+
+#### URL Attachment Content
+**GitHub URL**:
+- **Attachment ID**: `LINK-ATTACHMENT ON6E5R-DIYRECIPE-WORK R-1009!20250911T104722.036 GMT`
+- **Content Type**: URL Link
+- **URL**: https://www.github.com
+- **Display**: URL with safety verification notes
+
+### get_attachment API Pattern
+- **Endpoint**: GET `/api/application/v2/attachments/{attachmentID}`
+- **Authentication**: OAuth2 Bearer token required
+- **Response Types**: 
+  - File: Base64 encoded content with size estimation
+  - URL: Plain URL string with safety guidance
+  - Correspondence: HTML email content (not tested)
+- **Response Headers**: Empty (expected behavior)
+- **Response Time**: ~500ms consistently
+
+### Content Type Detection
+- **Base64 Identification**: Uses pattern matching and length validation
+- **URL Validation**: URL constructor validation
+- **HTML Detection**: Pattern matching for HTML tags
+- **Size Calculation**: Accurate estimation from base64 content length
+
+### Error Handling Confirmed
+- **404 NOT_FOUND**: Proper error for non-existent attachments with troubleshooting
+- **Parameter Validation**: Internal validation exists but MCP interface issues prevent display
+- **Response Quality**: Professional error formatting with comprehensive guidance
+
+### MCP Interface Issues Discovered
+- **Problem**: Parameter validation errors not exposed through MCP interface
+- **Impact**: Invalid formats and missing parameters return empty responses
+- **Status**: Core functionality works perfectly, MCP integration needs investigation
+- **Workaround**: Always use valid attachment IDs from get_case_attachments
+
 ## Future Data Collection
 Additional sample data will be added here as we test more tools:
 - Data view examples from data view tests  
 - Participant information from participant tests
-- Additional attachment handling examples (get_attachment, update_attachment, delete_attachment)
+- Additional attachment handling examples (update_attachment, delete_attachment)

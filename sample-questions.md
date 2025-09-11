@@ -227,5 +227,18 @@ The upload_attachment tool supports **3 different ways** to provide files:
 ### 💡 Tip: Thumbnail Support  
 Use `includeThumbnails=true` to get base64-encoded thumbnails for image attachments. Note that thumbnails significantly increase response size, so use them only when needed for displaying images in your interface.
 
+## get_attachment
+- "Can you get the content of this attachment for me?"
+- "Download the content from attachment LINK-ATTACHMENT ON6E5R-DIYRECIPE-WORK R-1009!20250911T095425.822 GMT"  
+- "Show me what's inside this file attachment - I need to see the actual content"
+
+### 💡 Tip: Different Content Types
+The get_attachment tool handles **3 types of attachment content**:
+1. **File Attachments**: Returns base64-encoded content with size estimation and preview
+2. **URL Attachments**: Returns the URL link with safety guidance 
+3. **Correspondence**: Returns HTML email content with parsed metadata
+
+**How to get attachment IDs**: Use `get_case_attachments` first to see all attachments and their IDs, then use those IDs with `get_attachment` to retrieve the actual content.
+
 ---
 *More examples will be added as testing progresses*

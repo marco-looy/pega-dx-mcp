@@ -43,8 +43,14 @@ export class GetAttachmentTool extends BaseTool {
     // Additional comprehensive parameter validation for complex logic
     const validationResult = this.validateParameters(attachmentID);
     if (!validationResult.valid) {
+      // Return proper MCP error response format
       return {
-        error: validationResult.error
+        content: [
+          {
+            type: 'text',
+            text: `## Parameter Validation Error\n\n**Error**: ${validationResult.error}\n\n**Solution**: Please provide a valid Link-Attachment instance pzInsKey and try again.`
+          }
+        ]
       };
     }
 
