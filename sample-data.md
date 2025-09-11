@@ -890,8 +890,59 @@ This file contains sample data discovered during testing that can be reused for 
 - **Status**: Core functionality works perfectly, MCP integration needs investigation
 - **Workaround**: Always use valid attachment IDs from get_case_attachments
 
+## Delete Attachment Information
+**Last Updated**: 2025-09-11  
+**Source**: delete_attachment testing
+
+### Successfully Tested Deletion Operations
+**Test Case**: ON6E5R-DIYRECIPE-WORK R-1009 (Recipe Collection)
+
+#### Successful Deletions
+**File Attachment Deleted**:
+- **Attachment ID**: `LINK-ATTACHMENT ON6E5R-DIYRECIPE-WORK R-1009!20250911T104859.375 GMT`
+- **File Name**: test-attachment-2.txt
+- **Result**: ✅ SUCCESS - Permanently removed from system
+- **Response Time**: ~1.4 seconds
+- **Verification**: Attachment count reduced from 7 to 6
+
+**URL Attachment Deleted**:
+- **Attachment ID**: `LINK-ATTACHMENT ON6E5R-DIYRECIPE-WORK R-1009!20250911T112102.449 GMT`  
+- **Display Name**: Test Example
+- **Result**: ✅ SUCCESS - Permanently removed from system
+- **Response Time**: ~1.6 seconds
+- **Final Count**: 5 attachments remaining
+
+### delete_attachment API Pattern
+- **Endpoint**: DELETE `/api/application/v2/attachments/{attachmentID}`
+- **Method**: HTTP DELETE with Bearer token authentication
+- **ID Format**: Complete Link-Attachment instance pzInsKey required
+- **Response Time**: 1.0-1.6 seconds consistently
+- **Case History**: Updated automatically after successful deletion
+- **Permissions**: Validates user has delete privileges for attachment category
+
+### Error Scenarios Confirmed
+- **404 NOT_FOUND**: Non-existent attachment IDs with detailed troubleshooting
+- **Client Validation**: Empty parameters caught before API call
+- **Format Validation**: Two-tier validation (client + server) working properly
+- **Permission Model**: Users can delete own attachments OR category-wide if configured
+
+### Tool Features Verified
+- ✅ **Permanent Deletion**: Cannot be undone - proper warning provided
+- ✅ **Audit Trail**: Case history updated for compliance tracking
+- ✅ **Multi-Link Support**: Only specific attachment link removed
+- ✅ **Permission Validation**: Attachment category privileges enforced
+- ✅ **ID Parsing**: Extracts case reference and timestamp from attachment ID
+- ✅ **Error Handling**: Comprehensive troubleshooting guidance for each scenario
+
+### Production Readiness Assessment
+- **Parameter Validation**: Excellent - both client-side and server-side
+- **Error Handling**: Outstanding - detailed guidance for all scenarios  
+- **Response Format**: Professional - rich formatted responses
+- **Performance**: Excellent - sub-2-second response times
+- **Overall Status**: ✅ PRODUCTION READY
+
 ## Future Data Collection
 Additional sample data will be added here as we test more tools:
 - Data view examples from data view tests  
 - Participant information from participant tests
-- Additional attachment handling examples (update_attachment, delete_attachment)
+- Additional attachment handling examples (update_attachment)

@@ -240,5 +240,19 @@ The get_attachment tool handles **3 types of attachment content**:
 
 **How to get attachment IDs**: Use `get_case_attachments` first to see all attachments and their IDs, then use those IDs with `get_attachment` to retrieve the actual content.
 
+## delete_attachment
+- "Can you delete this attachment from my case?"
+- "Remove attachment LINK-ATTACHMENT ON6E5R-DIYRECIPE-WORK R-1009!20250911T104859.375 GMT from the case"
+- "I need to permanently delete this file attachment that's no longer needed"
+
+### 💡 Tip: Permanent Deletion Warning
+The delete_attachment tool performs **permanent deletion** that cannot be undone. Key points:
+1. **Case History Updated**: All deletions are recorded in case history for audit purposes
+2. **Permission Required**: You need delete privileges for the attachment category (either self-delete or category-wide)  
+3. **Multi-Link Support**: If attachment is linked to multiple cases, only the specific link is removed
+4. **Verification Recommended**: Use `get_attachment` to verify details before deletion
+
+**How to get attachment IDs**: Use `get_case_attachments` to see all attachments and their full Link-Attachment instance IDs, then use those exact IDs with `delete_attachment`. The tool validates the proper LINK-ATTACHMENT format automatically.
+
 ---
 *More examples will be added as testing progresses*
