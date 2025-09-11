@@ -197,5 +197,18 @@ Simple questions you can ask the MCP to perform tasks with each tool.
 - "I need to recalculate calculated fields for assignment ASSIGN-WORKLIST ON6E5R-DIYRECIPE-WORK R-1070!RECIPEINTAKE_FLOW with action EnterRecipeDetails"
 - "Update the calculated fields RecipeName and Category for my recipe entry assignment"
 
+## upload_attachment
+- "Can you upload a file to Pega so I can attach it to a case later?"
+- "I need to upload this document from my computer to create a temporary attachment"
+- "Upload the file /path/to/document.pdf to Pega and give me the attachment ID"
+
+### 💡 Tip: Multiple Upload Methods
+The upload_attachment tool supports **3 different ways** to provide files:
+1. **File Path**: Upload directly from your filesystem using `filePath` parameter
+2. **Base64 Content**: Upload encoded content using `fileContent` and `fileName` parameters  
+3. **Data URL**: Upload from data URLs using `fileUrl` and `fileName` parameters
+
+**Remember**: Temporary attachments expire after 2 hours if not linked to a case!
+
 ---
 *More examples will be added as testing progresses*

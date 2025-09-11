@@ -1082,16 +1082,15 @@ export class PegaAPIClient {
     const { fileName, mimeType, appendUniqueIdToFileName = true } = options;
     
     try {
-      // Create FormData for multipart upload
-      const formData = new FormData();
+      // Create web standard FormData for use with fetch()
+      const formData = new globalThis.FormData();
       
       // Add form fields as specified in Pega API documentation
       formData.append('appendUniqueIdToFileName', appendUniqueIdToFileName.toString());
-      formData.append('file', fileBuffer, {
-        filename: fileName,
-        contentType: mimeType,
-        knownLength: fileBuffer.length
-      });
+      
+      // Create a Blob from the buffer for web standard FormData
+      const fileBlob = new Blob([fileBuffer], { type: mimeType });
+      formData.append('file', fileBlob, fileName);
 
       const url = `${this.baseUrl}/attachments/upload`;
 
@@ -1103,8 +1102,9 @@ export class PegaAPIClient {
       const headers = {
         'Authorization': `Bearer ${token}`,
         'Accept': 'application/json',
-        'x-origin-channel': 'Web',
-        ...formData.getHeaders() // This adds the correct Content-Type with boundary
+        'x-origin-channel': 'Web'
+        // Do NOT add formData.getHeaders() - web FormData doesn't have this method
+        // and fetch() will set the correct Content-Type with boundary automatically
       };
 
       // Make the multipart form data request

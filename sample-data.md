@@ -678,8 +678,56 @@ This file contains sample data discovered during testing that can be reused for 
 - **When Conditions**: When rules must be accessible in assignment action scope
 - **Response Structure**: Returns calculation results, UI resources, field states
 
+## Upload Attachment Information
+**Last Updated**: 2025-09-11  
+**Source**: upload_attachment testing
+
+### ✅ CRITICAL BUG FIXED - FormData Compatibility Issue
+**Issue**: Node.js form-data library incompatibility with web standard fetch() API
+**Root Cause**: Mixed usage of Node.js form-data with web fetch() causing file transmission failure
+**Solution**: Updated to use web standard FormData with Blob for proper file handling
+**Result**: All upload methods now fully functional
+
+### Successfully Tested Upload Methods
+**1. File Path Upload**
+- **Method**: Direct filesystem file upload using `filePath` parameter
+- **Test File**: `/tmp/test-upload.txt` (189 bytes)
+- **Result**: ✅ SUCCESS - Attachment ID: `fdc24cf7-8e85-4cfb-9591-abf31ea72daa`
+- **Features**: Auto MIME type detection (text/plain), unique ID appending
+
+**2. Base64 Content Upload**
+- **Method**: Upload base64-encoded content using `fileContent` and `fileName` parameters
+- **Test Data**: 189-byte text content encoded to base64
+- **Result**: ✅ SUCCESS - Attachment ID: `073ec397-9619-443f-816e-6b9bdb15eea1`
+- **Features**: Custom filename handling, MIME type specification, no unique ID option
+
+**3. Data URL Upload**
+- **Method**: Upload from data URL using `fileUrl` and `fileName` parameters
+- **Test URL**: `data:text/plain;base64,VGVzdCBkYXRhIFVSTCBjb250ZW50IGZvciB1cGxvYWQgdGVzdGluZw==`
+- **Result**: ✅ SUCCESS - Attachment ID: `ae2a36c3-e8d9-422f-9628-a6110dbfe28c`
+- **Features**: Data URL parsing, content extraction, MIME type auto-detection
+
+### Upload API Pattern
+- **Endpoint**: POST `/api/application/v2/attachments/upload`
+- **Format**: Multipart form-data with web standard FormData
+- **Authentication**: OAuth2 Bearer token required
+- **Response**: JSON with temporary attachment ID (UUID format)
+- **Expiry**: Temporary attachments auto-delete after 2 hours if not linked
+
+### Error Handling Confirmed
+- **Empty Files**: Proper "Empty file can't be uploaded" error (HTTP 400)
+- **Server Validation**: Comprehensive error details with localized messages
+- **Error Types**: BAD_REQUEST, FILE_TOO_LARGE, VIRUS_SCAN_FAIL supported
+- **User Guidance**: Detailed troubleshooting suggestions in error responses
+
+### Technical Implementation
+- **FormData Type**: Web standard FormData (globalThis.FormData)
+- **File Handling**: Buffer → Blob conversion for web compatibility
+- **MIME Detection**: mime-types library for automatic content type detection
+- **Response Formatting**: Rich MCP responses with usage examples and next steps
+
 ## Future Data Collection
 Additional sample data will be added here as we test more tools:
 - Data view examples from data view tests
 - Participant information from participant tests
-- Attachment handling examples
+- Additional attachment handling examples (add_case_attachments, get_case_attachments)
