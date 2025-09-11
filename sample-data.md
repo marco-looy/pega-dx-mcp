@@ -772,8 +772,70 @@ This file contains sample data discovered during testing that can be reused for 
 - **Case Association**: All case users gain access to attached files/URLs
 - **Atomic Processing**: Multiple attachments succeed/fail together
 
+## Get Case Attachments Information
+**Last Updated**: 2025-09-11  
+**Source**: get_case_attachments testing
+
+### Successfully Tested Attachment Retrieval
+**Test Case**: ON6E5R-DIYRECIPE-WORK R-1009 (7 attachments)
+**Empty Case**: ON6E5R-DIYRECIPE-WORK R-1071 (no attachments)
+
+### Attachment Types Confirmed
+**File Attachments (3)**:
+- **test-upload.txt**: 189 bytes, text/plain MIME type
+- **test-attachment-1.txt**: text/plain, with proper metadata  
+- **test-attachment-2.txt**: text/plain, with creation timestamps
+
+**URL Attachments (4)**:
+- **GitHub**: https://www.github.com (application/octet-stream MIME)
+- **Google Search**: https://www.google.com
+- **Test URLs**: Various test URLs with proper categorization
+
+### get_case_attachments Features Confirmed
+- **Rich Metadata Display**: ID, type, category, filename, MIME type, creator, timestamps
+- **Attachment Grouping**: Automatically groups by FILE, URL, EMAIL, other types
+- **Available Actions**: Download, Edit, Delete links via HATEOAS
+- **Thumbnail Support**: includeThumbnails parameter working (no images in test case)
+- **Empty State Handling**: Clear messaging for cases without attachments
+- **Error Handling**: Proper 404 NOT_FOUND for invalid case IDs
+- **Response Performance**: ~1.5 seconds for 7 attachments, ~0.6 seconds for empty cases
+
+### API Integration Pattern
+- **Endpoint**: GET `/api/application/v2/cases/{caseID}/attachments`
+- **Query Parameter**: `includeThumbnails` (boolean, default: false)
+- **Authentication**: OAuth2 Bearer token required
+- **Category Filtering**: Respects Attachment Category rule configuration
+- **User Permissions**: Returns only attachments user has access to view
+
+## Get Attachment Categories Information
+**Last Updated**: 2025-09-11  
+**Source**: get_attachment_categories testing
+
+### Attachment Category Configuration (Recipe Collection)
+**Test Case**: ON6E5R-DIYRECIPE-WORK R-1009
+
+#### File Attachment Categories
+- **Category Name**: File
+- **Category ID**: File
+- **Permissions**: Full access (View ✅, Create ✅, Edit ✅, Delete Own ✅, Delete All ✅)
+- **API Endpoint**: `/cases/{caseID}/attachment_categories?type=File`
+
+#### URL Attachment Categories  
+- **Category Name**: URL
+- **Category ID**: URL
+- **Permissions**: Full access (View ✅, Create ✅, Edit ✅, Delete Own ✅, Delete All ✅)
+- **API Endpoint**: `/cases/{caseID}/attachment_categories?type=URL`
+
+### API Behavior Confirmed
+- **Type Parameter**: Case insensitive ('file' → 'File', 'url' → 'URL')
+- **Default Behavior**: Defaults to 'File' when no type specified
+- **Filtering**: Returns either File or URL categories per request, not both
+- **Permission Model**: Each category includes 5 permission flags
+- **Response Time**: 1.0-1.5 seconds consistently
+- **Error Handling**: 404 NOT_FOUND for invalid case IDs with detailed troubleshooting
+
 ## Future Data Collection
 Additional sample data will be added here as we test more tools:
-- Data view examples from data view tests
+- Data view examples from data view tests  
 - Participant information from participant tests
-- Additional attachment handling examples (get_case_attachments, get_attachment_categories)
+- Additional attachment handling examples (get_attachment, update_attachment, delete_attachment)

@@ -2,7 +2,10 @@
 
 Simple questions you can ask the MCP to perform tasks with each tool.
 
-
+## get_attachment_categories
+- "What attachment categories are available for my case?"
+- "Show me the file attachment categories for case ON6E5R-DIYRECIPE-WORK R-1009"
+- "What URL attachment categories can I use with this case?"
 
 ## ping_pega_service
 - "Can you check if I have a valid connection to my Pega application?"
@@ -214,6 +217,15 @@ The upload_attachment tool supports **3 different ways** to provide files:
 3. **Data URL**: Upload from data URLs using `fileUrl` and `fileName` parameters
 
 **Remember**: Temporary attachments expire after 2 hours if not linked to a case!
+
+## get_case_attachments
+- "What attachments are associated with case ON6E5R-DIYRECIPE-WORK R-1009?"
+- "Show me all files and URLs attached to my Recipe Collection case"
+- "Get attachment details including thumbnails for my case"
+- "List the attachments for case R-1009 with full metadata and available actions"
+
+### 💡 Tip: Thumbnail Support  
+Use `includeThumbnails=true` to get base64-encoded thumbnails for image attachments. Note that thumbnails significantly increase response size, so use them only when needed for displaying images in your interface.
 
 ---
 *More examples will be added as testing progresses*
