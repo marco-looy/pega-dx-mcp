@@ -2,10 +2,7 @@
 
 Simple questions you can ask the MCP to perform tasks with each tool.
 
-## recalculate_assignment_fields
-- "Can you recalculate the fields in my assignment form to update calculated values?"
-- "I need to recalculate calculated fields for assignment ASSIGN-WORKLIST ON6E5R-DIYRECIPE-WORK R-1070!RECIPEINTAKE_FLOW with action EnterRecipeDetails"
-- "Update the calculated fields RecipeName and Category for my recipe entry assignment"
+
 
 ## ping_pega_service
 - "Can you check if I have a valid connection to my Pega application?"
@@ -193,6 +190,12 @@ Simple questions you can ask the MCP to perform tasks with each tool.
 
 ### 💡 Tip: Multi-Step Navigation Success
 **For navigation to work, you must be on step 2 or later** - there's no previous step from step 1! The tool automatically handles eTag management and works perfectly when there's actually a previous step to navigate to. Content updates work seamlessly when combined with valid navigation.
+
+
+## recalculate_assignment_fields
+- "Can you recalculate the fields in my assignment form to update calculated values?"
+- "I need to recalculate calculated fields for assignment ASSIGN-WORKLIST ON6E5R-DIYRECIPE-WORK R-1070!RECIPEINTAKE_FLOW with action EnterRecipeDetails"
+- "Update the calculated fields RecipeName and Category for my recipe entry assignment"
 
 ---
 *More examples will be added as testing progresses*

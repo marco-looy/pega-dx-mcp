@@ -113,42 +113,30 @@ export class RecalculateAssignmentFieldsTool extends BaseTool {
 
     // Validate calculations object structure
     if (!calculations || typeof calculations !== 'object' || Array.isArray(calculations)) {
-      return {
-        error: 'Invalid calculations parameter. Must be an object containing fields and/or whens arrays.'
-      };
+      return `## Error: Invalid Parameters\n\n**Assignment ID**: ${assignmentID}\n**Action ID**: ${actionID}\n**Error**: Invalid calculations parameter. Must be an object containing fields and/or whens arrays.\n\n---\n*Error occurred at: ${new Date().toISOString()}*`;
     }
 
     // Validate that calculations contains at least fields or whens
     if (!calculations.fields && !calculations.whens) {
-      return {
-        error: 'Invalid calculations parameter. Must contain at least one of "fields" or "whens" arrays.'
-      };
+      return `## Error: Invalid Parameters\n\n**Assignment ID**: ${assignmentID}\n**Action ID**: ${actionID}\n**Error**: Invalid calculations parameter. Must contain at least one of \"fields\" or \"whens\" arrays.\n\n---\n*Error occurred at: ${new Date().toISOString()}*`;
     }
 
     // Validate fields array if present
     if (calculations.fields !== undefined) {
       if (!Array.isArray(calculations.fields) || calculations.fields.length === 0) {
-        return {
-          error: 'Invalid calculations.fields parameter. Must be a non-empty array of field objects.'
-        };
+        return `## Error: Invalid Parameters\n\n**Assignment ID**: ${assignmentID}\n**Action ID**: ${actionID}\n**Error**: Invalid calculations.fields parameter. Must be a non-empty array of field objects.\n\n---\n*Error occurred at: ${new Date().toISOString()}*`;
       }
 
       for (let i = 0; i < calculations.fields.length; i++) {
         const field = calculations.fields[i];
         if (!field || typeof field !== 'object' || Array.isArray(field)) {
-          return {
-            error: `Invalid field object at index ${i}. Each field must be an object with name and context properties.`
-          };
+          return `## Error: Invalid Parameters\n\n**Assignment ID**: ${assignmentID}\n**Action ID**: ${actionID}\n**Error**: Invalid field object at index ${i}. Each field must be an object with name and context properties.\n\n---\n*Error occurred at: ${new Date().toISOString()}*`;
         }
         if (!field.name || typeof field.name !== 'string' || field.name.trim() === '') {
-          return {
-            error: `Invalid field name at index ${i}. Field name must be a non-empty string.`
-          };
+          return `## Error: Invalid Parameters\n\n**Assignment ID**: ${assignmentID}\n**Action ID**: ${actionID}\n**Error**: Invalid field name at index ${i}. Field name must be a non-empty string.\n\n---\n*Error occurred at: ${new Date().toISOString()}*`;
         }
         if (!field.context || typeof field.context !== 'string' || field.context.trim() === '') {
-          return {
-            error: `Invalid field context at index ${i}. Field context must be a non-empty string.`
-          };
+          return `## Error: Invalid Parameters\n\n**Assignment ID**: ${assignmentID}\n**Action ID**: ${actionID}\n**Error**: Invalid field context at index ${i}. Field context must be a non-empty string.\n\n---\n*Error occurred at: ${new Date().toISOString()}*`;
         }
       }
     }
@@ -156,27 +144,19 @@ export class RecalculateAssignmentFieldsTool extends BaseTool {
     // Validate whens array if present
     if (calculations.whens !== undefined) {
       if (!Array.isArray(calculations.whens) || calculations.whens.length === 0) {
-        return {
-          error: 'Invalid calculations.whens parameter. Must be a non-empty array of when objects.'
-        };
+        return `## Error: Invalid Parameters\n\n**Assignment ID**: ${assignmentID}\n**Action ID**: ${actionID}\n**Error**: Invalid calculations.whens parameter. Must be a non-empty array of when objects.\n\n---\n*Error occurred at: ${new Date().toISOString()}*`;
       }
 
       for (let i = 0; i < calculations.whens.length; i++) {
         const when = calculations.whens[i];
         if (!when || typeof when !== 'object' || Array.isArray(when)) {
-          return {
-            error: `Invalid when object at index ${i}. Each when must be an object with name and context properties.`
-          };
+          return `## Error: Invalid Parameters\n\n**Assignment ID**: ${assignmentID}\n**Action ID**: ${actionID}\n**Error**: Invalid when object at index ${i}. Each when must be an object with name and context properties.\n\n---\n*Error occurred at: ${new Date().toISOString()}*`;
         }
         if (!when.name || typeof when.name !== 'string' || when.name.trim() === '') {
-          return {
-            error: `Invalid when name at index ${i}. When name must be a non-empty string.`
-          };
+          return `## Error: Invalid Parameters\n\n**Assignment ID**: ${assignmentID}\n**Action ID**: ${actionID}\n**Error**: Invalid when name at index ${i}. When name must be a non-empty string.\n\n---\n*Error occurred at: ${new Date().toISOString()}*`;
         }
         if (!when.context || typeof when.context !== 'string' || when.context.trim() === '') {
-          return {
-            error: `Invalid when context at index ${i}. When context must be a non-empty string.`
-          };
+          return `## Error: Invalid Parameters\n\n**Assignment ID**: ${assignmentID}\n**Action ID**: ${actionID}\n**Error**: Invalid when context at index ${i}. When context must be a non-empty string.\n\n---\n*Error occurred at: ${new Date().toISOString()}*`;
         }
       }
     }
@@ -185,16 +165,12 @@ export class RecalculateAssignmentFieldsTool extends BaseTool {
 
     // Validate content parameter
     if (content !== undefined && (typeof content !== 'object' || Array.isArray(content))) {
-      return {
-        error: 'Invalid content parameter. Must be an object containing property name-value pairs.'
-      };
+      return `## Error: Invalid Parameters\n\n**Assignment ID**: ${assignmentID}\n**Action ID**: ${actionID}\n**Error**: Invalid content parameter. Must be an object containing property name-value pairs.\n\n---\n*Error occurred at: ${new Date().toISOString()}*`;
     }
 
     // Validate pageInstructions parameter
     if (pageInstructions !== undefined && !Array.isArray(pageInstructions)) {
-      return {
-        error: 'Invalid pageInstructions parameter. Must be an array of page instruction objects.'
-      };
+      return `## Error: Invalid Parameters\n\n**Assignment ID**: ${assignmentID}\n**Action ID**: ${actionID}\n**Error**: Invalid pageInstructions parameter. Must be an array of page instruction objects.\n\n---\n*Error occurred at: ${new Date().toISOString()}*`;
     }
 
     // Execute the API call with error handling
@@ -211,9 +187,7 @@ export class RecalculateAssignmentFieldsTool extends BaseTool {
         
         if (!response || !response.success) {
           const errorMsg = `Failed to auto-fetch eTag: ${response?.error?.message || 'Unknown error'}`;
-          return {
-            error: errorMsg
-          };
+          return `## Error: Assignment Field Recalculation Failed\n\n**Assignment ID**: ${assignmentID}\n**Action ID**: ${actionID}\n**Error**: ${errorMsg}\n\n---\n*Error occurred at: ${new Date().toISOString()}*`;
         }
         
         finalETag = response.eTag;
@@ -222,23 +196,17 @@ export class RecalculateAssignmentFieldsTool extends BaseTool {
         
         if (!finalETag) {
           const errorMsg = 'Auto-fetch succeeded but no eTag was returned from getAssignment. This may indicate a server issue.';
-          return {
-            error: errorMsg
-          };
+          return `## Error: Assignment Field Recalculation Failed\n\n**Assignment ID**: ${assignmentID}\n**Action ID**: ${actionID}\n**Error**: ${errorMsg}\n\n---\n*Error occurred at: ${new Date().toISOString()}*`;
         }
       } catch (error) {
         const errorMsg = `Failed to auto-fetch eTag: ${error.message}`;
-        return {
-          error: errorMsg
-        };
+        return `## Error: Assignment Field Recalculation Failed\n\n**Assignment ID**: ${assignmentID}\n**Action ID**: ${actionID}\n**Error**: ${errorMsg}\n\n---\n*Error occurred at: ${new Date().toISOString()}*`;
       }
     }
     
     // Validate eTag format (should be a timestamp-like string)
     if (typeof finalETag !== 'string' || finalETag.trim().length === 0) {
-      return {
-        error: 'Invalid eTag parameter. Must be a non-empty string representing case save date time.'
-      };
+      return `## Error: Assignment Field Recalculation Failed\n\n**Assignment ID**: ${assignmentID}\n**Action ID**: ${actionID}\n**Error**: Invalid eTag parameter. Must be a non-empty string representing case save date time.\n\n---\n*Error occurred at: ${new Date().toISOString()}*`;
     }
 
 
