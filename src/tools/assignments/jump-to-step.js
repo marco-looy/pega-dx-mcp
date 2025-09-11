@@ -183,22 +183,16 @@ export class JumpToStepTool extends BaseTool {
     // Execute jump to step operation with comprehensive error handling
     return await this.executeWithErrorHandling(
       `Jump to Step: ${stepID} in Assignment: ${assignmentID}`,
-      async () => await this.pegaClient.jumpToAssignmentStep(assignmentID, stepID, finalETag, options)
+      async () => await this.pegaClient.jumpToAssignmentStep(assignmentID, stepID, finalETag, options),
+      { params: { assignmentID, stepID, eTag: finalETag, viewType, content, pageInstructions, attachments } }
     );
   }
 
   /**
    * Format successful response for display
    */
-  formatSuccessResponse(result, params) {
-    return {
-      content: [
-        {
-          type: 'text',
-          text: this.buildSuccessMarkdown(result.data, params)
-        }
-      ]
-    };
+  formatSuccessResponse(operation, data, options = {}) {
+    return this.buildSuccessMarkdown(data, options.params || {});
   }
 
   /**
@@ -334,15 +328,8 @@ export class JumpToStepTool extends BaseTool {
   /**
    * Format error response for display with navigation-specific guidance
    */
-  formatErrorResponse(error) {
-    return {
-      content: [
-        {
-          type: 'text',
-          text: this.buildNavigationErrorMarkdown(error)
-        }
-      ]
-    };
+  formatErrorResponse(operation, error, options = {}) {
+    return this.buildNavigationErrorMarkdown(error);
   }
 
   /**

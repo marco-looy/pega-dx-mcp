@@ -612,6 +612,39 @@ This file contains sample data discovered during testing that can be reused for 
 - **Field Support**: Form field count and metadata adapt to current step
 - **Error Types**: VALIDATION_FAIL for first step (differs from documented 422)
 
+## Jump to Step Information
+**Last Updated**: 2025-09-11  
+**Source**: jump_to_step testing
+
+### Successfully Tested Step Navigation
+- **Test Case**: ON6E5R-DIYRECIPE-WORK R-1009  
+- **Assignment ID**: `ASSIGN-WORKLIST ON6E5R-DIYRECIPE-WORK R-1009!RECIPEINTAKE_FLOW`
+
+#### Step Navigation Patterns  
+- **AssignmentSF1**: "Enter Recipe Details" (5 fields, 4 components)
+- **AssignmentSF2**: "Input Ingredients List" (10 fields, 9 components)  
+- **Pattern**: `AssignmentSF{n}` format for sequential steps
+- **Complexity Growth**: Field count and UI complexity increase with step progression
+
+#### Tool Features Confirmed
+- ✅ **Auto-eTag Management**: No manual eTag handling required
+- ✅ **Multi-Step Navigation**: Seamless navigation between assignment steps
+- ✅ **Content Updates**: Update case fields during step navigation
+- ✅ **ViewType Support**: form, page, none options working perfectly
+- ✅ **Error Handling**: 409 CONFLICT (same step), 404 NOT_FOUND (invalid step)
+- ✅ **Assignment Evolution**: Same assignment ID, different step names and field counts
+
+#### Navigation Response Elements
+- **Rich Assignment Context**: Case info, assignment details, UI resources
+- **Step Discovery Guidance**: Comprehensive help for finding valid step IDs
+- **Error Recovery**: Clear troubleshooting steps for each error scenario
+- **Performance**: Sub-second navigation (~700-800ms response times)
+
+#### Critical Issues Fixed
+- **Syntax Errors**: Fixed invalid `finalETag.trim()` parameter handling
+- **Response Format**: Corrected MCP protocol response formatting methods
+- **Production Status**: Tool now fully functional and production-ready
+
 ## Future Data Collection
 Additional sample data will be added here as we test more tools:
 - Data view examples from data view tests

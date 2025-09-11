@@ -48,6 +48,33 @@ Simple questions you can ask the MCP to perform tasks with each tool.
 - Using a stale eTag will result in 409 Conflict errors
 - **Proven Pattern**: Fresh eTag → immediate use = 100% success rate
 
+## jump_to_step
+
+### Basic Navigation Questions:
+- "How can I jump to a specific step in my assignment workflow?"
+- "Navigate to step AssignmentSF2 in assignment ASSIGN-WORKLIST ON6E5R-DIYRECIPE-WORK R-1009!RECIPEINTAKE_FLOW"
+- "Jump to the second step of my Recipe Collection assignment"
+
+### Step Discovery Questions:
+- "What step IDs are available for navigation in my assignment?"
+- "Show me the available navigation steps for my current assignment"
+- "Help me understand the step ID patterns in my workflow"
+
+### Advanced Navigation Questions:
+- "Can I update case fields while navigating between assignment steps?"
+- "Jump to AssignmentSF2 and update RecipeName to 'Navigation Test' at the same time"
+- "Navigate to step AssignmentSF1 with page view to see full UI metadata"
+
+### Error Handling Questions:
+- "How do I handle navigation errors when jumping to assignment steps?"
+- "What happens if I try to jump to an invalid step ID?"
+- "Why am I getting a conflict error when trying to navigate to the same step?"
+
+### ViewType Questions:
+- "What's the difference between viewType options in step navigation?"
+- "Show me the navigation with minimal UI information (viewType=none)"
+- "Give me full page metadata when navigating to my assignment step"
+
 ## change_to_stage
 - "Move my case to the Classification stage"
 - "Navigate case R-1048 from Recipe Intake to Classification stage"
