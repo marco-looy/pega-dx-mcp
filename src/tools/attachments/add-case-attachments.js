@@ -71,15 +71,13 @@ export class AddCaseAttachmentsTool extends BaseTool {
     // Basic parameter validation using base class
     const requiredValidation = this.validateRequiredParams(params, ['caseID', 'attachments']);
     if (requiredValidation) {
-      return requiredValidation;
+      return this.createErrorResponse(`Add Attachments to Case: ${caseID || 'UNKNOWN'}`, { message: requiredValidation.error }, { caseID, attachments });
     }
 
     // Additional comprehensive parameter validation for complex logic
     const validationResult = this.validateParameters(caseID, attachments);
     if (!validationResult.valid) {
-      return {
-        error: validationResult.error
-      };
+      return this.createErrorResponse(`Add Attachments to Case: ${caseID}`, { message: validationResult.error }, { caseID, attachments });
     }
 
     // Execute with standardized error handling
@@ -298,13 +296,18 @@ export class AddCaseAttachmentsTool extends BaseTool {
   }
 
   /**
-   * Format error response for display
+   * Override formatErrorResponse to handle add_case_attachments specific formatting
    */
-  formatErrorResponse(caseID, attachments, error) {
-    let response = `## Error Adding Attachments to Case\n\n`;
+  formatErrorResponse(operation, error, options = {}) {
+    const { caseID, attachments } = options;
+    let response = `## ${operation}\n\n`;
     
-    response += `**Case ID**: ${caseID}\n`;
-    response += `**Attempted Attachments**: ${attachments.length}\n`;
+    if (caseID) {
+      response += `**Case ID**: ${caseID}\n`;
+    }
+    if (attachments && Array.isArray(attachments)) {
+      response += `**Attempted Attachments**: ${attachments.length}\n`;
+    }
     response += `**Error Type**: ${error.type}\n`;
     response += `**Message**: ${error.message}\n`;
     
@@ -377,14 +380,16 @@ export class AddCaseAttachmentsTool extends BaseTool {
     }
 
     // Display attachment details that failed
-    response += '\n### Attachment Details (Failed to Process)\n';
-    attachments.forEach((att, index) => {
-      if (att.type === 'File') {
-        response += `${index + 1}. **File**: Temporary ID ${att.ID}\n`;
-      } else if (att.type === 'URL') {
-        response += `${index + 1}. **URL**: ${att.name} (${att.url})\n`;
-      }
-    });
+    if (attachments && Array.isArray(attachments) && attachments.length > 0) {
+      response += '\n### Attachment Details (Failed to Process)\n';
+      attachments.forEach((att, index) => {
+        if (att.type === 'File') {
+          response += `${index + 1}. **File**: Temporary ID ${att.ID}\n`;
+        } else if (att.type === 'URL') {
+          response += `${index + 1}. **URL**: ${att.name} (${att.url})\n`;
+        }
+      });
+    }
 
     response += '\n**Important**: Due to atomic operation behavior, NO attachments were added to the case since at least one failed.\n';
 

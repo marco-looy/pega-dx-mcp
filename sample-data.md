@@ -726,8 +726,54 @@ This file contains sample data discovered during testing that can be reused for 
 - **MIME Detection**: mime-types library for automatic content type detection
 - **Response Formatting**: Rich MCP responses with usage examples and next steps
 
+## Add Case Attachments Information
+**Last Updated**: 2025-09-11  
+**Source**: add_case_attachments testing
+
+### ✅ SUCCESS SCENARIOS CONFIRMED (3/3 PASSED)
+**Test Case**: ON6E5R-DIYRECIPE-WORK R-1009 (Recipe Collection)
+
+#### Attachment Types Successfully Tested
+**1. File Attachments**
+- **Temporary ID**: ca4c1358-ce44-48e5-96bb-ced2e920f802 (from upload_attachment)
+- **File Size**: 51 bytes (text/plain)
+- **Result**: ✅ SUCCESS - Converted to permanent case attachment
+- **Response Time**: ~1.0 seconds
+
+**2. URL Attachments**  
+- **URL**: https://www.github.com
+- **Display Name**: GitHub
+- **Result**: ✅ SUCCESS - Direct URL attachment to case
+- **Response Time**: ~1.0 seconds
+
+**3. Mixed Attachments (Atomic Operation)**
+- **File**: c32fb4fc-839c-47fb-aa9d-d60ec79060dd (53 bytes)
+- **URL**: https://www.google.com (Google Search)
+- **Result**: ✅ SUCCESS - Both attachments processed atomically
+- **Response Time**: ~1.4 seconds
+- **Confirmation**: Atomic operation working perfectly
+
+### add_case_attachments API Pattern
+- **Endpoint**: POST `/api/application/v2/cases/{caseID}/attachments`
+- **Payload**: JSON array of attachment objects
+- **File Type**: `{"type": "File", "category": "File", "ID": "temp-attachment-id"}`
+- **URL Type**: `{"type": "URL", "category": "URL", "url": "https://...", "name": "display-name"}`
+- **Response**: Success confirmation with attachment summary
+
+### ❌ CRITICAL MCP ISSUE DISCOVERED
+**Problem**: Error responses not displayed through MCP protocol
+**Impact**: Cannot test error handling via MCP interface
+**Error Scenarios Affected**: 6+ validation and API error tests
+**Recommendation**: Urgent MCP error handling investigation needed
+
+### Attachment Workflow Integration
+- **Upload → Attach**: upload_attachment creates temporary ID → add_case_attachments makes permanent
+- **Expiry Management**: Temporary attachments expire in 2 hours if not linked
+- **Case Association**: All case users gain access to attached files/URLs
+- **Atomic Processing**: Multiple attachments succeed/fail together
+
 ## Future Data Collection
 Additional sample data will be added here as we test more tools:
 - Data view examples from data view tests
 - Participant information from participant tests
-- Additional attachment handling examples (add_case_attachments, get_case_attachments)
+- Additional attachment handling examples (get_case_attachments, get_attachment_categories)
