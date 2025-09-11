@@ -645,6 +645,39 @@ This file contains sample data discovered during testing that can be reused for 
 - **Response Format**: Corrected MCP protocol response formatting methods
 - **Production Status**: Tool now fully functional and production-ready
 
+## Recalculate Assignment Fields Information
+**Last Updated**: 2025-09-11  
+**Source**: recalculate_assignment_fields testing
+
+### Successfully Tested Field Recalculation
+- **Test Case**: ON6E5R-DIYRECIPE-WORK R-1070  
+- **Assignment ID**: `ASSIGN-WORKLIST ON6E5R-DIYRECIPE-WORK R-1070!RECIPEINTAKE_FLOW`
+- **Action ID**: `EnterRecipeDetails`
+- **eTag**: `20250911T074705.620 GMT`
+
+#### Tool Features Confirmed
+- ✅ **Auto-eTag Management**: No manual eTag handling required
+- ✅ **Field Recalculation**: Calculates fields and when conditions successfully
+- ✅ **Content Merging**: Updates case fields before calculations
+- ✅ **API Response**: Returns data and uiResources structures
+- ✅ **Error Handling**: Proper NOT_FOUND responses for invalid assignments
+- ✅ **Parameter Validation**: Comprehensive validation of calculations structure
+
+#### Critical Issues Fixed
+- **Syntax Errors**: Fixed invalid `finalETag.trim():` property syntax
+- **Missing Commas**: Added commas in required arrays (lines 90, 109)  
+- **API Call Structure**: Fixed malformed executeRequest to proper try-catch
+- **Variable References**: Corrected eTag vs finalETag usage throughout
+- **Validation Logic**: Moved eTag validation after auto-fetch logic
+- **Production Status**: Tool fully functional and production-ready
+
+#### Assignment Action Requirements
+- **Fresh Assignments**: Must use assignments in proper state for recalculation
+- **Valid Actions**: Action must support field recalculation (EnterRecipeDetails works)
+- **Field Context**: Fields must exist in assignment action view with valid context
+- **When Conditions**: When rules must be accessible in assignment action scope
+- **Response Structure**: Returns calculation results, UI resources, field states
+
 ## Future Data Collection
 Additional sample data will be added here as we test more tools:
 - Data view examples from data view tests

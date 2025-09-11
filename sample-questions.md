@@ -2,6 +2,11 @@
 
 Simple questions you can ask the MCP to perform tasks with each tool.
 
+## recalculate_assignment_fields
+- "Can you recalculate the fields in my assignment form to update calculated values?"
+- "I need to recalculate calculated fields for assignment ASSIGN-WORKLIST ON6E5R-DIYRECIPE-WORK R-1070!RECIPEINTAKE_FLOW with action EnterRecipeDetails"
+- "Update the calculated fields RecipeName and Category for my recipe entry assignment"
+
 ## ping_pega_service
 - "Can you check if I have a valid connection to my Pega application?"
 - "Test my Pega authentication setup"

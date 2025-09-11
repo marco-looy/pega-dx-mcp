@@ -26,7 +26,7 @@ export class RecalculateAssignmentFieldsTool extends BaseTool {
             type: 'string',
             description: 'Name of the assignment action - ID of the flow action rule. This corresponds to the Flow Action rule configured in the Pega application where field calculations are defined. Example: CompleteVerification, Approve, Reject.'
           },
-          finalETag.trim(): {
+          eTag: {
             type: 'string',
             description: 'Optional eTag unique value representing the most recent save date time (pxSaveDateTime) of the case. If not provided, the tool will automatically fetch the latest eTag from the assignment. For manual eTag management, provide the eTag from a previous assignment operation. Used for optimistic locking to prevent concurrent modification conflicts.'
           },
@@ -87,7 +87,7 @@ export class RecalculateAssignmentFieldsTool extends BaseTool {
             }
           }
         },
-        required: ['assignmentID', 'actionID''calculations']
+        required: ['assignmentID', 'actionID', 'calculations']
       }
     };
   }
@@ -106,7 +106,7 @@ export class RecalculateAssignmentFieldsTool extends BaseTool {
     } = params;
 
     // Basic parameter validation using base class
-    const requiredValidation = this.validateRequiredParams(params, ['assignmentID', 'actionID''calculations']);
+    const requiredValidation = this.validateRequiredParams(params, ['assignmentID', 'actionID', 'calculations']);
     if (requiredValidation) {
       return requiredValidation;
     }
@@ -181,12 +181,7 @@ export class RecalculateAssignmentFieldsTool extends BaseTool {
       }
     }
 
-    // Validate eTag parameter
-    if (!eTag || typeof eTag !== 'string' || eTag.trim() === '') {
-      return {
-        error: 'Invalid finalETag.trim() parameter. Must be a non-empty string obtained from a previous assignment action request.'
-      };
-    }
+    // eTag validation will happen after auto-fetch logic
 
     // Validate content parameter
     if (content !== undefined && (typeof content !== 'object' || Array.isArray(content))) {
@@ -226,7 +221,7 @@ export class RecalculateAssignmentFieldsTool extends BaseTool {
         console.log(`Successfully auto-fetched eTag: ${finalETag}`);
         
         if (!finalETag) {
-          const errorMsg = 'Auto-fetch succeeded but no finalETag.trim() was returned from getAssignment. This may indicate a server issue.';
+          const errorMsg = 'Auto-fetch succeeded but no eTag was returned from getAssignment. This may indicate a server issue.';
           return {
             error: errorMsg
           };
@@ -242,37 +237,50 @@ export class RecalculateAssignmentFieldsTool extends BaseTool {
     // Validate eTag format (should be a timestamp-like string)
     if (typeof finalETag !== 'string' || finalETag.trim().length === 0) {
       return {
-        error: 'Invalid finalETag.trim() parameter. Must be a non-empty string representing case save date time.'
+        error: 'Invalid eTag parameter. Must be a non-empty string representing case save date time.'
       };
     }
 
 
-    // Prepare request options(
-      `Recalculating fields and whens for assignment action ${actionID} on assignment ${assignmentID}`,
-      async () => await this.pegaClient.recalculateAssignmentFields(
+    try {
+      // Call Pega API to recalculate assignment fields
+      const result = await this.pegaClient.recalculateAssignmentFields(
         assignmentID.trim(), 
         actionID.trim(), 
-        eTag.trim(),
+        finalETag.trim(),
         calculations,
         {
           content,
           pageInstructions
         }
-      ),
-      {
-        formatSuccessResponse: (data, eTag) => this.formatSuccessResponse(assignmentID, actionID, data, eTag, {
+      );
+
+      if (result.success) {
+        return this.formatSuccessResponse(assignmentID, actionID, result.data, result.eTag, {
           calculations,
           content,
           pageInstructions
-        }),
-        formatErrorResponse: (error) => this.formatErrorResponse(assignmentID, actionID, error, {
-          eTag,
+        });
+      } else {
+        return this.formatErrorResponse(assignmentID, actionID, result.error, {
+          eTag: finalETag,
           calculations,
           content,
           pageInstructions
-        })
+        });
       }
-    );
+    } catch (error) {
+      return this.formatErrorResponse(assignmentID, actionID, {
+        type: 'CONNECTION_ERROR',
+        message: error.message,
+        details: error.stack
+      }, {
+        eTag: finalETag,
+        calculations,
+        content,
+        pageInstructions
+      });
+    }
   }
 
   /**
@@ -477,7 +485,7 @@ export class RecalculateAssignmentFieldsTool extends BaseTool {
     // Display execution sequence information
     response += '\n### Execution Sequence Completed\n';
     response += '1. ✅ Assignment and action validated\n';
-    response += '2. ✅ finalETag.trim() verified for optimistic locking\n';
+    response += '2. ✅ eTag verified for optimistic locking\n';
     response += '3. ✅ Case opened from database\n';
     
     if (content && Object.keys(content).length > 0) {
@@ -511,7 +519,7 @@ export class RecalculateAssignmentFieldsTool extends BaseTool {
     if (data.eTag) {
       response += '\n### Operation Support\n';
       response += `- **New eTag Captured**: ${data.eTag}\n`;
-      response += '- **Ready for Next Action**: Use new finalETag.trim() for subsequent assignment operations\n';
+      response += '- **Ready for Next Action**: Use new eTag for subsequent assignment operations\n';
     }
 
     response += '\n---\n';
