@@ -1215,7 +1215,32 @@ This file contains sample data discovered during testing that can be reused for 
 | **Pagination** | Data view dependent | Generally supported |
 | **Use Case** | Analytics, planning | Data display |
 
+## Case Tags Information
+**Last Updated**: 2025-09-12  
+**Source**: get_case_tags testing
+
+### Cases without Tags
+**Test Cases**: ON6E5R-DIYRECIPE-WORK R-1009, ON6E5R-DIYRECIPE-WORK R-1059
+- **Result**: Both cases return empty tagsList arrays [0 items]
+- **API Behavior**: Proper handling of cases with no tags assigned
+- **Response Format**: `{"tagsList": []}`
+- **Response Time**: ~0.5 seconds consistently
+
+### get_case_tags API Pattern
+- **Endpoint**: GET `/api/application/v2/cases/{caseID}/tags`
+- **Authentication**: OAuth2 Bearer token required
+- **Error Handling**: 404 NOT_FOUND for invalid case IDs with clear "Case not found" message
+- **Parameter Validation**: Client-side validation for empty/missing caseID
+- **Whitespace Handling**: Automatic trimming of case ID parameters
+
+### Tag System Insights
+- **Empty State Management**: Clean handling when no tags exist on cases
+- **Response Consistency**: Identical behavior across different cases without tags
+- **Error Quality**: Excellent troubleshooting guidance for all error scenarios
+- **Performance**: Sub-second response times for both success and error cases
+
 ## Future Data Collection
 Additional sample data will be added here as we test more tools:
 - Participant information from participant tests
 - Document handling examples from document tests
+- Cases with actual tags (after testing add_case_tags tool)

@@ -351,5 +351,10 @@ The delete_attachment tool performs **permanent deletion** that cannot be undone
 - "List all the followers for my Recipe Collection case"
 - "Who is subscribed to receive notifications for this case?"
 
+## get_case_tags
+- "What tags are associated with my Recipe Collection case R-1009?"
+- "Can you show me all the tags for case ON6E5R-DIYRECIPE-WORK R-1059?"
+- "How do I check if my case has any organizational tags?"
+
 ---
 *More examples will be added as testing progresses*
