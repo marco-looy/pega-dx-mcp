@@ -357,6 +357,14 @@ The add_case_followers tool processes **each user individually** within bulk req
 ### 💡 Tip: User ID Validation  
 Make sure to use **valid user IDs** that exist in your Pega system. The tool validates each user against the user directory and will return "User [ID] is not valid" errors for non-existent users. Use actual operator IDs like "SystemAdmin" rather than made-up test names.
 
+## delete_case_follower
+- "Can you remove SystemAdmin as a follower from case ON6E5R-DIYRECIPE-WORK R-1009?"
+- "I need to unsubscribe a user from my Recipe Collection case notifications"
+- "Delete the follower TestUser1 from case R-1059"
+
+### 💡 Tip: Clean Removal
+The delete_case_follower tool cleanly removes follower associations and returns a simple success response. If the user wasn't following the case, you'll get a clean "No data found" result rather than an error - this is normal behavior for already-removed followers.
+
 ## get_case_followers
 - "Can you show me who is following case R-1059?"
 - "List all the followers for my Recipe Collection case"
@@ -383,5 +391,10 @@ The add_case_tags tool supports **alphanumeric characters, spaces, and basic int
 ### 💡 Tip: Tag ID Format Required
 The delete_case_tag tool requires the **full tag key format**, not just the tag name. First use `get_case_tags` to see your current tags, then copy the exact `tagKey` value (like `DATA-SOCIAL-TAG ON6E5R-DIYRECIPE-WORK!TESTING`) to delete_case_tag. Simple tag names like "testing" won't work.
 
----
-*More examples will be added as testing progresses*
+## get_document
+- "Can you retrieve the content of document DOC-12345 from the system?"
+- "Get me the base64 content for document DOCUMENT-ABC-123"
+- "I need to download document content - what's in document ID XYZ-789?"
+
+### 💡 Tip: Environment Limitation
+The get_document tool works perfectly but requires valid document IDs from your Pega system. Documents are different from attachments - they're stored in Pega's content management system. If you don't have any documents, you can still test the tool with invalid IDs to see its excellent error handling, or contact your system administrator to create sample documents.
