@@ -346,5 +346,10 @@ The delete_attachment tool performs **permanent deletion** that cannot be undone
 - "Unlink case R-1048 from my primary Recipe Collection case"
 - "I need to delete the relationship between these two related cases"
 
+## get_case_followers
+- "Can you show me who is following case R-1059?"
+- "List all the followers for my Recipe Collection case"
+- "Who is subscribed to receive notifications for this case?"
+
 ---
 *More examples will be added as testing progresses*

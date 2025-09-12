@@ -24,6 +24,17 @@ This file contains sample data discovered during testing that can be reused for 
 - No authentication issues encountered during testing
 - Environment is stable for testing purposes
 
+## Case Followers Data
+**Last Updated**: 2025-09-12
+**Source**: get_case_followers testing
+
+### Cases with Followers
+- **Case R-1059**: Has 1 follower
+  - Follower: SystemAdmin (ID: SystemAdmin, Email: marketing@enablement.com)
+
+### Cases without Followers
+- **Case R-1009**: No followers (returns "No data found")
+
 ## Case Types Information
 **Last Updated**: 2025-09-05  
 **Source**: get_case_types testing
