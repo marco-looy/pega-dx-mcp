@@ -2,6 +2,11 @@
 
 Simple questions you can ask the MCP to perform tasks with each tool.
 
+## get_data_objects
+- "What data objects are available in this Pega application?"
+- "Show me all the recipe-related data objects I can work with"
+- "What case objects can I use for workflow management?"
+
 ## update_attachment
 - "Can you update the name of my attachment to 'Updated Document'?"
 - "Change the attachment name from 'test-file' to 'Final Report' for case R-1009"

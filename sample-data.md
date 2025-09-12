@@ -994,8 +994,77 @@ This file contains sample data discovered during testing that can be reused for 
 - **Unicode Support**: ✅ OUTSTANDING - Full international character and emoji support  
 - **Overall Status**: ✅ FULLY PRODUCTION READY (no caveats)
 
+## Data Objects Information
+**Last Updated**: 2025-09-12  
+**Source**: get_data_objects testing
+
+### Available Data Objects (13 total)
+**Test Date**: 2025-09-12  
+**Recipe Application Context**: All objects relate to DIY Recipe application domain
+
+#### Data Type Objects (7)
+1. **CookingInstruction** (D_CookingInstructionList)
+   - Detailed recipe preparation steps with multimedia support
+   - Integration: Recipe database for real-time updates
+
+2. **Ingredient** (D_IngredientList)  
+   - Recipe components with nutritional information
+   - Integration: Ingredient inventory system for data synchronization
+
+3. **Recipe** (D_RecipeList)
+   - Complete recipes with ingredients and instructions
+   - Integration: Recipe database with photos and cooking time
+
+4. **RecipeCategory** (D_RecipeCategoryList)
+   - Recipe classification and categorization system
+   - Integration: Recipe database for organization
+
+5. **RecipeRating** (D_RecipeRatingList)
+   - User reviews and rating system
+   - Integration: User management system
+
+6. **ShoppingList** (D_ShoppingListList)
+   - Ingredient lists generated from recipes
+   - Integration: User management system
+
+7. **UserProfile** (D_UserProfileList)
+   - User preferences, dietary restrictions, and favorites
+   - Integration: User management system
+
+#### Case Type Objects (6)  
+1. **ChildCase** (D_ChildCaseList)
+   - Generic child case functionality
+
+2. **Recipe Collection** (D_RecipeCollectionList)
+   - Recipe management and organization with tagging and search
+   - Integration: Calendar and reminder functionalities
+
+3. **Recipe Planning** (D_RecipePlanningList)
+   - Meal planning with shopping list generation
+   - Integration: Calendar system
+
+4. **Recipe Review** (D_RecipeReviewList)
+   - Recipe rating with moderation and feedback
+   - Integration: Quality control mechanisms
+
+5. **Recipe Sharing** (D_RecipeSharingList)
+   - Social sharing with privacy controls
+   - Integration: Social media platforms
+
+6. **Recipe Submission** (D_RecipeSubmissionList)
+   - New recipe validation and approval workflow
+   - Integration: Quality assurance processes
+
+### Data Object API Pattern
+- **Endpoint**: GET `/api/application/v2/data`
+- **Type Filtering**: `?type=data` or `?type=case`
+- **Response Elements**: classID, dataObjectID, defaultListDataView, description, name, isDefaultListDataViewQueryable, links
+- **HATEOAS Links**: Metadata links for data view exploration
+- **Performance**: ~1.5 seconds consistent response time
+
 ## Future Data Collection
 Additional sample data will be added here as we test more tools:
-- Data view examples from data view tests  
+- Data view metadata examples from get_data_view_metadata tests
+- List data view examples from get_list_data_view tests  
 - Participant information from participant tests
 - Document handling examples from document tests
