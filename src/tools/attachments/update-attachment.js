@@ -51,9 +51,7 @@ export class UpdateAttachmentTool extends BaseTool {
     // Additional comprehensive parameter validation
     const validationResult = this.validateParameters(attachmentID, name, category);
     if (!validationResult.valid) {
-      return {
-        error: validationResult.error
-      };
+      return validationResult;
     }
 
     // Execute with standardized error handling
@@ -71,32 +69,48 @@ export class UpdateAttachmentTool extends BaseTool {
     // Validate attachmentID
     if (!attachmentID || typeof attachmentID !== 'string' || attachmentID.trim() === '') {
       return {
-        valid: false,
-        error: 'Invalid attachmentID parameter. Attachment ID must be a non-empty string containing the full Link-Attachment instance handle (e.g., "LINK-ATTACHMENT OSIEO3-TESTAPP03-WORK T-672011!20240104T100246.978 GMT").'
+        content: [
+          {
+            type: 'text',
+            text: `## Parameter Validation Error\n\n**Error**: Invalid attachmentID parameter.\n\n**Details**: Attachment ID must be a non-empty string containing the full Link-Attachment instance handle (e.g., "LINK-ATTACHMENT OSIEO3-TESTAPP03-WORK T-672011!20240104T100246.978 GMT").\n\n**Solution**: Please provide a valid attachmentID value and try again.`
+          }
+        ]
       };
     }
 
     // Basic format validation for Link-Attachment instance key
     if (!attachmentID.includes('LINK-ATTACHMENT')) {
       return {
-        valid: false,
-        error: 'Invalid attachmentID format. Expected Link-Attachment instance pzInsKey format (e.g., "LINK-ATTACHMENT OSIEO3-TESTAPP03-WORK T-672011!20240104T100246.978 GMT").'
+        content: [
+          {
+            type: 'text',
+            text: `## Parameter Validation Error\n\n**Error**: Invalid attachmentID format.\n\n**Details**: Expected Link-Attachment instance pzInsKey format (e.g., "LINK-ATTACHMENT OSIEO3-TESTAPP03-WORK T-672011!20240104T100246.978 GMT").\n\n**Solution**: Please provide a valid Link-Attachment instance handle and try again.`
+          }
+        ]
       };
     }
 
     // Validate name
     if (!name || typeof name !== 'string' || name.trim() === '') {
       return {
-        valid: false,
-        error: 'Invalid name parameter. Name must be a non-empty string that will be used as the display name for the attachment.'
+        content: [
+          {
+            type: 'text',
+            text: `## Parameter Validation Error\n\n**Error**: Invalid name parameter.\n\n**Details**: Name must be a non-empty string that will be used as the display name for the attachment.\n\n**Solution**: Please provide a valid name value and try again.`
+          }
+        ]
       };
     }
 
     // Validate category
     if (!category || typeof category !== 'string' || category.trim() === '') {
       return {
-        valid: false,
-        error: 'Invalid category parameter. Category must be a non-empty string that corresponds to a valid attachment category in the system.'
+        content: [
+          {
+            type: 'text',
+            text: `## Parameter Validation Error\n\n**Error**: Invalid category parameter.\n\n**Details**: Category must be a non-empty string that corresponds to a valid attachment category in the system.\n\n**Solution**: Please provide a valid category value and try again.`
+          }
+        ]
       };
     }
 

@@ -941,8 +941,61 @@ This file contains sample data discovered during testing that can be reused for 
 - **Performance**: Excellent - sub-2-second response times
 - **Overall Status**: ✅ PRODUCTION READY
 
+## Update Attachment Information
+**Last Updated**: 2025-09-11  
+**Source**: update_attachment testing
+
+### Successfully Tested Updates
+**Test Case**: ON6E5R-DIYRECIPE-WORK R-1009 (Recipe Collection)
+
+#### File Attachment Updates
+- **Original**: test-upload.txt → **Updated**: 📝 Updated Test File
+- **Original**: test-attachment-1.txt → **Updated**: 🚀 Test with Special Characters: @#$%^&*()_+-=[]{}|;':\",./<>? 中文 العربية 🎉
+- **Result**: ✅ SUCCESS - Display names updated while preserving file content
+
+#### URL Attachment Updates
+- **Original**: GitHub → **Updated**: 🐙 Updated GitHub Link
+- **Original**: Google Search → **Updated**: [670+ character long name...]
+- **Result**: ✅ SUCCESS - Display names updated while preserving original URLs
+
+### update_attachment API Pattern
+- **Endpoint**: PATCH `/api/application/v2/attachments/{attachmentID}`
+- **Method**: PATCH with JSON body containing name and category
+- **Authentication**: OAuth2 Bearer token required
+- **URL Encoding**: Attachment ID automatically URL encoded for special characters
+- **Response Time**: Consistent 1.0-1.1 seconds
+- **Response Format**: Success confirmation with "Attachment edited successfully" message
+
+### Testing Insights
+- ✅ **Unicode Support**: Full emoji, special character, and international text support confirmed
+- ✅ **Length Handling**: No server-side restrictions found (tested 670+ characters)
+- ✅ **Category Validation**: Server validates category existence and user permissions
+- ✅ **Update Scope**: Only name and category can be updated (filename/URL unchanged as expected)
+- ✅ **Error Quality**: Excellent troubleshooting guidance for all error scenarios
+- ✅ **MCP Validation Fixed**: All validation errors now display properly (bug resolved 2025-09-12)
+
+### Error Scenarios Confirmed
+- **404 NOT_FOUND**: Non-existent attachments with detailed "Error_File_Not_Found" response
+- **403 FORBIDDEN**: Invalid categories trigger "Error_Attachment_Access_Denied" security validation
+- **Client Validation**: Empty name/category parameters properly caught with clear messages
+- **Validation Errors**: Malformed attachment IDs display proper error messages (fixed 2025-09-12)
+
+### Sample Attachment IDs (Recipe Collection Case)
+- **File**: `LINK-ATTACHMENT ON6E5R-DIYRECIPE-WORK R-1009!20250911T095425.822 GMT`
+- **URL**: `LINK-ATTACHMENT ON6E5R-DIYRECIPE-WORK R-1009!20250911T104722.036 GMT`
+- **Format**: Complete Link-Attachment instance pzInsKey required
+- **Usage**: Get IDs from get_case_attachments before updating
+
+### Production Readiness Assessment - update_attachment
+- **Core Functionality**: ✅ EXCELLENT - Name and category updates work perfectly
+- **Parameter Validation**: ✅ EXCELLENT - All validation scenarios working properly (fixed 2025-09-12)
+- **Error Handling**: ✅ EXCELLENT - Rich error responses with comprehensive troubleshooting
+- **Performance**: ✅ EXCELLENT - Consistent sub-2-second response times
+- **Unicode Support**: ✅ OUTSTANDING - Full international character and emoji support  
+- **Overall Status**: ✅ FULLY PRODUCTION READY (no caveats)
+
 ## Future Data Collection
 Additional sample data will be added here as we test more tools:
 - Data view examples from data view tests  
 - Participant information from participant tests
-- Additional attachment handling examples (update_attachment)
+- Document handling examples from document tests

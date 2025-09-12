@@ -2,6 +2,11 @@
 
 Simple questions you can ask the MCP to perform tasks with each tool.
 
+## update_attachment
+- "Can you update the name of my attachment to 'Updated Document'?"
+- "Change the attachment name from 'test-file' to 'Final Report' for case R-1009"
+- "Update the category of this attachment to 'File' with a new name"
+
 ## get_attachment_categories
 - "What attachment categories are available for my case?"
 - "Show me the file attachment categories for case ON6E5R-DIYRECIPE-WORK R-1009"
