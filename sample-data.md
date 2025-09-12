@@ -1062,9 +1062,57 @@ This file contains sample data discovered during testing that can be reused for 
 - **HATEOAS Links**: Metadata links for data view exploration
 - **Performance**: ~1.5 seconds consistent response time
 
+## Data View Metadata Information
+**Last Updated**: 2025-09-12  
+**Source**: get_data_view_metadata testing
+
+### Successfully Tested Data Views
+**Recipe Application Context**: All data views relate to DIY Recipe application domain
+
+#### D_RecipeCollectionList (Case Type Data View)
+- **Class ID**: ON6E5R-DIYRecipe-Work-RecipeCollection
+- **Structure**: List, isQueryable: true, isSearchable: false  
+- **Field Count**: 112 fields across 6 categories
+- **Categories**: Recipe Collection, Recipe, Create Operator, Update Operator, Case Type, Update Operator
+- **Response Time**: ~2.4 seconds
+- **Complexity**: High (case workflow + recipe data + operator associations)
+
+**Sample Fields**:
+- **Recipe Fields**: RecipeName, Category, Cuisine, DifficultyLevel, PreparationTime, CookingTime, Servings
+- **System Fields**: pxCreateDateTime, pxUpdateDateTime, pxSaveDateTime, pyStatusWork, pyID
+- **Operator Fields**: pxCreateOperator, pxUpdateOperator with full association metadata
+- **Case Fields**: pyDescription, pyEffortActual, pySLADeadline, pyResolvedTimestamp
+
+#### D_RecipeList (Data Type Data View)
+- **Class ID**: ON6E5R-DIYRecipe-Data-Recipe
+- **Structure**: List, isQueryable: true, isSearchable: false
+- **Field Count**: 71 fields across 3 categories  
+- **Categories**: Recipe, Create Operator, Update Operator
+- **Response Time**: ~1.6 seconds (33% faster than case type)
+- **Complexity**: Medium (pure recipe data + operator associations)
+
+**Sample Fields**:
+- **Recipe Fields**: Category, Cuisine, Date, Duration, Ingredient, Instruction, Name, Photo, Rating, Servings
+- **System Fields**: pxCreateDateTime, pxUpdateDateTime, pxSaveDateTime, pyGUID
+- **Operator Associations**: Full Create/Update operator metadata with contact details
+
+### Data View Metadata API Pattern
+- **Endpoint**: GET `/api/application/v2/data_views/{dataViewID}`
+- **Authentication**: OAuth2 Bearer token required
+- **Response Elements**: classID, className, structure, isQueryable, isSearchable, name, fields array, HATEOAS links
+- **Field Metadata**: category, description, displayAs, fieldID, fieldType, isReadOnly, name, dataType, maxLength, associations
+- **Performance**: 1.4-2.4 seconds depending on data view complexity
+- **Case Sensitivity**: Data view IDs require exact case matching (D_RecipeList ≠ d_recipelist)
+
+### Field Type Examples
+- **Text Fields**: "Text (single line)" with maxLength constraints
+- **DateTime Fields**: "Date & time", "Date only", "Time only" with displayAs formatting
+- **Numeric Fields**: "Integer", "Decimal" with validation
+- **Reference Fields**: "User Reference" with D_pxOperatorsList data source links
+- **Special Fields**: "Email", "Phone", "URL" with format validation
+
 ## Future Data Collection
 Additional sample data will be added here as we test more tools:
-- Data view metadata examples from get_data_view_metadata tests
 - List data view examples from get_list_data_view tests  
 - Participant information from participant tests
 - Document handling examples from document tests

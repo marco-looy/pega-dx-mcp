@@ -2,20 +2,7 @@
 
 Simple questions you can ask the MCP to perform tasks with each tool.
 
-## get_data_objects
-- "What data objects are available in this Pega application?"
-- "Show me all the recipe-related data objects I can work with"
-- "What case objects can I use for workflow management?"
 
-## update_attachment
-- "Can you update the name of my attachment to 'Updated Document'?"
-- "Change the attachment name from 'test-file' to 'Final Report' for case R-1009"
-- "Update the category of this attachment to 'File' with a new name"
-
-## get_attachment_categories
-- "What attachment categories are available for my case?"
-- "Show me the file attachment categories for case ON6E5R-DIYRECIPE-WORK R-1009"
-- "What URL attachment categories can I use with this case?"
 
 ## ping_pega_service
 - "Can you check if I have a valid connection to my Pega application?"
@@ -263,6 +250,28 @@ The delete_attachment tool performs **permanent deletion** that cannot be undone
 4. **Verification Recommended**: Use `get_attachment` to verify details before deletion
 
 **How to get attachment IDs**: Use `get_case_attachments` to see all attachments and their full Link-Attachment instance IDs, then use those exact IDs with `delete_attachment`. The tool validates the proper LINK-ATTACHMENT format automatically.
+
+## get_data_objects
+- "What data objects are available in this Pega application?"
+- "Show me all the recipe-related data objects I can work with"
+- "What case objects can I use for workflow management?"
+
+## get_data_view_metadata  
+- "Show me the field structure and metadata for the D_RecipeCollectionList data view"
+- "What fields are available in the Recipe data view (D_RecipeList)?"
+- "Can you analyze the structure of data view D_IngredientList for me?"
+
+## update_attachment
+- "Can you update the name of my attachment to 'Updated Document'?"
+- "Change the attachment name from 'test-file' to 'Final Report' for case R-1009"
+- "Update the category of this attachment to 'File' with a new name"
+
+## get_attachment_categories
+- "What attachment categories are available for my case?"
+- "Show me the file attachment categories for case ON6E5R-DIYRECIPE-WORK R-1009"
+- "What URL attachment categories can I use with this case?"
+
+
 
 ---
 *More examples will be added as testing progresses*
