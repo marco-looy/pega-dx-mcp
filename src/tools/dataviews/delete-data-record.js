@@ -24,7 +24,7 @@ export class DeleteDataRecordTool extends BaseTool {
           },
           dataViewParameters: {
             type: 'string',
-            description: 'Primary key(s) as input to uniquely identify the data record to delete. The exact format depends on the data page configuration and may include multiple key-value pairs. For example: "CustomerID=12345" or "OrderID=O-1001&CustomerID=C-5678".'
+            description: 'Primary key(s) as JSON string to uniquely identify the data record to delete. Must be a valid JSON object containing key-value pairs. For example: "{\\"CustomerID\\": \\"12345\\"}" or "{\\"OrderID\\": \\"O-1001\\", \\"CustomerID\\": \\"C-5678\\"}". Note: String format like "CustomerID=12345" will cause validation errors.'
           }
         },
         required: ['dataViewID', 'dataViewParameters']
