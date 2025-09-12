@@ -1111,8 +1111,100 @@ This file contains sample data discovered during testing that can be reused for 
 - **Reference Fields**: "User Reference" with D_pxOperatorsList data source links
 - **Special Fields**: "Email", "Phone", "URL" with format validation
 
+## List Data View Information
+**Last Updated**: 2025-09-12  
+**Source**: get_list_data_view testing
+
+### Successfully Tested Data View Query Patterns
+**Data View**: D_RecipeCollectionList (66 total records)
+
+#### Basic Retrieval Patterns
+- **Simple Query**: `{"dataViewID": "D_RecipeCollectionList"}` → All 66 records
+- **Pagination**: `{"dataViewID": "D_RecipeCollectionList", "paging": {"pageSize": 5}}` → 5 records per page
+- **Field Selection**: `{"query": {"select": [{"field": "RecipeName"}, {"field": "Category"}]}}` → Performance optimized
+
+#### Filtering Patterns  
+- **EQ Filter**: `"filter": {"filterConditions": {"F1": {"lhs": {"field": "Category"}, "comparator": "EQ", "rhs": {"value": "Desserts"}}}, "logic": "F1"}` → 8 dessert recipes
+- **CONTAINS Search**: `"filter": {"filterConditions": {"F1": {"lhs": {"field": "RecipeName"}, "comparator": "CONTAINS", "rhs": {"value": "Cookie"}}}}` → 9 cookie recipes
+- **Complex AND Logic**: `"logic": "F1 AND F2"` with multiple conditions → 7 American dessert recipes
+
+#### Aggregation Patterns
+- **COUNT Aggregation**: `{"aggregations": {"CategoryCount": {"field": "Category", "summaryFunction": "COUNT"}}, "select": [{"field": "Category"}, {"aggregation": "CategoryCount"}]}` → 26 unique categories with counts
+- **Most Popular Categories**: Testing (16), Desserts (8), SUCCESS/Test variations (multiple)
+
+#### Advanced Query Patterns
+- **Distinct Values**: `{"select": [{"field": "Category"}], "distinctResultsOnly": true}` → Unique category list
+- **Sorting**: `{"sortBy": [{"field": "RecipeName", "type": "ASC"}]}` → Alphabetical ordering
+- **Extended Timeout**: `{"useExtendedTimeout": true}` → 45-second timeout for report-based views
+
+### Data View Performance Insights
+- **Basic Queries**: ~1.0 second response time
+- **Field Selection**: ~0.5 seconds (50% performance improvement)  
+- **Simple Filtering**: ~0.3-0.6 seconds
+- **Aggregation**: ~0.7 seconds
+- **Error Responses**: ~0.2 seconds
+
+### Supported Comparators (Confirmed Working)
+- **EQ** (equals) - Text and numeric fields
+- **CONTAINS** - Text pattern matching  
+- **AND/OR Logic** - Complex condition combinations
+- **All documented comparators** supported per API specification
+
+### Recipe Collection Field Analysis
+**Common Fields Available**:
+- **Recipe Data**: RecipeName, Category, Cuisine, DifficultyLevel, Servings
+- **Time Fields**: PreparationTime, CookingTime (time format: "HH:MM:SS") 
+- **System Fields**: pyStatusWork, pxCreateDateTime, pxUpdateDateTime, pyID
+- **Operator Fields**: pxCreateOpName, pxUpdateOpName (user references)
+- **Calculated Fields**: Calculated, Calculatenew (mostly null)
+
+### Error Handling Examples
+- **Invalid Data View**: 404 "Dataview not found"
+- **Conflicting Pagination**: 400 "MaxResultsToFetch and paging information both are not supported at same time"  
+- **Invalid Aggregation Combo**: 400 "DistinctResultsOnly is not supported for aggregation"
+
+## Data View Count Information
+**Last Updated**: 2025-09-12  
+**Source**: get_data_view_count testing
+
+### Successfully Tested Count Operations
+**Data View**: D_RecipeCollectionList (Recipe Collection case type)
+
+#### Count Operation Results
+- **Total Records**: 66 records (matches get_list_data_view total)
+- **Unique Categories**: 26 distinct category values
+- **Dessert Records**: 8 records (matches filtered get_list_data_view result)
+- **API Endpoint**: POST `/api/application/v2/data_views/{dataViewID}/count`
+
+### get_data_view_count API Behavior
+- **Required Select**: When using query parameter, select array is mandatory (unlike get_list_data_view)
+- **Pagination Support**: Data view specific - D_RecipeCollectionList does not support pagination in count operations
+- **Response Format**: `{"fetchDateTime": "ISO-date", "resultCount": number, "hasMoreResults": boolean}`
+- **Performance**: 400-700ms response times (significantly faster than full data retrieval)
+
+### Supported Query Patterns (Confirmed Working)
+- **Simple Count**: No query parameter - returns total record count
+- **Filtered Count**: Filter conditions with required select fields  
+- **Distinct Count**: `distinctResultsOnly: true` with select fields
+- **Aggregated Count**: Aggregations with summary functions (COUNT, SUM, etc.)
+- **Multi-Field Selection**: Multiple fields in select array
+
+### Error Scenarios (Confirmed Working)
+- **Invalid DataViewID**: 404 NOT_FOUND with "Dataview not found" message
+- **Missing Select in Query**: 400 BAD_REQUEST with "Query does not contain select" message
+- **Invalid Parameter Combo**: 400 BAD_REQUEST with "DistinctResultsOnly is not supported for aggregation"
+- **Pagination Not Supported**: 422 VALIDATION_FAIL with "This dataview does not support paging in request"
+
+### Count vs List Data View Comparison
+| Feature | get_data_view_count | get_list_data_view |
+|---------|-------------------|-------------------|
+| **Response** | Count metadata only | Full record data |
+| **Performance** | ~400-700ms | ~1000-2500ms |
+| **Query + Select** | Select required | Select optional |
+| **Pagination** | Data view dependent | Generally supported |
+| **Use Case** | Analytics, planning | Data display |
+
 ## Future Data Collection
 Additional sample data will be added here as we test more tools:
-- List data view examples from get_list_data_view tests  
 - Participant information from participant tests
 - Document handling examples from document tests

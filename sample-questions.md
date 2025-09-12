@@ -271,7 +271,46 @@ The delete_attachment tool performs **permanent deletion** that cannot be undone
 - "Show me the file attachment categories for case ON6E5R-DIYRECIPE-WORK R-1009"
 - "What URL attachment categories can I use with this case?"
 
+## get_list_data_view Tool Questions
+**Last Updated**: 2025-09-12  
+**Source**: get_list_data_view testing
 
+### Simple Questions Users Would Ask
+
+1. **"Can you show me all the recipes in our recipe collection?"**
+   - **Tool**: get_list_data_view
+   - **Purpose**: Basic data retrieval from D_RecipeCollectionList
+   - **Example**: Simple list of all recipe collection cases with full details
+
+2. **"Can you find all dessert recipes and show me just the names and categories?"**
+   - **Tool**: get_list_data_view  
+   - **Purpose**: Filtered search with field selection for performance
+   - **Example**: Filter by Category="Desserts" and select only RecipeName, Category fields
+
+3. **"How many recipes do we have in each category?"**
+   - **Tool**: get_list_data_view
+   - **Purpose**: Aggregation and grouping to analyze recipe distribution
+   - **Example**: COUNT aggregation grouped by Category field to show statistics
+
+## get_data_view_count Tool Questions
+**Last Updated**: 2025-09-12  
+**Source**: get_data_view_count testing
+
+### Simple Questions Users Would Ask
+1. **"How many total recipes do we have in the system?"**
+   - **Tool**: get_data_view_count
+   - **Purpose**: Get total record count without retrieving actual data
+   - **Example**: Simple count of all records in D_RecipeCollectionList
+
+2. **"How many unique categories exist in our recipe collection?"**
+   - **Tool**: get_data_view_count
+   - **Purpose**: Count distinct values for analysis and UI planning
+   - **Example**: Distinct count on Category field to determine dropdown options
+
+3. **"Tell me how many dessert recipes we have without showing me the actual recipes"**
+   - **Tool**: get_data_view_count
+   - **Purpose**: Filtered count for performance optimization and pagination planning
+   - **Example**: Count records where Category="Desserts" for fast analytics
 
 ---
 *More examples will be added as testing progresses*
