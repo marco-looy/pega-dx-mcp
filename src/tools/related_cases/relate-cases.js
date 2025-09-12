@@ -60,7 +60,18 @@ export class RelateCasesTool extends BaseTool {
     // Additional validation for cases array
     if (!Array.isArray(cases) || cases.length === 0) {
       return {
-        error: 'cases parameter must be a non-empty array of case objects with ID properties.'
+        content: [{
+          type: 'text',
+          text: this.formatErrorResponse(
+            `Relate Cases to: ${caseID}`,
+            {
+              type: 'VALIDATION_ERROR',
+              message: 'Invalid cases parameter',
+              details: 'cases parameter must be a non-empty array of case objects with ID properties.',
+              status: 400
+            }
+          )
+        }]
       };
     }
 
@@ -69,7 +80,18 @@ export class RelateCasesTool extends BaseTool {
       const caseObj = cases[i];
       if (!caseObj || typeof caseObj !== 'object' || !caseObj.ID || typeof caseObj.ID !== 'string') {
         return {
-          error: `cases[${i}] must be an object with a required 'ID' string property.`
+          content: [{
+            type: 'text',
+            text: this.formatErrorResponse(
+              `Relate Cases to: ${caseID}`,
+              {
+                type: 'VALIDATION_ERROR',
+                message: 'Invalid case object structure',
+                details: `cases[${i}] must be an object with a required 'ID' string property.`,
+                status: 400
+              }
+            )
+          }]
         };
       }
     }

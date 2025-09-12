@@ -331,5 +331,20 @@ The delete_attachment tool performs **permanent deletion** that cannot be undone
 - "Delete a participant who no longer needs access to my case"
 - "Can you remove the Interested participant from my Recipe Collection case?"
 
+## get_related_cases
+- "Can you show me all cases related to case R-1009?"
+- "What other cases are connected to my recipe collection case?"
+- "Find all related cases for this specific case ID"
+
+## relate_cases
+- "Can you create a relationship between case R-1009 and case R-1027?"
+- "Link multiple cases to my primary Recipe Collection case"
+- "I need to relate case R-1009 to both R-1045 and R-1048 at once"
+
+## delete_related_case
+- "Can you remove the relationship between case R-1009 and case R-1027?"
+- "Unlink case R-1048 from my primary Recipe Collection case"
+- "I need to delete the relationship between these two related cases"
+
 ---
 *More examples will be added as testing progresses*
