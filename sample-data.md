@@ -26,14 +26,37 @@ This file contains sample data discovered during testing that can be reused for 
 
 ## Case Followers Data
 **Last Updated**: 2025-09-12
-**Source**: get_case_followers testing
+**Source**: get_case_followers and add_case_followers testing
 
-### Cases with Followers
-- **Case R-1059**: Has 1 follower
+### Cases with Followers (After Testing)
+- **Case R-1009**: Has 1 follower (SystemAdmin added during testing)
+  - Follower: SystemAdmin (ID: SystemAdmin, Email: marketing@enablement.com)
+- **Case R-1059**: Has 1 follower  
   - Follower: SystemAdmin (ID: SystemAdmin, Email: marketing@enablement.com)
 
-### Cases without Followers
-- **Case R-1009**: No followers (returns "No data found")
+### Add Case Followers Testing Results
+**Test Date**: 2025-09-12  
+**Tool**: add_case_followers
+
+#### Successful Operations
+- **Single Follower Addition**: ✅ SUCCESS - SystemAdmin added to R-1009
+  - Request: `{"users": [{"ID": "SystemAdmin"}]}`
+  - Response: `{"ID": "SystemAdmin", "status": "201"}`
+  - Verification: Confirmed via get_case_followers
+
+#### Error Handling Verified
+- **Invalid Users**: TestUser1, TestUser2 properly rejected with 400 BAD_REQUEST
+  - Error: "User TestUser1 is not valid", "User TestUser2 is not valid"
+- **Duplicate Followers**: SystemAdmin duplicate prevented with 409 CONFLICT
+  - Error: "User SystemAdmin is already a follower"
+- **Invalid Case ID**: Proper 404 NOT_FOUND for non-existent cases
+- **Client Validation**: Empty arrays and missing ID fields blocked before API calls
+
+#### API Pattern Confirmed
+- **Endpoint**: POST `/api/application/v2/cases/{caseID}/followers`
+- **Individual Processing**: Each user gets separate success/error status
+- **Performance**: Consistent ~1.0 second response times
+- **Validation**: Comprehensive client-side and server-side validation
 
 ## Case Types Information
 **Last Updated**: 2025-09-05  

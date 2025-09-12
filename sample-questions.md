@@ -346,6 +346,17 @@ The delete_attachment tool performs **permanent deletion** that cannot be undone
 - "Unlink case R-1048 from my primary Recipe Collection case"
 - "I need to delete the relationship between these two related cases"
 
+## add_case_followers
+- "Can you add SystemAdmin as a follower to my case ON6E5R-DIYRECIPE-WORK R-1009?"
+- "I need to add multiple users to follow my Recipe Collection case for notifications"
+- "Add the users TestUser1 and TestUser2 as followers to case R-1059"
+
+### 💡 Tip: Individual User Results
+The add_case_followers tool processes **each user individually** within bulk requests. If you add multiple users and some are invalid, you'll get individual success/error responses for each user. Valid users will be added successfully (status 201) while invalid users will show detailed error messages. The tool also prevents duplicate followers with clear "already a follower" messages.
+
+### 💡 Tip: User ID Validation  
+Make sure to use **valid user IDs** that exist in your Pega system. The tool validates each user against the user directory and will return "User [ID] is not valid" errors for non-existent users. Use actual operator IDs like "SystemAdmin" rather than made-up test names.
+
 ## get_case_followers
 - "Can you show me who is following case R-1059?"
 - "List all the followers for my Recipe Collection case"
