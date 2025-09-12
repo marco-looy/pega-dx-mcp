@@ -1217,18 +1217,37 @@ This file contains sample data discovered during testing that can be reused for 
 
 ## Case Tags Information
 **Last Updated**: 2025-09-12  
-**Source**: get_case_tags testing
+**Source**: get_case_tags and add_case_tags testing
 
-### Cases without Tags
-**Test Cases**: ON6E5R-DIYRECIPE-WORK R-1009, ON6E5R-DIYRECIPE-WORK R-1059
-- **Result**: Both cases return empty tagsList arrays [0 items]
-- **API Behavior**: Proper handling of cases with no tags assigned
-- **Response Format**: `{"tagsList": []}`
-- **Response Time**: ~0.5 seconds consistently
+### Cases with Tags (After add_case_tags Testing)
+**Test Case**: ON6E5R-DIYRECIPE-WORK R-1009 - Now has 3 tags:
+- **recipe** (key: `DATA-SOCIAL-TAG ON6E5R-DIYRECIPE-WORK!RECIPE`)
+- **testing** (key: `DATA-SOCIAL-TAG ON6E5R-DIYRECIPE-WORK!TESTING`)
+- **validation** (key: `DATA-SOCIAL-TAG ON6E5R-DIYRECIPE-WORK!VALIDATION`)
+
+**Test Case**: ON6E5R-DIYRECIPE-WORK R-1059 - Has 1 tag:
+- **中文标签** (key: `DATA-SOCIAL-TAG ON6E5R-DIYRECIPE-WORK!中文标签`)
+
+### add_case_tags API Pattern
+- **Endpoint**: POST `/api/application/v2/cases/{caseID}/tags`
+- **Method**: POST with JSON body containing tags array
+- **Authentication**: OAuth2 Bearer token required
+- **Request Format**: `{"tags": [{"Name": "TagName1"}, {"Name": "TagName2"}]}`
+- **Response Format**: Array of results with ID, status (201 CREATED or 500 ERROR), optional error details
+- **Bulk Operations**: 1-50 tags in single request, atomic processing
+
+### Tag System Behavior
+- **Name Normalization**: All tag names converted to lowercase in storage
+- **Key Generation**: Format `DATA-SOCIAL-TAG {caseType}!{TAGNAME_UPPERCASE}`
+- **Character Support**: Alphanumeric, spaces, Chinese characters ✅; Emoji, symbols ❌
+- **Mixed Results**: Individual tags can succeed/fail within same request
+- **Error Pattern**: 500 "pyError_Add_Tag - Couldn't add tag" for unsupported characters
 
 ### get_case_tags API Pattern
 - **Endpoint**: GET `/api/application/v2/cases/{caseID}/tags`
 - **Authentication**: OAuth2 Bearer token required
+- **Empty Cases**: Return empty tagsList arrays [0 items]
+- **With Tags**: Return array of objects with tagName and tagKey properties
 - **Error Handling**: 404 NOT_FOUND for invalid case IDs with clear "Case not found" message
 - **Parameter Validation**: Client-side validation for empty/missing caseID
 - **Whitespace Handling**: Automatic trimming of case ID parameters
@@ -1238,6 +1257,8 @@ This file contains sample data discovered during testing that can be reused for 
 - **Response Consistency**: Identical behavior across different cases without tags
 - **Error Quality**: Excellent troubleshooting guidance for all error scenarios
 - **Performance**: Sub-second response times for both success and error cases
+- **Integration**: Perfect workflow between add_case_tags and get_case_tags tools
+- **Character Restrictions**: Environment-specific limitations on Unicode characters
 
 ## Future Data Collection
 Additional sample data will be added here as we test more tools:

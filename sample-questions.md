@@ -356,5 +356,21 @@ The delete_attachment tool performs **permanent deletion** that cannot be undone
 - "Can you show me all the tags for case ON6E5R-DIYRECIPE-WORK R-1059?"
 - "How do I check if my case has any organizational tags?"
 
+## add_case_tags
+- "Can you add tags 'Recipe' and 'Testing' to my case ON6E5R-DIYRECIPE-WORK R-1009?"
+- "I need to add multiple organizational tags to my Recipe Collection case"
+- "Add the tags 'Validation', 'Approved', and 'Ready' to case R-1059"
+
+### 💡 Tip: Tag Character Support
+The add_case_tags tool supports **alphanumeric characters, spaces, and basic international text** (like Chinese characters). However, **emoji and special symbols** (@#$%) may cause errors in some Pega environments. For best results, stick to simple text tags like "Recipe Testing" or "中文标签".
+
+## delete_case_tag
+- "Can you delete the 'testing' tag from my case ON6E5R-DIYRECIPE-WORK R-1009?"
+- "Remove a specific tag from my Recipe Collection case"
+- "I need to delete the tag with key 'DATA-SOCIAL-TAG ON6E5R-DIYRECIPE-WORK!VALIDATION'"
+
+### 💡 Tip: Tag ID Format Required
+The delete_case_tag tool requires the **full tag key format**, not just the tag name. First use `get_case_tags` to see your current tags, then copy the exact `tagKey` value (like `DATA-SOCIAL-TAG ON6E5R-DIYRECIPE-WORK!TESTING`) to delete_case_tag. Simple tag names like "testing" won't work.
+
 ---
 *More examples will be added as testing progresses*
