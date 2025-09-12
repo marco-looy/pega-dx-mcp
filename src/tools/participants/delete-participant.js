@@ -56,9 +56,7 @@ export class DeleteParticipantTool extends BaseTool {
     if (!finalETag) {
       try {
         console.log(`Auto-fetching latest eTag for participant operation on ${caseID}...`);
-        const caseResponse = await this.pegaClient.getCase(caseID.trim(), {
-          viewType: 'form'  // Use form view for eTag retrieval
-        });
+        const caseResponse = await this.pegaClient.getCase(caseID.trim());
         
         if (!caseResponse || !caseResponse.success) {
           const errorMsg = `Failed to auto-fetch eTag: ${caseResponse?.error?.message || 'Unknown error'}`;
@@ -94,7 +92,7 @@ export class DeleteParticipantTool extends BaseTool {
 
     return await this.executeWithErrorHandling(
       `Delete Participant: ${caseID.trim()} / ${participantID.trim()}`,
-      async () => await this.pegaClient.deleteParticipant(caseID.trim(), participantID.trim(), eTag.trim()),
+      async () => await this.pegaClient.deleteParticipant(caseID.trim(), participantID.trim(), finalETag.trim()),
       { caseID: caseID.trim(), participantID: participantID.trim(), eTag: '***' } // Hide eTag in logs for security
     );
   }

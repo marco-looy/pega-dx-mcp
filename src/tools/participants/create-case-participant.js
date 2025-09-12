@@ -101,9 +101,7 @@ export class CreateCaseParticipantTool extends BaseTool {
     if (!finalETag) {
       try {
         console.log(`Auto-fetching latest eTag for participant operation on ${caseID}...`);
-        const caseResponse = await this.pegaClient.getCase(caseID.trim(), {
-          viewType: 'form'  // Use form view for eTag retrieval
-        });
+        const caseResponse = await this.pegaClient.getCase(caseID.trim());
         
         if (!caseResponse || !caseResponse.success) {
           const errorMsg = `Failed to auto-fetch eTag: ${caseResponse?.error?.message || 'Unknown error'}`;
@@ -140,7 +138,7 @@ export class CreateCaseParticipantTool extends BaseTool {
     return await this.executeWithErrorHandling(
       `Create Participant: ${caseID}`,
       async () => await this.pegaClient.createCaseParticipant(caseID.trim(), {
-        eTag,
+        eTag: finalETag,
         content,
         participantRoleID,
         viewType,

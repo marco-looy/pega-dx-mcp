@@ -296,5 +296,40 @@ The delete_attachment tool performs **permanent deletion** that cannot be undone
 - "How many unique categories exist in our recipe collection?"
 - "Tell me how many dessert recipes we have without showing me the actual recipes"
 
+## create_case_participant
+- "Add a new participant to case ON6E5R-DIYRECIPE-WORK R-1009 with Customer role"
+- "Can you create a participant in my Recipe Collection case?"
+- "I need to add someone as an Interested participant to my case"
+
+## get_case_participants  
+- "Who are the participants in case ON6E5R-DIYRECIPE-WORK R-1009?"
+- "Show me all participants for my Recipe Collection case"
+- "List everyone who has access to this case"
+
+## get_participant_roles
+- "What participant roles are available for my case?"
+- "Show me the available roles I can assign to participants"
+- "What types of participants can I add to case R-1009?"
+
+## get_participant_role_details
+- "Show me the details for the Customer role in my case"
+- "What fields are available for the Interested participant role?"
+- "Get the role configuration for Owner participants"
+
+## get_participant
+- "Get details for the Customer participant in case ON6E5R-DIYRECIPE-WORK R-1009"
+- "Show me information about a specific participant"
+- "What details do we have for the Interested participant?"
+
+## update_participant
+- "Update the Customer participant's email to john.doe@example.com"
+- "Change the name of the Interested participant in my case"
+- "Modify participant details for someone in my Recipe Collection case"
+
+## delete_participant  
+- "Remove the Customer participant from case ON6E5R-DIYRECIPE-WORK R-1009"
+- "Delete a participant who no longer needs access to my case"
+- "Can you remove the Interested participant from my Recipe Collection case?"
+
 ---
 *More examples will be added as testing progresses*
