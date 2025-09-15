@@ -147,6 +147,12 @@ Simple questions you can ask the MCP to perform tasks with each tool.
 - "Calculate field values and when conditions for my case action form"
 - "Recalculate specific fields using the content context and see the updated values"
 
+## get_case_type_action
+- "Show me the action metadata for pyUpdateCaseDetails on case type RecipeCollection"
+- "What fields are available in the CreateCase action for Recipe Collection cases?"
+- "Get the UI structure for action pyChangeStage on case type RecipeCollection without creating a case"
+- "Can you retrieve the form metadata for a specific action on my case type?"
+
 ## get_assignment
 - "Show me the details of assignment ASSIGN-WORKLIST ON6E5R-DIYRECIPE-WORK R-1009!RECIPEINTAKE_FLOW"
 - "Get information about my Recipe Collection assignment with form view"
