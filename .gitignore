@@ -158,3 +158,11 @@ tests/*
 todo.md
 TODO.md
 .claude/*
+
+documentation/*
+DXapis/*
+json/*
+todo/*
+unit-test-logs/*
+unit-test-results/*
+mcp-tests/*
