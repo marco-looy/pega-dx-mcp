@@ -414,3 +414,19 @@ The remove_case_document tool is for removing **documents** (content management 
 
 ### ⚠️ Environment Note: Launchpad Only
 The get_case_type_bulk_action tool is designed for **Pega Launchpad environments only**. If you're using Pega Constellation, this endpoint may not be available and will return 404 errors. The tool itself is production-ready and will work perfectly when bulk actions are configured in a supported environment. Contact your Pega administrator if you need bulk actions functionality.
+
+## bulk_cases_patch
+- "Can you update the status on multiple cases at once?"
+- "I need to apply the same changes to cases R-1001, R-1002, and R-1003 - can you do this in one operation?"
+- "Please perform a bulk update on these cases using the UpdateStatus action with detailed results."
+
+### 💡 Rich Response Formatting
+The bulk_cases_patch tool provides **comprehensive response details** including platform detection (Infinity vs Launchpad), individual case results, success/failure counts, and detailed troubleshooting information. Perfect for scenarios where you need detailed feedback on bulk operations.
+
+## perform_bulk_action  
+- "Can you run an action on several cases simultaneously?"
+- "I have a list of cases that need the same action applied - can you batch process them quickly?"
+- "Please execute a bulk operation to update multiple Recipe Collection cases with new category information."
+
+### ⚡ Performance Focus
+The perform_bulk_action tool offers **faster response times** with simpler formatting compared to bulk_cases_patch. Choose this tool when you need efficient bulk processing without detailed response analysis. Both tools use the same API endpoint and provide identical functionality.
