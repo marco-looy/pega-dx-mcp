@@ -398,3 +398,11 @@ The delete_case_tag tool requires the **full tag key format**, not just the tag 
 
 ### 💡 Tip: Environment Limitation
 The get_document tool works perfectly but requires valid document IDs from your Pega system. Documents are different from attachments - they're stored in Pega's content management system. If you don't have any documents, you can still test the tool with invalid IDs to see its excellent error handling, or contact your system administrator to create sample documents.
+
+## remove_case_document
+- "Can you remove document DOC-12345 from case ON6E5R-DIYRECIPE-WORK R-1009?"
+- "I need to unlink document DOCUMENT-ABC-123 from the case"
+- "Remove the document connection for document ID XYZ-789 from this case"
+
+### 💡 Tip: Documents vs Attachments
+The remove_case_document tool is for removing **documents** (content management system) from cases, not **attachments**. Documents and attachments are separate concepts in Pega. Use attachment tools (delete_attachment) for file/URL attachments, and this tool for formal document objects. Both tools have excellent error handling to guide you if you use the wrong type.

@@ -139,7 +139,8 @@ export class RemoveCaseDocumentTool extends BaseTool {
   /**
    * Format error response for display
    */
-  formatErrorResponse(caseID, documentID, error) {
+  formatErrorResponse(operation, error, options = {}) {
+    const { caseID, documentID } = options;
     let response = `## Error Removing Document from Case\n\n`;
     
     response += `**Case ID**: ${caseID}\n`;
