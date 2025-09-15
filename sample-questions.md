@@ -406,3 +406,11 @@ The get_document tool works perfectly but requires valid document IDs from your 
 
 ### 💡 Tip: Documents vs Attachments
 The remove_case_document tool is for removing **documents** (content management system) from cases, not **attachments**. Documents and attachments are separate concepts in Pega. Use attachment tools (delete_attachment) for file/URL attachments, and this tool for formal document objects. Both tools have excellent error handling to guide you if you use the wrong type.
+
+## get_case_type_bulk_action
+- "What bulk actions are available for case type RecipeCollection?"
+- "Can you check if Clone action is available as a bulk action for Recipe Collection cases?"
+- "I need to see the bulk action metadata for BulkTest action on my case type"
+
+### ⚠️ Environment Note: Launchpad Only
+The get_case_type_bulk_action tool is designed for **Pega Launchpad environments only**. If you're using Pega Constellation, this endpoint may not be available and will return 404 errors. The tool itself is production-ready and will work perfectly when bulk actions are configured in a supported environment. Contact your Pega administrator if you need bulk actions functionality.

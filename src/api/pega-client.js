@@ -134,7 +134,7 @@ export class PegaAPIClient {
     // URL encode both IDs to handle spaces and special characters
     const encodedCaseTypeID = encodeURIComponent(caseTypeID);
     const encodedActionID = encodeURIComponent(actionID);
-    const url = `${this.baseUrl}/casetypes/${encodedCaseTypeID}/actions/${encodedActionID}`;
+    const url = `${this.baseUrl}/casetypes/${encodedCaseTypeID}/bulk-actions/${encodedActionID}`;
 
     return await this.makeRequest(url, {
       method: 'GET',
