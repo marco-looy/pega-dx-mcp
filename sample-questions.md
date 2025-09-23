@@ -2,12 +2,13 @@
 
 Simple questions you can ask the MCP to perform tasks with each tool.
 
-
-
 ## ping_pega_service
 - "Can you check if I have a valid connection to my Pega application?"
 - "Test my Pega authentication setup"
 - "Verify my OAuth2 configuration is working"
+
+## start conversation
+- "What can I do now?"
 
 ## get_case_types
 - "What types of cases can I create in this application?"
@@ -15,17 +16,12 @@ Simple questions you can ask the MCP to perform tasks with each tool.
 - "List the case types I can use for creating new cases"
 
 ## create_case
-- "Create a new Recipe Collection case for me"
 - "What fields do I need to create a Recipe Collection case?"
+- "Create a new Recipe Collection case for me"
 - "Help me create a case with sample recipe data"
 
-## add_case_attachments
-- "Can you attach a file to my case ON6E5R-DIYRECIPE-WORK R-1009?"
-- "I need to add both a file and a URL to a case"
-- "How do I attach multiple files to a Recipe Collection case at once?"
-
 ## get_case
-- "Show me the details of case R-1009"
+- "Show me the details of this case"
 - "Get information about case ON6E5R-DIYRECIPE-WORK R-1009"
 - "What's the current status of my Recipe Collection case?"
 
@@ -33,6 +29,11 @@ Simple questions you can ask the MCP to perform tasks with each tool.
 - "Show me the Edit details action for case ON6E5R-DIYRECIPE-WORK R-1009"
 - "What can I do with the pyUpdateCaseDetails action on my case?"
 - "Get the form metadata for the Change stage action on my Recipe Collection case"
+
+## add_case_attachments
+- "Can you attach a file to my case ON6E5R-DIYRECIPE-WORK R-1009?"
+- "I need to add both a file and a URL to a case"
+- "How do I attach multiple files to a Recipe Collection case at once?"
 
 ## perform_case_action
 
