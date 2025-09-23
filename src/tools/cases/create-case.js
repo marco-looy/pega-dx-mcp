@@ -341,6 +341,11 @@ export class CreateCaseTool extends BaseTool {
    * Check if a result object contains a field-related error (in content format)
    */
   isFieldRelatedErrorInResult(result) {
+    // First check if the result indicates success
+    if (result && (result.success === true || result.data || result.ID)) {
+      return false; // This is a successful result, not an error
+    }
+
     // Check if result has content array with error text
     if (result && result.content && Array.isArray(result.content) && result.content.length > 0) {
       const errorText = result.content[0].text;
@@ -357,11 +362,11 @@ export class CreateCaseTool extends BaseTool {
           'allowedstartingfields',
           'bad request'
         ];
-        
+
         return fieldErrorKeywords.some(keyword => errorMessage.includes(keyword));
       }
     }
-    
+
     // Also check direct error field
     return this.isFieldRelatedErrorResult(result);
   }

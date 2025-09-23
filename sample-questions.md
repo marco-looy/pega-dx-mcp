@@ -26,35 +26,20 @@ Simple questions you can ask the MCP to perform tasks with each tool.
 - "What's the current status of my Recipe Collection case?"
 
 ## get_case_action
-- "Show me the Edit details action for case ON6E5R-DIYRECIPE-WORK R-1009"
 - "What can I do with the pyUpdateCaseDetails action on my case?"
+- "Show me the Edit details action for case ON6E5R-DIYRECIPE-WORK R-1009"
 - "Get the form metadata for the Change stage action on my Recipe Collection case"
 
 ## add_case_attachments
-- "Can you attach a file to my case ON6E5R-DIYRECIPE-WORK R-1009?"
+- "Can you attach the following file to my case..."
 - "I need to add both a file and a URL to a case"
 - "How do I attach multiple files to a Recipe Collection case at once?"
 
 ## perform_case_action
 
-1. **First, get the current eTag**:
-   - "Get the case action details for pyUpdateCaseDetails on case ON6E5R-DIYRECIPE-WORK R-1027"
-   - eTag is automatically extracted from response
-
-2. **Then, perform the action immediately**:
-   - "Execute pyUpdateCaseDetails on case ON6E5R-DIYRECIPE-WORK R-1027 with eTag '20250908T122641.286 GMT' and update RecipeName to '🎉 SUCCESS! Manual Test Complete'"
-
-### Sample Questions (All Validated):
-- "I need to update case R-1027. First get me the current eTag, then perform the update"
-- "Update my Recipe Collection case with new recipe details - handle the eTag workflow for me"
-- "Follow the complete manual testing flow to update case name and verify success"
+### Sample Questions:
+- "Update the name in my Recipe Collection case with ....."
 - "Get current case action details, then immediately execute the update action"
-
-### Why eTags Are Required:
-- Pega uses optimistic locking to prevent concurrent modifications
-- The eTag represents the exact moment (pxSaveDateTime) the case was last saved
-- Using a stale eTag will result in 409 Conflict errors
-- **Proven Pattern**: Fresh eTag → immediate use = 100% success rate
 
 ## jump_to_step
 
