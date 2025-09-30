@@ -3,9 +3,16 @@ import { OAuth2Client } from '../auth/oauth2-client.js';
 import FormData from 'form-data';
 
 export class PegaAPIClient {
-  constructor() {
-    this.oauth2Client = new OAuth2Client();
-    this.baseUrl = config.pega.apiBaseUrl;
+  constructor(sessionConfig = null) {
+    // Use session config if provided, otherwise fall back to environment config
+    this.config = sessionConfig || config;
+    this.oauth2Client = new OAuth2Client(this.config);
+    this.baseUrl = this.config.pega.apiBaseUrl;
+
+    // Log configuration source for debugging
+    const configSource = this.config._sessionMeta ?
+      `session ${this.config._sessionMeta.sessionId}` : 'environment';
+    console.log(`🔧 PegaAPIClient initialized with ${configSource} config (${this.oauth2Client.authMode} mode)`);
   }
 
   /**
@@ -2489,75 +2496,94 @@ export class PegaAPIClient {
    */
   async ping() {
     const startTime = Date.now();
-    
+
     try {
-      // Test OAuth2 authentication by getting an access token
+      // Test authentication by getting an access token
       const token = await this.oauth2Client.getAccessToken();
-      
+
       const duration = Date.now() - startTime;
-      
+
       // Get token info without exposing the actual token
       const tokenInfo = {
         type: 'Bearer',
         length: token ? token.length : 0,
         prefix: token ? token.substring(0, 10) + '...' : 'None',
         acquired: !!token,
-        cached: !!this.oauth2Client.accessToken
+        cached: !!this.oauth2Client.accessToken,
+        authMode: this.oauth2Client.authMode
       };
-      
+
+      // Use session-aware configuration
+      const { pega } = this.config;
+
       return {
         success: true,
         data: {
           timestamp: new Date().toISOString(),
           configuration: {
-            baseUrl: config.pega.baseUrl,
-            apiVersion: config.pega.apiVersion,
-            tokenUrl: config.pega.tokenUrl,
-            apiBaseUrl: config.pega.apiBaseUrl
+            baseUrl: pega.baseUrl,
+            apiVersion: pega.apiVersion,
+            tokenUrl: pega.tokenUrl,
+            apiBaseUrl: pega.apiBaseUrl,
+            authMode: this.oauth2Client.authMode,
+            configSource: this.config._sessionMeta ? 'session' : 'environment'
           },
           tests: [{
-            test: 'OAuth2 Authentication',
+            test: `${this.oauth2Client.authMode.toUpperCase()} Authentication`,
             success: true,
             duration: `${duration}ms`,
-            endpoint: config.pega.tokenUrl,
-            message: 'Successfully obtained access token',
+            endpoint: this.oauth2Client.authMode === 'oauth' ? pega.tokenUrl : 'Direct Token',
+            message: this.oauth2Client.authMode === 'oauth' ?
+              'Successfully obtained access token' :
+              'Successfully validated direct access token',
             tokenInfo: tokenInfo
           }]
         }
       };
     } catch (error) {
       const duration = Date.now() - startTime;
-      
+
+      // Use session-aware configuration for error reporting
+      const { pega } = this.config;
+
       return {
         success: false,
         error: {
           type: 'CONNECTION_ERROR',
-          message: 'OAuth2 authentication failed',
+          message: `${this.oauth2Client.authMode.toUpperCase()} authentication failed`,
           details: error.message,
           timestamp: new Date().toISOString(),
           configuration: {
-            baseUrl: config.pega.baseUrl,
-            apiVersion: config.pega.apiVersion,
-            tokenUrl: config.pega.tokenUrl,
-            apiBaseUrl: config.pega.apiBaseUrl
+            baseUrl: pega.baseUrl,
+            apiVersion: pega.apiVersion,
+            tokenUrl: pega.tokenUrl,
+            apiBaseUrl: pega.apiBaseUrl,
+            authMode: this.oauth2Client.authMode,
+            configSource: this.config._sessionMeta ? 'session' : 'environment'
           },
           tests: [{
-            test: 'OAuth2 Authentication',
+            test: `${this.oauth2Client.authMode.toUpperCase()} Authentication`,
             success: false,
             duration: `${duration}ms`,
-            endpoint: config.pega.tokenUrl,
+            endpoint: this.oauth2Client.authMode === 'oauth' ? pega.tokenUrl : 'Direct Token',
             error: error.message,
             tokenInfo: {
               type: 'Bearer',
               length: 0,
               prefix: 'None',
               acquired: false,
-              cached: false
+              cached: false,
+              authMode: this.oauth2Client.authMode
             },
-            troubleshooting: [
-              'Verify PEGA_BASE_URL is correct and accessible',
-              'Check PEGA_CLIENT_ID and PEGA_CLIENT_SECRET are valid',
+            troubleshooting: this.oauth2Client.authMode === 'oauth' ? [
+              'Verify baseUrl is correct and accessible',
+              'Check clientId and clientSecret are valid',
               'Ensure OAuth2 client is configured in Pega Infinity',
+              'Verify network connectivity to Pega instance'
+            ] : [
+              'Verify the provided access token is valid',
+              'Check if the token has expired',
+              'Ensure the token has appropriate permissions',
               'Verify network connectivity to Pega instance'
             ]
           }]
@@ -2589,7 +2615,7 @@ export class PegaAPIClient {
       const response = await fetch(url, {
         ...options,
         headers,
-        timeout: config.pega.requestTimeout || 30000
+        timeout: this.config.pega.requestTimeout || 30000
       });
 
       // Handle non-2xx responses

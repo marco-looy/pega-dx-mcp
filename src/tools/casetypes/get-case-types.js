@@ -1,4 +1,5 @@
 import { BaseTool } from '../../registry/base-tool.js';
+import { getSessionCredentialsSchema } from '../../utils/tool-schema.js';
 
 export class GetCaseTypesTool extends BaseTool {
   /**
@@ -17,7 +18,9 @@ export class GetCaseTypesTool extends BaseTool {
       description: 'Get list of case types that the user can create in the application',
       inputSchema: {
         type: 'object',
-        properties: {},
+        properties: {
+          sessionCredentials: getSessionCredentialsSchema()
+        },
         required: []
       }
     };
@@ -27,21 +30,47 @@ export class GetCaseTypesTool extends BaseTool {
    * Execute the get case types operation
    */
   async execute(params) {
-    // Execute with standardized error handling
-    return await this.executeWithErrorHandling(
-      'Available Case Types',
-      async () => await this.pegaClient.getCaseTypes(),
-      {}
-    );
+    let sessionInfo = null;
+
+    try {
+      // Initialize session configuration if provided
+      sessionInfo = this.initializeSessionConfig(params);
+
+      // Execute with standardized error handling
+      return await this.executeWithErrorHandling(
+        'Available Case Types',
+        async () => await this.pegaClient.getCaseTypes(),
+        { sessionInfo }
+      );
+    } catch (error) {
+      return {
+        content: [
+          {
+            type: 'text',
+            text: `## Error: Get Case Types\n\n**Unexpected Error**: ${error.message}\n\n${sessionInfo ? `**Session**: ${sessionInfo.sessionId} (${sessionInfo.authMode} mode)\n` : ''}*Error occurred at: ${new Date().toISOString()}*`
+          }
+        ]
+      };
+    }
   }
 
   /**
    * Override formatSuccessResponse to add case types specific formatting
    */
   formatSuccessResponse(operation, data, options = {}) {
+    const { sessionInfo } = options;
+
     let response = `## ${operation}\n\n`;
-    
     response += `*Operation completed at: ${new Date().toISOString()}*\n\n`;
+
+    // Session Information (if applicable)
+    if (sessionInfo) {
+      response += `### Session Information\n`;
+      response += `- **Session ID**: ${sessionInfo.sessionId}\n`;
+      response += `- **Authentication Mode**: ${sessionInfo.authMode.toUpperCase()}\n`;
+      response += `- **Configuration Source**: ${sessionInfo.configSource}\n`;
+      response += '\n';
+    }
     
     // Display application compatibility info
     if (data.applicationIsConstellationCompatible !== undefined) {

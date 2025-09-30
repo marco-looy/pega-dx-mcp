@@ -1,4 +1,5 @@
 import { PegaAPIClient } from '../api/pega-client.js';
+import { getSessionConfig, createSessionFromCredentials } from '../config/session-config.js';
 
 /**
  * Abstract base class for all Pega DX MCP tools
@@ -8,6 +9,7 @@ export class BaseTool {
   constructor() {
     // Use lazy initialization - only create pegaClient when needed
     this._pegaClient = null;
+    this._sessionConfig = null;
   }
 
   /**
@@ -16,9 +18,70 @@ export class BaseTool {
    */
   get pegaClient() {
     if (!this._pegaClient) {
-      this._pegaClient = new PegaAPIClient();
+      // If we have session config, ensure we don't fall back to environment config
+      // by passing the session config directly. If no session config, pass null to use environment.
+      this._pegaClient = new PegaAPIClient(this._sessionConfig);
     }
     return this._pegaClient;
+  }
+
+  /**
+   * Initialize session-aware configuration from tool parameters
+   * @param {Object} params - Tool execution parameters
+   * @returns {Object|null} Session info if session credentials provided
+   */
+  initializeSessionConfig(params) {
+    // Check if session credentials are provided
+    if (!params.sessionCredentials) {
+      // No session credentials, use environment config
+      this._sessionConfig = null;
+      return null;
+    }
+
+    try {
+      // Extract and parse session credentials (handle both object and string)
+      let sessionCredentials = params.sessionCredentials;
+
+      // If it's a string, try to parse it as JSON
+      if (typeof sessionCredentials === 'string') {
+        console.log(`🔧 Parsing session credentials from string: ${sessionCredentials.substring(0, 100)}...`);
+        sessionCredentials = JSON.parse(sessionCredentials);
+      }
+
+      console.log(`🔧 Session credentials type: ${typeof sessionCredentials}`, sessionCredentials);
+
+      const existingSessionId = sessionCredentials.sessionId;
+
+      // Create or update session
+      const sessionInfo = createSessionFromCredentials(sessionCredentials, existingSessionId);
+
+      // Set session configuration
+      this._sessionConfig = sessionInfo.config;
+
+      // Reset client to ensure it uses the new session config
+      this.resetClient();
+
+      console.log(`🔧 Tool initialized with session ${sessionInfo.sessionId}`);
+
+      return {
+        sessionId: sessionInfo.sessionId,
+        authMode: sessionInfo.config.getAuthMode(),
+        configSource: 'session'
+      };
+
+    } catch (error) {
+      console.error('❌ Failed to initialize session configuration:', error.message);
+      // Fall back to environment configuration
+      this._sessionConfig = null;
+      throw new Error(`Session configuration error: ${error.message}`);
+    }
+  }
+
+  /**
+   * Reset client instance (useful when session config changes)
+   */
+  resetClient() {
+    this._pegaClient = null;
   }
 
   /**

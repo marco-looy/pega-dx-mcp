@@ -1,4 +1,5 @@
 import { BaseTool } from '../../registry/base-tool.js';
+import { getSessionCredentialsSchema } from '../../utils/tool-schema.js';
 
 export class PingServiceTool extends BaseTool {
   /**
@@ -14,10 +15,12 @@ export class PingServiceTool extends BaseTool {
   static getDefinition() {
     return {
       name: 'ping_pega_service',
-      description: 'Test OAuth2 connectivity to Pega Infinity server and verify authentication configuration',
+      description: 'Test connectivity to Pega Infinity server and verify authentication configuration. Supports both environment credentials and session-based credentials.',
       inputSchema: {
         type: 'object',
-        properties: {},
+        properties: {
+          sessionCredentials: getSessionCredentialsSchema()
+        },
         required: []
       }
     };
@@ -27,15 +30,21 @@ export class PingServiceTool extends BaseTool {
    * Execute the ping service operation
    */
   async execute(params) {
+    let sessionInfo = null;
+
     try {
+      // Initialize session configuration if provided
+      sessionInfo = this.initializeSessionConfig(params);
+
+      // Perform ping operation
       const result = await this.pegaClient.ping();
-      
+
       if (result.success) {
         return {
           content: [
             {
               type: 'text',
-              text: this.formatPingResponse(result.data)
+              text: this.formatPingResponse(result.data, sessionInfo)
             }
           ]
         };
@@ -47,7 +56,7 @@ export class PingServiceTool extends BaseTool {
         content: [
           {
             type: 'text',
-            text: `## Error: Ping Pega Service\n\n**Unexpected Error**: ${error.message}\n\n*Error occurred at: ${new Date().toISOString()}*`
+            text: `## Error: Ping Pega Service\n\n**Unexpected Error**: ${error.message}\n\n${sessionInfo ? `**Session**: ${sessionInfo.sessionId} (${sessionInfo.authMode} mode)\n` : ''}*Error occurred at: ${new Date().toISOString()}*`
           }
         ]
       };
@@ -57,12 +66,22 @@ export class PingServiceTool extends BaseTool {
   /**
    * Format ping-specific response with detailed information
    * @param {Object} data - Ping response data
+   * @param {Object} sessionInfo - Session information (if applicable)
    * @returns {string} Formatted ping response
    */
-  formatPingResponse(data) {
+  formatPingResponse(data, sessionInfo = null) {
     let response = `## Ping Pega Service\n\n`;
     response += `*Operation completed at: ${data.timestamp}*\n\n`;
     
+    // Session Information (if applicable)
+    if (sessionInfo) {
+      response += `### Session Information\n`;
+      response += `- **Session ID**: ${sessionInfo.sessionId}\n`;
+      response += `- **Authentication Mode**: ${sessionInfo.authMode.toUpperCase()}\n`;
+      response += `- **Configuration Source**: ${sessionInfo.configSource}\n`;
+      response += '\n';
+    }
+
     // Configuration Section
     response += `### Configuration\n`;
     response += `- **Base URL**: ${data.configuration.baseUrl}\n`;
@@ -71,6 +90,8 @@ export class PingServiceTool extends BaseTool {
     if (data.configuration.apiVersion) {
       response += `- **API Version**: ${data.configuration.apiVersion}\n`;
     }
+    response += `- **Authentication Mode**: ${data.configuration.authMode.toUpperCase()}\n`;
+    response += `- **Configuration Source**: ${data.configuration.configSource}\n`;
     response += '\n';
     
     // Test Results Section
