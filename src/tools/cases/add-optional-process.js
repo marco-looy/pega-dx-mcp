@@ -1,4 +1,5 @@
 import { BaseTool } from '../../registry/base-tool.js';
+import { getSessionCredentialsSchema } from '../../utils/tool-schema.js';
 
 export class AddOptionalProcessTool extends BaseTool {
   /**
@@ -31,7 +32,8 @@ export class AddOptionalProcessTool extends BaseTool {
             enum: ['none', 'form', 'page'],
             description: 'Type of view data to return. "none" returns no uiResources, data.caseInfo.content contains the fields of the pyDetails view (default), "form" returns the form UI metadata (read-only review mode, without page-specific metadata) in the uiResources object, "page" returns the full page (read-only review mode) UI metadata in the uiResources object.',
             default: 'none'
-          }
+          },
+          sessionCredentials: getSessionCredentialsSchema()
         },
         required: ['caseID', 'processID']
       }
@@ -43,26 +45,39 @@ export class AddOptionalProcessTool extends BaseTool {
    */
   async execute(params) {
     const { caseID, processID, viewType } = params;
+    let sessionInfo = null;
 
-    // Validate required parameters using base class
-    const requiredValidation = this.validateRequiredParams(params, ['caseID', 'processID']);
-    if (requiredValidation) {
-      return requiredValidation;
+    try {
+      // Initialize session configuration if provided
+      sessionInfo = this.initializeSessionConfig(params);
+
+      // Validate required parameters using base class
+      const requiredValidation = this.validateRequiredParams(params, ['caseID', 'processID']);
+      if (requiredValidation) {
+        return requiredValidation;
+      }
+
+      // Validate enum parameters using base class
+      const enumValidation = this.validateEnumParams(params, {
+        viewType: ['none', 'form', 'page']
+      });
+      if (enumValidation) {
+        return enumValidation;
+      }
+
+      // Execute with standardized error handling
+      return await this.executeWithErrorHandling(
+        `Add Optional Process: ${processID} to case ${caseID}`,
+        async () => await this.pegaClient.addOptionalProcess(caseID.trim(), processID.trim(), { viewType }),
+        { processID, viewType, sessionInfo }
+      );
+    } catch (error) {
+      return {
+        content: [{
+          type: 'text',
+          text: `## Error: Add Optional Process\n\n**Unexpected Error**: ${error.message}\n\n${sessionInfo ? `**Session**: ${sessionInfo.sessionId} (${sessionInfo.authMode} mode)\n` : ''}*Error occurred at: ${new Date().toISOString()}*`
+        }]
+      };
     }
-
-    // Validate enum parameters using base class
-    const enumValidation = this.validateEnumParams(params, {
-      viewType: ['none', 'form', 'page']
-    });
-    if (enumValidation) {
-      return enumValidation;
-    }
-
-    // Execute with standardized error handling
-    return await this.executeWithErrorHandling(
-      `Add Optional Process: ${processID} to case ${caseID}`,
-      async () => await this.pegaClient.addOptionalProcess(caseID.trim(), processID.trim(), { viewType }),
-      { processID, viewType }
-    );
   }
 }

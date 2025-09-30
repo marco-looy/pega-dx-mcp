@@ -1,4 +1,5 @@
 import { BaseTool } from '../../registry/base-tool.js';
+import { getSessionCredentialsSchema } from '../../utils/tool-schema.js';
 
 export class ReleaseCaseLockTool extends BaseTool {
   /**
@@ -27,7 +28,8 @@ export class ReleaseCaseLockTool extends BaseTool {
             enum: ['none', 'page'],
             description: 'Type of view data to return. "none" returns no view metadata or fields (default), "page" returns the full page UI metadata.',
             default: 'none'
-          }
+          },
+          sessionCredentials: getSessionCredentialsSchema()
         },
         required: ['caseID']
       }
@@ -39,26 +41,39 @@ export class ReleaseCaseLockTool extends BaseTool {
    */
   async execute(params) {
     const { caseID, viewType } = params;
+    let sessionInfo = null;
 
-    // Validate required parameters using base class
-    const requiredValidation = this.validateRequiredParams(params, ['caseID']);
-    if (requiredValidation) {
-      return requiredValidation;
+    try {
+      // Initialize session configuration if provided
+      sessionInfo = this.initializeSessionConfig(params);
+
+      // Validate required parameters using base class
+      const requiredValidation = this.validateRequiredParams(params, ['caseID']);
+      if (requiredValidation) {
+        return requiredValidation;
+      }
+
+      // Validate enum parameters using base class
+      const enumValidation = this.validateEnumParams(params, {
+        viewType: ['none', 'page']
+      });
+      if (enumValidation) {
+        return enumValidation;
+      }
+
+      // Execute with standardized error handling
+      return await this.executeWithErrorHandling(
+        `Release Case Lock: ${caseID}`,
+        async () => await this.pegaClient.releaseCaseLock(caseID.trim(), { viewType }),
+        { viewType, sessionInfo }
+      );
+    } catch (error) {
+      return {
+        content: [{
+          type: 'text',
+          text: `## Error: Release Case Lock\n\n**Unexpected Error**: ${error.message}\n\n${sessionInfo ? `**Session**: ${sessionInfo.sessionId} (${sessionInfo.authMode} mode)\n` : ''}*Error occurred at: ${new Date().toISOString()}*`
+        }]
+      };
     }
-
-    // Validate enum parameters using base class
-    const enumValidation = this.validateEnumParams(params, {
-      viewType: ['none', 'page']
-    });
-    if (enumValidation) {
-      return enumValidation;
-    }
-
-    // Execute with standardized error handling
-    return await this.executeWithErrorHandling(
-      `Release Case Lock: ${caseID}`,
-      async () => await this.pegaClient.releaseCaseLock(caseID.trim(), { viewType }),
-      { viewType }
-    );
   }
 }

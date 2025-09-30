@@ -1,4 +1,5 @@
 import { BaseTool } from '../../registry/base-tool.js';
+import { getSessionCredentialsSchema } from '../../utils/tool-schema.js';
 
 export class GetParticipantTool extends BaseTool {
   /**
@@ -31,7 +32,8 @@ export class GetParticipantTool extends BaseTool {
             enum: ['form', 'none'],
             description: 'Type of view data to return. "form" returns form UI metadata in uiResources object for display purposes, "none" returns no UI resources. Default: "form".',
             default: 'form'
-          }
+          },
+          sessionCredentials: getSessionCredentialsSchema()
         },
         required: ['caseID', 'participantID']
       }
@@ -43,26 +45,38 @@ export class GetParticipantTool extends BaseTool {
    */
   async execute(params) {
     const { caseID, participantID, viewType } = params;
+    let sessionInfo = null;
 
-    // Validate required parameters using base class
-    const requiredValidation = this.validateRequiredParams(params, ['caseID', 'participantID']);
-    if (requiredValidation) {
-      return requiredValidation;
+    try {
+      sessionInfo = this.initializeSessionConfig(params);
+
+      // Validate required parameters using base class
+      const requiredValidation = this.validateRequiredParams(params, ['caseID', 'participantID']);
+      if (requiredValidation) {
+        return requiredValidation;
+      }
+
+      // Validate enum parameters using base class
+      const enumValidation = this.validateEnumParams(params, {
+        viewType: ['form', 'none']
+      });
+      if (enumValidation) {
+        return enumValidation;
+      }
+
+      // Execute with standardized error handling
+      return await this.executeWithErrorHandling(
+        `Get Participant: ${caseID.trim()} / ${participantID.trim()}`,
+        async () => await this.pegaClient.getParticipant(caseID.trim(), participantID.trim(), { viewType }),
+        { caseID: caseID.trim(), participantID: participantID.trim(), viewType, sessionInfo }
+      );
+    } catch (error) {
+      return {
+        content: [{
+          type: 'text',
+          text: `## Error: Get Participant: ${caseID} / ${participantID}\n\n**Unexpected Error**: ${error.message}\n\n${sessionInfo ? `**Session**: ${sessionInfo.sessionId} (${sessionInfo.authMode} mode)\n` : ''}*Error occurred at: ${new Date().toISOString()}*`
+        }]
+      };
     }
-
-    // Validate enum parameters using base class
-    const enumValidation = this.validateEnumParams(params, {
-      viewType: ['form', 'none']
-    });
-    if (enumValidation) {
-      return enumValidation;
-    }
-
-    // Execute with standardized error handling
-    return await this.executeWithErrorHandling(
-      `Get Participant: ${caseID.trim()} / ${participantID.trim()}`,
-      async () => await this.pegaClient.getParticipant(caseID.trim(), participantID.trim(), { viewType }),
-      { caseID: caseID.trim(), participantID: participantID.trim(), viewType }
-    );
   }
 }

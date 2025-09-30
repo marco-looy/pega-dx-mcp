@@ -1,4 +1,5 @@
 import { BaseTool } from '../../registry/base-tool.js';
+import { getSessionCredentialsSchema } from '../../utils/tool-schema.js';
 
 export class SaveAssignmentActionTool extends BaseTool {
   /**
@@ -79,7 +80,8 @@ export class SaveAssignmentActionTool extends BaseTool {
           originChannel: {
             type: 'string',
             description: 'Optional origin channel identifier for this service request. Indicates the source of the save request for tracking and audit purposes. Examples: "Web", "Mobile", "WebChat". Default value is "Web" if not specified.'
-          }
+          },
+          sessionCredentials: getSessionCredentialsSchema()
         },
         required: ['assignmentID', 'actionID']
       }
@@ -91,8 +93,13 @@ export class SaveAssignmentActionTool extends BaseTool {
    */
   async execute(params) {
     const { assignmentID, actionID, eTag, content, pageInstructions, attachments, originChannel } = params;
+    let sessionInfo = null;
 
-    // Basic parameter validation using base class
+    try {
+      // Initialize session configuration if provided
+      sessionInfo = this.initializeSessionConfig(params);
+
+      // Basic parameter validation using base class
     const requiredValidation = this.validateRequiredParams(params, ['assignmentID', 'actionID']);
     if (requiredValidation) {
       return requiredValidation;
@@ -180,7 +187,7 @@ export class SaveAssignmentActionTool extends BaseTool {
       // Check if API call was successful
       if (result.success) {
         // Format and return successful response
-        return this.formatSuccessResponse(result.data, params);
+        return this.formatSuccessResponse(result.data, { ...params, sessionInfo });
       } else {
         // Format and return error response from API
         return this.formatErrorResponse(result.error);
@@ -189,6 +196,14 @@ export class SaveAssignmentActionTool extends BaseTool {
     } catch (error) {
       // Format and return error response
       return this.formatErrorResponse(error);
+    }
+    } catch (error) {
+      return {
+        content: [{
+          type: 'text',
+          text: `## Error: Save Assignment Action\n\n**Unexpected Error**: ${error.message}\n\n${sessionInfo ? `**Session**: ${sessionInfo.sessionId} (${sessionInfo.authMode} mode)\n` : ''}*Error occurred at: ${new Date().toISOString()}*`
+        }]
+      };
     }
   }
 

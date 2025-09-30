@@ -1,4 +1,5 @@
 import { BaseTool } from '../../registry/base-tool.js';
+import { getSessionCredentialsSchema } from '../../utils/tool-schema.js';
 
 export class NavigateAssignmentPreviousTool extends BaseTool {
   /**
@@ -77,7 +78,8 @@ export class NavigateAssignmentPreviousTool extends BaseTool {
             enum: ['none', 'form', 'page'],
             description: 'Type of view data to return. "none" returns no UI resources (default), "form" returns form UI metadata in read-only review mode, "page" returns full page UI metadata in read-only review mode. Navigation breadcrumb information is included under uiResources when not "none".',
             default: 'none'
-          }
+          },
+          sessionCredentials: getSessionCredentialsSchema()
         },
         required: ['assignmentID']
       }
@@ -89,8 +91,13 @@ export class NavigateAssignmentPreviousTool extends BaseTool {
    */
   async execute(params) {
     const { assignmentID, eTag, content, pageInstructions, attachments, viewType } = params;
+    let sessionInfo = null;
 
-    // Basic parameter validation using base class
+    try {
+      // Initialize session configuration if provided
+      sessionInfo = this.initializeSessionConfig(params);
+
+      // Basic parameter validation using base class
     const requiredValidation = this.validateRequiredParams(params, ['assignmentID']);
     if (requiredValidation) {
       return requiredValidation;
@@ -196,6 +203,14 @@ export class NavigateAssignmentPreviousTool extends BaseTool {
     } catch (error) {
       // Format and return error response
       return this.formatErrorResponse(error);
+    }
+    } catch (error) {
+      return {
+        content: [{
+          type: 'text',
+          text: `## Error: Navigate Assignment Previous\n\n**Unexpected Error**: ${error.message}\n\n${sessionInfo ? `**Session**: ${sessionInfo.sessionId} (${sessionInfo.authMode} mode)\n` : ''}*Error occurred at: ${new Date().toISOString()}*`
+        }]
+      };
     }
   }
 

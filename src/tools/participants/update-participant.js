@@ -1,4 +1,5 @@
 import { BaseTool } from '../../registry/base-tool.js';
+import { getSessionCredentialsSchema } from '../../utils/tool-schema.js';
 
 export class UpdateParticipantTool extends BaseTool {
   /**
@@ -73,7 +74,8 @@ export class UpdateParticipantTool extends BaseTool {
             enum: ['form', 'none'],
             description: 'Type of view data to return after update. "form" returns form UI metadata in uiResources object for display purposes, "none" returns no UI resources. Default: "form".',
             default: 'form'
-          }
+          },
+          sessionCredentials: getSessionCredentialsSchema()
         },
         required: ['caseID', 'participantID']
       }
@@ -85,86 +87,98 @@ export class UpdateParticipantTool extends BaseTool {
    */
   async execute(params) {
     const { caseID, participantID, eTag, content, pageInstructions, viewType } = params;
+    let sessionInfo = null;
 
-    // Validate required parameters using base class
-    const requiredValidation = this.validateRequiredParams(params, ['caseID', 'participantID']);
-    if (requiredValidation) {
-      return requiredValidation;
-    }
+    try {
+      sessionInfo = this.initializeSessionConfig(params);
 
-    // Validate enum parameters using base class
-    const enumValidation = this.validateEnumParams(params, {
-      viewType: ['form', 'none']
-    });
-    if (enumValidation) {
-      return enumValidation;
-    }
+      // Validate required parameters using base class
+      const requiredValidation = this.validateRequiredParams(params, ['caseID', 'participantID']);
+      if (requiredValidation) {
+        return requiredValidation;
+      }
 
-    // Prepare options object for API call
-    const options = {};
-    if (content) {
-      options.content = content;
-    }
-    if (pageInstructions) {
-      options.pageInstructions = pageInstructions;
-    }
-    if (viewType) {
-      options.viewType = viewType;
-    }
+      // Validate enum parameters using base class
+      const enumValidation = this.validateEnumParams(params, {
+        viewType: ['form', 'none']
+      });
+      if (enumValidation) {
+        return enumValidation;
+      }
 
-    // Execute with standardized error handling
-// Auto-fetch eTag if not provided
-    let finalETag = eTag;
-    let autoFetchedETag = false;
-    
-    if (!finalETag) {
-      try {
-        console.log(`Auto-fetching latest eTag for participant operation on ${caseID}...`);
-        const caseResponse = await this.pegaClient.getCase(caseID.trim());
-        
-        if (!caseResponse || !caseResponse.success) {
-          const errorMsg = `Failed to auto-fetch eTag: ${caseResponse?.error?.message || 'Unknown error'}`;
+      // Prepare options object for API call
+      const options = {};
+      if (content) {
+        options.content = content;
+      }
+      if (pageInstructions) {
+        options.pageInstructions = pageInstructions;
+      }
+      if (viewType) {
+        options.viewType = viewType;
+      }
+
+      // Auto-fetch eTag if not provided
+      let finalETag = eTag;
+      let autoFetchedETag = false;
+
+      if (!finalETag) {
+        try {
+          console.log(`Auto-fetching latest eTag for participant operation on ${caseID}...`);
+          const caseResponse = await this.pegaClient.getCase(caseID.trim());
+
+          if (!caseResponse || !caseResponse.success) {
+            const errorMsg = `Failed to auto-fetch eTag: ${caseResponse?.error?.message || 'Unknown error'}`;
+            return {
+              error: errorMsg
+            };
+          }
+
+          finalETag = caseResponse.eTag;
+          autoFetchedETag = true;
+          console.log(`Successfully auto-fetched eTag: ${finalETag}`);
+
+          if (!finalETag) {
+            const errorMsg = 'Auto-fetch succeeded but no eTag was returned from get_case. This may indicate a server issue.';
+            return {
+              error: errorMsg
+            };
+          }
+        } catch (error) {
+          const errorMsg = `Failed to auto-fetch eTag: ${error.message}`;
           return {
             error: errorMsg
           };
         }
-        
-        finalETag = caseResponse.eTag;
-        autoFetchedETag = true;
-        console.log(`Successfully auto-fetched eTag: ${finalETag}`);
-        
-        if (!finalETag) {
-          const errorMsg = 'Auto-fetch succeeded but no eTag was returned from get_case. This may indicate a server issue.';
-          return {
-            error: errorMsg
-          };
-        }
-      } catch (error) {
-        const errorMsg = `Failed to auto-fetch eTag: ${error.message}`;
+      }
+
+      // Validate eTag format (should be a timestamp-like string)
+      if (typeof finalETag !== 'string' || finalETag.trim().length === 0) {
         return {
-          error: errorMsg
+          error: 'Invalid eTag parameter. Must be a non-empty string representing case save date time.'
         };
       }
-    }
-    
-    // Validate eTag format (should be a timestamp-like string)
-    if (typeof finalETag !== 'string' || finalETag.trim().length === 0) {
+
+      return await this.executeWithErrorHandling(
+        `Update Participant: ${caseID.trim()} / ${participantID.trim()}`,
+        async () => await this.pegaClient.updateParticipant(caseID.trim(), participantID.trim(), finalETag.trim(), options),
+        {
+          caseID: caseID.trim(),
+          participantID: participantID.trim(),
+          eTag: '***', // Hide eTag in logs for security
+          hasContent: !!content,
+          hasPageInstructions: !!pageInstructions,
+          viewType,
+          sessionInfo
+        }
+      );
+    } catch (error) {
       return {
-        error: 'Invalid eTag parameter. Must be a non-empty string representing case save date time.'
+        content: [{
+          type: 'text',
+          text: `## Error: Update Participant: ${caseID} / ${participantID}\n\n**Unexpected Error**: ${error.message}\n\n${sessionInfo ? `**Session**: ${sessionInfo.sessionId} (${sessionInfo.authMode} mode)\n` : ''}*Error occurred at: ${new Date().toISOString()}*`
+        }]
       };
     }
-
-    return await this.executeWithErrorHandling(
-      `Update Participant: ${caseID.trim()} / ${participantID.trim()}`,
-      async () => await this.pegaClient.updateParticipant(caseID.trim(), participantID.trim(), finalETag.trim(), options),
-      { 
-        caseID: caseID.trim(), 
-        participantID: participantID.trim(), 
-        eTag: '***', // Hide eTag in logs for security
-        hasContent: !!content,
-        hasPageInstructions: !!pageInstructions,
-        viewType 
-      }
-    );
   }
 }

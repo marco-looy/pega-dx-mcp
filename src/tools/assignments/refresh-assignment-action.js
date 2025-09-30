@@ -1,4 +1,5 @@
 import { BaseTool } from '../../registry/base-tool.js';
+import { getSessionCredentialsSchema } from '../../utils/tool-schema.js';
 
 export class RefreshAssignmentActionTool extends BaseTool {
   /**
@@ -57,7 +58,8 @@ export class RefreshAssignmentActionTool extends BaseTool {
             items: {
               type: 'object'
             }
-          }
+          },
+          sessionCredentials: getSessionCredentialsSchema()
         },
         required: ['assignmentID', 'actionID']
       }
@@ -68,19 +70,24 @@ export class RefreshAssignmentActionTool extends BaseTool {
    * Execute the refresh assignment action operation
    */
   async execute(params) {
-    const { 
-      assignmentID, 
-      actionID, 
-      refreshFor, 
-      fillFormWithAI = false, 
-      operation, 
-      interestPage, 
-      interestPageActionID, 
-      content, 
-      pageInstructions 
+    const {
+      assignmentID,
+      actionID,
+      refreshFor,
+      fillFormWithAI = false,
+      operation,
+      interestPage,
+      interestPageActionID,
+      content,
+      pageInstructions
     } = params;
+    let sessionInfo = null;
 
-    // Basic parameter validation using base class
+    try {
+      // Initialize session configuration if provided
+      sessionInfo = this.initializeSessionConfig(params);
+
+      // Basic parameter validation using base class
     const requiredValidation = this.validateRequiredParams(params, ['assignmentID', 'actionID']);
     if (requiredValidation) {
       return requiredValidation;
@@ -238,6 +245,14 @@ export class RefreshAssignmentActionTool extends BaseTool {
     } catch (error) {
       return {
         error: `Unexpected error while refreshing assignment action ${actionID} for assignment ${assignmentID}: ${error.message}`
+      };
+    }
+    } catch (error) {
+      return {
+        content: [{
+          type: 'text',
+          text: `## Error: Refresh Assignment Action\n\n**Unexpected Error**: ${error.message}\n\n${sessionInfo ? `**Session**: ${sessionInfo.sessionId} (${sessionInfo.authMode} mode)\n` : ''}*Error occurred at: ${new Date().toISOString()}*`
+        }]
       };
     }
   }

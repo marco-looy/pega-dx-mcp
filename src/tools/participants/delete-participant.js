@@ -1,4 +1,5 @@
 import { BaseTool } from '../../registry/base-tool.js';
+import { getSessionCredentialsSchema } from '../../utils/tool-schema.js';
 
 export class DeleteParticipantTool extends BaseTool {
   /**
@@ -29,7 +30,8 @@ export class DeleteParticipantTool extends BaseTool {
           eTag: {
             type: 'string',
             description: 'Optional eTag unique value representing the most recent save date time (pxSaveDateTime) of the case. If not provided, the tool will automatically fetch the latest eTag from the case. For manual eTag management, provide the eTag from a previous case operation. Used for optimistic locking to prevent concurrent modification conflicts.'
-          }
+          },
+          sessionCredentials: getSessionCredentialsSchema()
         },
         required: ['caseID', 'participantID']
       }
@@ -41,6 +43,10 @@ export class DeleteParticipantTool extends BaseTool {
    */
   async execute(params) {
     const { caseID, participantID, eTag } = params;
+    let sessionInfo = null;
+
+    try {
+      sessionInfo = this.initializeSessionConfig(params);
 
     // Validate required parameters using base class
     const requiredValidation = this.validateRequiredParams(params, ['caseID', 'participantID']);
@@ -90,10 +96,18 @@ export class DeleteParticipantTool extends BaseTool {
       };
     }
 
-    return await this.executeWithErrorHandling(
-      `Delete Participant: ${caseID.trim()} / ${participantID.trim()}`,
-      async () => await this.pegaClient.deleteParticipant(caseID.trim(), participantID.trim(), finalETag.trim()),
-      { caseID: caseID.trim(), participantID: participantID.trim(), eTag: '***' } // Hide eTag in logs for security
-    );
+      return await this.executeWithErrorHandling(
+        `Delete Participant: ${caseID.trim()} / ${participantID.trim()}`,
+        async () => await this.pegaClient.deleteParticipant(caseID.trim(), participantID.trim(), finalETag.trim()),
+        { caseID: caseID.trim(), participantID: participantID.trim(), eTag: '***', sessionInfo } // Hide eTag in logs for security
+      );
+    } catch (error) {
+      return {
+        content: [{
+          type: 'text',
+          text: `## Error: Delete Participant: ${caseID} / ${participantID}\n\n**Unexpected Error**: ${error.message}\n\n${sessionInfo ? `**Session**: ${sessionInfo.sessionId} (${sessionInfo.authMode} mode)\n` : ''}*Error occurred at: ${new Date().toISOString()}*`
+        }]
+      };
+    }
   }
 }

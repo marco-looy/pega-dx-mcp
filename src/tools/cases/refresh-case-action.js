@@ -1,4 +1,5 @@
 import { BaseTool } from '../../registry/base-tool.js';
+import { getSessionCredentialsSchema } from '../../utils/tool-schema.js';
 
 export class RefreshCaseActionTool extends BaseTool {
   /**
@@ -69,7 +70,8 @@ export class RefreshCaseActionTool extends BaseTool {
           originChannel: {
             type: 'string',
             description: 'Optional origin channel identifier for this service request. Indicates the source of the request for tracking and audit purposes. Examples: "Web", "Mobile", "WebChat". Default value is "Web" if not specified.'
-          }
+          },
+          sessionCredentials: getSessionCredentialsSchema()
         },
         required: ['caseID', 'actionID']
       }
@@ -80,20 +82,25 @@ export class RefreshCaseActionTool extends BaseTool {
    * Execute the refresh case action operation
    */
   async execute(params) {
-    const { 
-      caseID, 
-      actionID, 
+    const {
+      caseID,
+      actionID,
       eTag,
-      refreshFor, 
-      fillFormWithAI = false, 
-      operation, 
-      content, 
+      refreshFor,
+      fillFormWithAI = false,
+      operation,
+      content,
       pageInstructions,
       contextData = false,
-      interestPage, 
+      interestPage,
       interestPageActionID,
-      originChannel 
+      originChannel
     } = params;
+    let sessionInfo = null;
+
+    try {
+      // Initialize session configuration if provided
+      sessionInfo = this.initializeSessionConfig(params);
 
     // Basic parameter validation using base class
     const requiredValidation = this.validateRequiredParams(params, ['caseID', 'actionID']);
@@ -208,11 +215,10 @@ export class RefreshCaseActionTool extends BaseTool {
       };
     }
 
-    // Execute the API call directly and handle custom formatting
-    try {
+      // Execute the API call directly and handle custom formatting
       const apiResult = await this.pegaClient.refreshCaseAction(
-        caseID.trim(), 
-        actionID.trim(), 
+        caseID.trim(),
+        actionID.trim(),
         finalETag.trim(),
         {
           refreshFor: refreshFor?.trim(),
@@ -226,7 +232,7 @@ export class RefreshCaseActionTool extends BaseTool {
           originChannel
         }
       );
-      
+
       if (apiResult.success) {
         return {
           content: [
@@ -241,7 +247,8 @@ export class RefreshCaseActionTool extends BaseTool {
                 contextData,
                 interestPage,
                 interestPageActionID,
-                originChannel
+                originChannel,
+                sessionInfo
               })
             }
           ]
@@ -267,7 +274,10 @@ export class RefreshCaseActionTool extends BaseTool {
       }
     } catch (error) {
       return {
-        error: `Unexpected error during refreshing case action ${actionID} for case ${caseID}: ${error.message}`
+        content: [{
+          type: 'text',
+          text: `## Error: Refresh Case Action\n\n**Unexpected Error**: ${error.message}\n\n${sessionInfo ? `**Session**: ${sessionInfo.sessionId} (${sessionInfo.authMode} mode)\n` : ''}*Error occurred at: ${new Date().toISOString()}*`
+        }]
       };
     }
   }
@@ -276,9 +286,19 @@ export class RefreshCaseActionTool extends BaseTool {
    * Format successful response for display
    */
   formatSuccessResponse(caseID, actionID, data, eTag, options) {
-    const { refreshFor, fillFormWithAI, operation, content, pageInstructions, contextData, interestPage, interestPageActionID, originChannel } = options;
-    
+    const { refreshFor, fillFormWithAI, operation, content, pageInstructions, contextData, interestPage, interestPageActionID, originChannel, sessionInfo } = options;
+
     let response = `## Case Action Refresh Results: ${actionID}\n\n`;
+    response += `*Operation completed at: ${new Date().toISOString()}*\n\n`;
+
+    // Session Information (if applicable)
+    if (sessionInfo) {
+      response += `### Session Information\n`;
+      response += `- **Session ID**: ${sessionInfo.sessionId}\n`;
+      response += `- **Authentication Mode**: ${sessionInfo.authMode.toUpperCase()}\n`;
+      response += `- **Configuration Source**: ${sessionInfo.configSource}\n\n`;
+    }
+
     response += `**Case ID**: ${caseID}\n`;
     response += `**Action ID**: ${actionID}\n`;
     response += `**eTag Used**: ${eTag}\n`;

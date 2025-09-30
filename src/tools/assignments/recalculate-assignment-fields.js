@@ -1,4 +1,5 @@
 import { BaseTool } from '../../registry/base-tool.js';
+import { getSessionCredentialsSchema } from '../../utils/tool-schema.js';
 
 export class RecalculateAssignmentFieldsTool extends BaseTool {
   /**
@@ -85,7 +86,8 @@ export class RecalculateAssignmentFieldsTool extends BaseTool {
             items: {
               type: 'object'
             }
-          }
+          },
+          sessionCredentials: getSessionCredentialsSchema()
         },
         required: ['assignmentID', 'actionID', 'calculations']
       }
@@ -96,16 +98,21 @@ export class RecalculateAssignmentFieldsTool extends BaseTool {
    * Execute the recalculate assignment fields operation
    */
   async execute(params) {
-    const { 
-      assignmentID, 
-      actionID, 
+    const {
+      assignmentID,
+      actionID,
       eTag,
       calculations,
-      content, 
-      pageInstructions 
+      content,
+      pageInstructions
     } = params;
+    let sessionInfo = null;
 
-    // Basic parameter validation using base class
+    try {
+      // Initialize session configuration if provided
+      sessionInfo = this.initializeSessionConfig(params);
+
+      // Basic parameter validation using base class
     const requiredValidation = this.validateRequiredParams(params, ['assignmentID', 'actionID', 'calculations']);
     if (requiredValidation) {
       return requiredValidation;
@@ -248,6 +255,15 @@ export class RecalculateAssignmentFieldsTool extends BaseTool {
         content,
         pageInstructions
       });
+    }
+    } catch (error) {
+      return {
+        content: [{
+          type: 'text',
+          text: `## Error: Recalculate Assignment Fields\n\n**Unexpected Error**: ${error.message}\n\n${sessionInfo ? `**Session**: ${sessionInfo.sessionId} (${sessionInfo.authMode} mode)\n` : ''}*Error occurred at: ${new Date().toISOString()}*`
+        }]
+      };
+    }
     }
   }
 

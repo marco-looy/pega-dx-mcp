@@ -1,4 +1,5 @@
 import { BaseTool } from '../../registry/base-tool.js';
+import { getSessionCredentialsSchema } from '../../utils/tool-schema.js';
 
 export class GetAttachmentCategoriesTool extends BaseTool {
   /**
@@ -27,7 +28,8 @@ export class GetAttachmentCategoriesTool extends BaseTool {
             enum: ['File', 'URL', 'file', 'url'],
             description: 'Filter for the attachment type to retrieve categories for. Case insensitive. "File" or "file" returns all attachment categories of type File. "URL" or "url" returns attachment categories of type URL. Default value is "File". The API returns attachment categories of either type File or type URL during a particular API call, not both simultaneously.',
             default: 'File'
-          }
+          },
+          sessionCredentials: getSessionCredentialsSchema()
         },
         required: ['caseID']
       }
@@ -40,29 +42,41 @@ export class GetAttachmentCategoriesTool extends BaseTool {
   async execute(params) {
     const { caseID, type = 'File' } = params;
 
-    // Basic parameter validation using base class
-    const requiredValidation = this.validateRequiredParams(params, ['caseID']);
-    if (requiredValidation) {
-      return requiredValidation;
-    }
+    let sessionInfo = null;
+    try {
+      sessionInfo = this.initializeSessionConfig(params);
 
-    // Additional comprehensive parameter validation for complex logic
-    const validationResult = this.validateParameters(caseID, type);
-    if (!validationResult.valid) {
+      // Basic parameter validation using base class
+      const requiredValidation = this.validateRequiredParams(params, ['caseID']);
+      if (requiredValidation) {
+        return requiredValidation;
+      }
+
+      // Additional comprehensive parameter validation for complex logic
+      const validationResult = this.validateParameters(caseID, type);
+      if (!validationResult.valid) {
+        return {
+          error: validationResult.error
+        };
+      }
+
+      // Normalize type parameter to handle case insensitivity
+      const normalizedType = type.toLowerCase() === 'file' ? 'File' : 'URL';
+
+      // Execute with standardized error handling
+      return await this.executeWithErrorHandling(
+        `Attachment Categories: ${caseID} (${normalizedType})`,
+        async () => await this.pegaClient.getCaseAttachmentCategories(caseID, { type: normalizedType }),
+        { caseID, type: normalizedType, sessionInfo }
+      );
+    } catch (error) {
       return {
-        error: validationResult.error
+        content: [{
+          type: 'text',
+          text: `## Error: Attachment Categories\n\n**Unexpected Error**: ${error.message}\n\n${sessionInfo ? `**Session**: ${sessionInfo.sessionId} (${sessionInfo.authMode} mode)\n` : ''}*Error occurred at: ${new Date().toISOString()}*`
+        }]
       };
     }
-
-    // Normalize type parameter to handle case insensitivity
-    const normalizedType = type.toLowerCase() === 'file' ? 'File' : 'URL';
-
-    // Execute with standardized error handling
-    return await this.executeWithErrorHandling(
-      `Attachment Categories: ${caseID} (${normalizedType})`,
-      async () => await this.pegaClient.getCaseAttachmentCategories(caseID, { type: normalizedType }),
-      { caseID, type: normalizedType }
-    );
   }
 
   /**
@@ -102,12 +116,19 @@ export class GetAttachmentCategoriesTool extends BaseTool {
    * Override formatSuccessResponse to add attachment categories specific formatting
    */
   formatSuccessResponse(operation, data, options = {}) {
-    const { caseID, type } = options;
+    const { caseID, type, sessionInfo } = options;
     const { attachment_categories = [] } = data;
     
     let response = `## ${operation}\n\n`;
-    
+
     response += `*Operation completed at: ${new Date().toISOString()}*\n\n`;
+
+    if (sessionInfo) {
+      response += `### Session Information\n`;
+      response += `- **Session ID**: ${sessionInfo.sessionId}\n`;
+      response += `- **Authentication Mode**: ${sessionInfo.authMode.toUpperCase()}\n`;
+      response += `- **Configuration Source**: ${sessionInfo.configSource}\n\n`;
+    }
     
     if (attachment_categories.length === 0) {
       response += `No ${type.toLowerCase()} attachment categories found for this case.\n\n`;

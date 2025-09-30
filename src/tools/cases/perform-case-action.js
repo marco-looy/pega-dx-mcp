@@ -1,4 +1,5 @@
 import { BaseTool } from '../../registry/base-tool.js';
+import { getSessionCredentialsSchema } from '../../utils/tool-schema.js';
 
 export class PerformCaseActionTool extends BaseTool {
   /**
@@ -62,7 +63,8 @@ export class PerformCaseActionTool extends BaseTool {
           originChannel: {
             type: 'string',
             description: 'Optional origin channel identifier for this service request. Indicates the source of the request for tracking and audit purposes. Examples: "Web", "Mobile", "WebChat". Default value is "Web" if not specified.'
-          }
+          },
+          sessionCredentials: getSessionCredentialsSchema()
         },
         required: ['caseID', 'actionID']
       }
@@ -73,19 +75,24 @@ export class PerformCaseActionTool extends BaseTool {
    * Execute the perform case action operation
    */
   async execute(params) {
-    const { 
-      caseID, 
-      actionID, 
-      eTag, 
-      content, 
-      pageInstructions, 
-      attachments, 
-      viewType, 
-      skipRoboticAutomation, 
-      originChannel 
+    const {
+      caseID,
+      actionID,
+      eTag,
+      content,
+      pageInstructions,
+      attachments,
+      viewType,
+      skipRoboticAutomation,
+      originChannel
     } = params;
+    let sessionInfo = null;
 
-    // Validate required parameters using base class
+    try {
+      // Initialize session configuration if provided
+      sessionInfo = this.initializeSessionConfig(params);
+
+      // Validate required parameters using base class
     const requiredValidation = this.validateRequiredParams(params, ['caseID', 'actionID']);
     if (requiredValidation) {
       return requiredValidation;
@@ -147,12 +154,12 @@ export class PerformCaseActionTool extends BaseTool {
       };
     }
 
-    // Execute with standardized error handling
-    return await this.executeWithErrorHandling(
-      `Case Action Execution: ${actionID} on ${caseID}`,
-      async () => {
-        // Build options object for API call
-        const options = {};
+      // Execute with standardized error handling
+      return await this.executeWithErrorHandling(
+        `Case Action Execution: ${actionID} on ${caseID}`,
+        async () => {
+          // Build options object for API call
+          const options = {};
         
         if (content) options.content = content;
         if (pageInstructions) options.pageInstructions = pageInstructions;
@@ -164,41 +171,63 @@ export class PerformCaseActionTool extends BaseTool {
         // Add eTag to options
         options.eTag = finalETag.trim();
 
-        return await this.pegaClient.performCaseAction(caseID.trim(), actionID.trim(), options);
-      },
-      { 
-        caseID, 
-        actionID, 
-        eTag: finalETag, 
-        autoFetchedETag,
-        viewType, 
-        skipRoboticAutomation,
-        hasContent: !!content,
-        hasPageInstructions: !!pageInstructions,
-        hasAttachments: !!attachments
-      }
-    );
+          return await this.pegaClient.performCaseAction(caseID.trim(), actionID.trim(), options);
+        },
+        {
+          caseID,
+          actionID,
+          eTag: finalETag,
+          autoFetchedETag,
+          viewType,
+          skipRoboticAutomation,
+          hasContent: !!content,
+          hasPageInstructions: !!pageInstructions,
+          hasAttachments: !!attachments,
+          sessionInfo
+        }
+      );
+    } catch (error) {
+      return {
+        content: [{
+          type: 'text',
+          text: `## Error: Perform Case Action
+
+**Unexpected Error**: ${error.message}
+
+${sessionInfo ? `**Session**: ${sessionInfo.sessionId} (${sessionInfo.authMode} mode)\n` : ''}*Error occurred at: ${new Date().toISOString()}*`
+        }]
+      };
+    }
   }
 
   /**
    * Override formatSuccessResponse to add case action specific formatting
    */
   formatSuccessResponse(operation, data, options = {}) {
-    const { 
-      caseID, 
-      actionID, 
-      eTag, 
+    const {
+      caseID,
+      actionID,
+      eTag,
       autoFetchedETag,
-      viewType, 
+      viewType,
       skipRoboticAutomation,
       hasContent,
       hasPageInstructions,
-      hasAttachments
+      hasAttachments,
+      sessionInfo
     } = options;
-    
+
     let response = `## ${operation}\n\n`;
-    
+
     response += `*Operation completed at: ${new Date().toISOString()}*\n\n`;
+
+    // Session Information (if applicable)
+    if (sessionInfo) {
+      response += `### Session Information\n`;
+      response += `- **Session ID**: ${sessionInfo.sessionId}\n`;
+      response += `- **Authentication Mode**: ${sessionInfo.authMode.toUpperCase()}\n`;
+      response += `- **Configuration Source**: ${sessionInfo.configSource}\n\n`;
+    }
     
     // Display action execution summary
     response += '### Action Execution Summary\n';

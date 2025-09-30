@@ -1,4 +1,5 @@
 import { BaseTool } from '../../registry/base-tool.js';
+import { getSessionCredentialsSchema } from '../../utils/tool-schema.js';
 
 export class GetCaseViewCalculatedFieldsTool extends BaseTool {
   /**
@@ -73,7 +74,8 @@ export class GetCaseViewCalculatedFieldsTool extends BaseTool {
             },
             required: ['fields'],
             additionalProperties: false
-          }
+          },
+          sessionCredentials: getSessionCredentialsSchema()
         },
         required: ['caseID', 'viewID', 'calculations']
       }
@@ -85,12 +87,17 @@ export class GetCaseViewCalculatedFieldsTool extends BaseTool {
    */
   async execute(params) {
     const { caseID, viewID, calculations } = params;
+    let sessionInfo = null;
 
-    // Validate required parameters using base class
-    const requiredValidation = this.validateRequiredParams(params, ['caseID', 'viewID', 'calculations']);
-    if (requiredValidation) {
-      return requiredValidation;
-    }
+    try {
+      // Initialize session configuration if provided
+      sessionInfo = this.initializeSessionConfig(params);
+
+      // Validate required parameters using base class
+      const requiredValidation = this.validateRequiredParams(params, ['caseID', 'viewID', 'calculations']);
+      if (requiredValidation) {
+        return requiredValidation;
+      }
 
     // Additional validation for calculations structure
     if (!calculations || typeof calculations !== 'object' || Array.isArray(calculations)) {
@@ -159,27 +166,43 @@ export class GetCaseViewCalculatedFieldsTool extends BaseTool {
       }
     }
 
-    // Execute with standardized error handling
-    return await this.executeWithErrorHandling(
-      `Case View Calculated Fields: ${viewID} for ${caseID}`,
-      async () => await this.pegaClient.getCaseViewCalculatedFields(
-        caseID.trim(), 
-        viewID.trim(), 
-        calculations
-      ),
-      { caseID, viewID, calculations }
-    );
+      // Execute with standardized error handling
+      return await this.executeWithErrorHandling(
+        `Case View Calculated Fields: ${viewID} for ${caseID}`,
+        async () => await this.pegaClient.getCaseViewCalculatedFields(
+          caseID.trim(),
+          viewID.trim(),
+          calculations
+        ),
+        { caseID, viewID, calculations, sessionInfo }
+      );
+    } catch (error) {
+      return {
+        content: [{
+          type: 'text',
+          text: `## Error: Get Case View Calculated Fields\n\n**Unexpected Error**: ${error.message}\n\n${sessionInfo ? `**Session**: ${sessionInfo.sessionId} (${sessionInfo.authMode} mode)\n` : ''}*Error occurred at: ${new Date().toISOString()}*`
+        }]
+      };
+    }
   }
 
   /**
    * Override formatSuccessResponse to add calculated fields specific formatting
    */
   formatSuccessResponse(operation, data, options = {}) {
-    const { caseID, viewID, calculations } = options;
-    
+    const { caseID, viewID, calculations, sessionInfo } = options;
+
     let response = `## ${operation}\n\n`;
-    
+
     response += `*Operation completed at: ${new Date().toISOString()}*\n\n`;
+
+    // Session Information (if applicable)
+    if (sessionInfo) {
+      response += `### Session Information\n`;
+      response += `- **Session ID**: ${sessionInfo.sessionId}\n`;
+      response += `- **Authentication Mode**: ${sessionInfo.authMode.toUpperCase()}\n`;
+      response += `- **Configuration Source**: ${sessionInfo.configSource}\n\n`;
+    }
     
     response += '### Request Details\n';
     response += `- **Case ID**: ${caseID}\n`;

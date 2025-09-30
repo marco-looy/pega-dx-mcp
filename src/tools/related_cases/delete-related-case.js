@@ -1,4 +1,5 @@
 import { BaseTool } from '../../registry/base-tool.js';
+import { getSessionCredentialsSchema } from '../../utils/tool-schema.js';
 
 export class DeleteRelatedCaseTool extends BaseTool {
   /**
@@ -25,7 +26,8 @@ export class DeleteRelatedCaseTool extends BaseTool {
           related_caseID: {
             type: 'string',
             description: 'Related case ID to be removed from the primary case. Example: "ON6E5R-DIYRecipe-Work-RecipeCollection R-1009". Must be a complete case identifier including spaces and special characters.'
-          }
+          },
+          sessionCredentials: getSessionCredentialsSchema()
         },
         required: ['caseID', 'related_caseID']
       }
@@ -37,17 +39,30 @@ export class DeleteRelatedCaseTool extends BaseTool {
    */
   async execute(params) {
     const { caseID, related_caseID } = params;
+    let sessionInfo = null;
 
-    // Validate required parameters using base class
-    const requiredValidation = this.validateRequiredParams(params, ['caseID', 'related_caseID']);
-    if (requiredValidation) {
-      return requiredValidation;
+    try {
+      sessionInfo = this.initializeSessionConfig(params);
+
+      // Validate required parameters using base class
+      const requiredValidation = this.validateRequiredParams(params, ['caseID', 'related_caseID']);
+      if (requiredValidation) {
+        return requiredValidation;
+      }
+
+      // Execute with standardized error handling
+      return await this.executeWithErrorHandling(
+        `Delete Related Case: ${related_caseID} from ${caseID}`,
+        async () => await this.pegaClient.deleteRelatedCase(caseID.trim(), related_caseID.trim()),
+        { sessionInfo }
+      );
+    } catch (error) {
+      return {
+        content: [{
+          type: 'text',
+          text: `## Error: Delete Related Case: ${related_caseID} from ${caseID}\n\n**Unexpected Error**: ${error.message}\n\n${sessionInfo ? `**Session**: ${sessionInfo.sessionId} (${sessionInfo.authMode} mode)\n` : ''}*Error occurred at: ${new Date().toISOString()}*`
+        }]
+      };
     }
-
-    // Execute with standardized error handling
-    return await this.executeWithErrorHandling(
-      `Delete Related Case: ${related_caseID} from ${caseID}`,
-      async () => await this.pegaClient.deleteRelatedCase(caseID.trim(), related_caseID.trim())
-    );
   }
 }

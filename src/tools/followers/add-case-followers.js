@@ -1,4 +1,5 @@
 import { BaseTool } from '../../registry/base-tool.js';
+import { getSessionCredentialsSchema } from '../../utils/tool-schema.js';
 
 export class AddCaseFollowersTool extends BaseTool {
   /**
@@ -36,7 +37,8 @@ export class AddCaseFollowersTool extends BaseTool {
               required: ['ID']
             },
             minItems: 1
-          }
+          },
+          sessionCredentials: getSessionCredentialsSchema()
         },
         required: ['caseID', 'users']
       }
@@ -48,34 +50,47 @@ export class AddCaseFollowersTool extends BaseTool {
    */
   async execute(params) {
     const { caseID, users } = params;
+    let sessionInfo = null;
 
-    // Validate required parameters using base class
-    const requiredValidation = this.validateRequiredParams(params, ['caseID', 'users']);
-    if (requiredValidation) {
-      return requiredValidation;
-    }
+    try {
+      sessionInfo = this.initializeSessionConfig(params);
 
-    // Validate users array
-    if (!Array.isArray(users) || users.length === 0) {
-      return {
-        error: 'users parameter must be a non-empty array of user objects.'
-      };
-    }
+      // Validate required parameters using base class
+      const requiredValidation = this.validateRequiredParams(params, ['caseID', 'users']);
+      if (requiredValidation) {
+        return requiredValidation;
+      }
 
-    // Validate each user object
-    for (let i = 0; i < users.length; i++) {
-      const user = users[i];
-      if (!user.ID) {
+      // Validate users array
+      if (!Array.isArray(users) || users.length === 0) {
         return {
-          error: `User at index ${i} is missing required ID field.`
+          error: 'users parameter must be a non-empty array of user objects.'
         };
       }
-    }
 
-    // Execute with standardized error handling
-    return await this.executeWithErrorHandling(
-      `Add Case Followers: ${caseID}`,
-      async () => await this.pegaClient.addCaseFollowers(caseID.trim(), users)
-    );
+      // Validate each user object
+      for (let i = 0; i < users.length; i++) {
+        const user = users[i];
+        if (!user.ID) {
+          return {
+            error: `User at index ${i} is missing required ID field.`
+          };
+        }
+      }
+
+      // Execute with standardized error handling
+      return await this.executeWithErrorHandling(
+        `Add Case Followers: ${caseID}`,
+        async () => await this.pegaClient.addCaseFollowers(caseID.trim(), users),
+        { sessionInfo }
+      );
+    } catch (error) {
+      return {
+        content: [{
+          type: 'text',
+          text: `## Error: Add Case Followers: ${caseID}\n\n**Unexpected Error**: ${error.message}\n\n${sessionInfo ? `**Session**: ${sessionInfo.sessionId} (${sessionInfo.authMode} mode)\n` : ''}*Error occurred at: ${new Date().toISOString()}*`
+        }]
+      };
+    }
   }
 }

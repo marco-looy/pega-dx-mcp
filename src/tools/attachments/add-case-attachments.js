@@ -1,4 +1,5 @@
 import { BaseTool } from '../../registry/base-tool.js';
+import { getSessionCredentialsSchema } from '../../utils/tool-schema.js';
 
 export class AddCaseAttachmentsTool extends BaseTool {
   /**
@@ -55,7 +56,8 @@ export class AddCaseAttachmentsTool extends BaseTool {
             },
             minItems: 1,
             maxItems: 50
-          }
+          },
+          sessionCredentials: getSessionCredentialsSchema()
         },
         required: ['caseID', 'attachments']
       }
@@ -68,24 +70,36 @@ export class AddCaseAttachmentsTool extends BaseTool {
   async execute(params) {
     const { caseID, attachments } = params;
 
-    // Basic parameter validation using base class
-    const requiredValidation = this.validateRequiredParams(params, ['caseID', 'attachments']);
-    if (requiredValidation) {
-      return this.createErrorResponse(`Add Attachments to Case: ${caseID || 'UNKNOWN'}`, { message: requiredValidation.error }, { caseID, attachments });
-    }
+    let sessionInfo = null;
+    try {
+      sessionInfo = this.initializeSessionConfig(params);
 
-    // Additional comprehensive parameter validation for complex logic
-    const validationResult = this.validateParameters(caseID, attachments);
-    if (!validationResult.valid) {
-      return this.createErrorResponse(`Add Attachments to Case: ${caseID}`, { message: validationResult.error }, { caseID, attachments });
-    }
+      // Basic parameter validation using base class
+      const requiredValidation = this.validateRequiredParams(params, ['caseID', 'attachments']);
+      if (requiredValidation) {
+        return this.createErrorResponse(`Add Attachments to Case: ${caseID || 'UNKNOWN'}`, { message: requiredValidation.error }, { caseID, attachments });
+      }
 
-    // Execute with standardized error handling
-    return await this.executeWithErrorHandling(
-      `Add Attachments to Case: ${caseID}`,
-      async () => await this.pegaClient.addCaseAttachments(caseID, attachments),
-      { caseID, attachments }
-    );
+      // Additional comprehensive parameter validation for complex logic
+      const validationResult = this.validateParameters(caseID, attachments);
+      if (!validationResult.valid) {
+        return this.createErrorResponse(`Add Attachments to Case: ${caseID}`, { message: validationResult.error }, { caseID, attachments });
+      }
+
+      // Execute with standardized error handling
+      return await this.executeWithErrorHandling(
+        `Add Attachments to Case: ${caseID}`,
+        async () => await this.pegaClient.addCaseAttachments(caseID, attachments),
+        { caseID, attachments, sessionInfo }
+      );
+    } catch (error) {
+      return {
+        content: [{
+          type: 'text',
+          text: `## Error: Add Attachments to Case\n\n**Unexpected Error**: ${error.message}\n\n${sessionInfo ? `**Session**: ${sessionInfo.sessionId} (${sessionInfo.authMode} mode)\n` : ''}*Error occurred at: ${new Date().toISOString()}*`
+        }]
+      };
+    }
   }
 
   /**
@@ -250,11 +264,18 @@ export class AddCaseAttachmentsTool extends BaseTool {
    * Override formatSuccessResponse to add case attachments specific formatting
    */
   formatSuccessResponse(operation, data, options = {}) {
-    const { caseID, attachments } = options;
+    const { caseID, attachments, sessionInfo } = options;
     
     let response = `## ${operation}\n\n`;
-    
+
     response += `*Operation completed at: ${new Date().toISOString()}*\n\n`;
+
+    if (sessionInfo) {
+      response += `### Session Information\n`;
+      response += `- **Session ID**: ${sessionInfo.sessionId}\n`;
+      response += `- **Authentication Mode**: ${sessionInfo.authMode.toUpperCase()}\n`;
+      response += `- **Configuration Source**: ${sessionInfo.configSource}\n\n`;
+    }
     
     response += `Successfully attached ${attachments.length} ${attachments.length === 1 ? 'item' : 'items'} to the case.\n\n`;
 

@@ -1,4 +1,5 @@
 import { BaseTool } from '../../registry/base-tool.js';
+import { getSessionCredentialsSchema } from '../../utils/tool-schema.js';
 
 export class GetNextAssignmentTool extends BaseTool {
   /**
@@ -27,7 +28,8 @@ export class GetNextAssignmentTool extends BaseTool {
           pageName: {
             type: 'string',
             description: 'If provided, view metadata for specific page name will be returned (only used when viewType is "page")'
-          }
+          },
+          sessionCredentials: getSessionCredentialsSchema()
         },
         required: []
       }
@@ -41,42 +43,63 @@ export class GetNextAssignmentTool extends BaseTool {
     // Handle null/undefined params
     const safeParams = params || {};
     const { viewType = 'page', pageName } = safeParams;
+    let sessionInfo = null;
 
-    // Validate enum parameters using base class
-    const enumValidation = this.validateEnumParams(safeParams, {
-      viewType: ['form', 'page']
-    });
-    if (enumValidation) {
-      return enumValidation;
-    }
+    try {
+      // Initialize session configuration if provided
+      sessionInfo = this.initializeSessionConfig(safeParams);
 
-    // Validate pageName usage
-    if (pageName && viewType !== 'page') {
+      // Validate enum parameters using base class
+      const enumValidation = this.validateEnumParams(safeParams, {
+        viewType: ['form', 'page']
+      });
+      if (enumValidation) {
+        return enumValidation;
+      }
+
+      // Validate pageName usage
+      if (pageName && viewType !== 'page') {
+        return {
+          error: 'pageName parameter can only be used when viewType is set to "page".'
+        };
+      }
+
+      // Execute with standardized error handling
+      return await this.executeWithErrorHandling(
+        'Next Assignment',
+        async () => await this.pegaClient.getNextAssignment({
+          viewType,
+          pageName
+        }),
+        { viewType, pageName, sessionInfo }
+      );
+    } catch (error) {
       return {
-        error: 'pageName parameter can only be used when viewType is set to "page".'
+        content: [{
+          type: 'text',
+          text: `## Error: Next Assignment\n\n**Unexpected Error**: ${error.message}\n\n${sessionInfo ? `**Session**: ${sessionInfo.sessionId} (${sessionInfo.authMode} mode)\n` : ''}*Error occurred at: ${new Date().toISOString()}*`
+        }]
       };
     }
-
-    // Execute with standardized error handling
-    return await this.executeWithErrorHandling(
-      'Next Assignment',
-      async () => await this.pegaClient.getNextAssignment({
-        viewType,
-        pageName
-      }),
-      { viewType, pageName }
-    );
   }
 
   /**
    * Override formatSuccessResponse to add next assignment specific formatting
    */
   formatSuccessResponse(operation, data, options = {}) {
-    const { viewType } = options;
-    
+    const { viewType, sessionInfo } = options;
+
     let response = `## ${operation}\n\n`;
-    
+
     response += `*Operation completed at: ${new Date().toISOString()}*\n\n`;
+
+    // Session Information (if applicable)
+    if (sessionInfo) {
+      response += `### Session Information\n`;
+      response += `- **Session ID**: ${sessionInfo.sessionId}\n`;
+      response += `- **Authentication Mode**: ${sessionInfo.authMode.toUpperCase()}\n`;
+      response += `- **Configuration Source**: ${sessionInfo.configSource}\n\n`;
+    }
     
     if (data.data) {
       response += '### Assignment Information\n';

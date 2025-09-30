@@ -1,4 +1,5 @@
 import { BaseTool } from '../../registry/base-tool.js';
+import { getSessionCredentialsSchema } from '../../utils/tool-schema.js';
 
 export class GetCaseAttachmentsTool extends BaseTool {
   /**
@@ -26,7 +27,8 @@ export class GetCaseAttachmentsTool extends BaseTool {
             type: 'boolean',
             description: 'When set to true, thumbnails are added as part of the response as base64 encoded strings. Thumbnails are available for images of the following types: gif, jpg, jpeg, png, and others. Default: false. Note: Enabling thumbnails significantly increases response size.',
             default: false
-          }
+          },
+          sessionCredentials: getSessionCredentialsSchema()
         },
         required: ['caseID']
       }
@@ -39,26 +41,38 @@ export class GetCaseAttachmentsTool extends BaseTool {
   async execute(params) {
     const { caseID, includeThumbnails = false } = params;
 
-    // Basic parameter validation using base class
-    const requiredValidation = this.validateRequiredParams(params, ['caseID']);
-    if (requiredValidation) {
-      return requiredValidation;
-    }
+    let sessionInfo = null;
+    try {
+      sessionInfo = this.initializeSessionConfig(params);
 
-    // Additional comprehensive parameter validation for complex logic
-    const validationResult = this.validateParameters(caseID, includeThumbnails);
-    if (!validationResult.valid) {
+      // Basic parameter validation using base class
+      const requiredValidation = this.validateRequiredParams(params, ['caseID']);
+      if (requiredValidation) {
+        return requiredValidation;
+      }
+
+      // Additional comprehensive parameter validation for complex logic
+      const validationResult = this.validateParameters(caseID, includeThumbnails);
+      if (!validationResult.valid) {
+        return {
+          error: validationResult.error
+        };
+      }
+
+      // Execute with standardized error handling
+      return await this.executeWithErrorHandling(
+        `Case Attachments: ${caseID}`,
+        async () => await this.pegaClient.getCaseAttachments(caseID, { includeThumbnails }),
+        { caseID, includeThumbnails, sessionInfo }
+      );
+    } catch (error) {
       return {
-        error: validationResult.error
+        content: [{
+          type: 'text',
+          text: `## Error: Case Attachments\n\n**Unexpected Error**: ${error.message}\n\n${sessionInfo ? `**Session**: ${sessionInfo.sessionId} (${sessionInfo.authMode} mode)\n` : ''}*Error occurred at: ${new Date().toISOString()}*`
+        }]
       };
     }
-
-    // Execute with standardized error handling
-    return await this.executeWithErrorHandling(
-      `Case Attachments: ${caseID}`,
-      async () => await this.pegaClient.getCaseAttachments(caseID, { includeThumbnails }),
-      { caseID, includeThumbnails }
-    );
   }
 
   /**
@@ -88,12 +102,19 @@ export class GetCaseAttachmentsTool extends BaseTool {
    * Override formatSuccessResponse to add case attachments specific formatting
    */
   formatSuccessResponse(operation, data, options = {}) {
-    const { caseID, includeThumbnails } = options;
+    const { caseID, includeThumbnails, sessionInfo } = options;
     const { attachments = [] } = data;
     
     let response = `## ${operation}\n\n`;
-    
+
     response += `*Operation completed at: ${new Date().toISOString()}*\n\n`;
+
+    if (sessionInfo) {
+      response += `### Session Information\n`;
+      response += `- **Session ID**: ${sessionInfo.sessionId}\n`;
+      response += `- **Authentication Mode**: ${sessionInfo.authMode.toUpperCase()}\n`;
+      response += `- **Configuration Source**: ${sessionInfo.configSource}\n\n`;
+    }
     
     if (attachments.length === 0) {
       response += `No attachments found for this case.\n\n`;

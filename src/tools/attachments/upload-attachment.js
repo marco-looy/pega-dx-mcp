@@ -1,4 +1,5 @@
 import { BaseTool } from '../../registry/base-tool.js';
+import { getSessionCredentialsSchema } from '../../utils/tool-schema.js';
 import fs from 'fs';
 import path from 'path';
 import { lookup as lookupMimeType } from 'mime-types';
@@ -45,7 +46,8 @@ export class UploadAttachmentTool extends BaseTool {
             type: 'boolean',
             description: 'Whether to append a unique identifier to the filename to prevent naming conflicts. Pega will add timestamp-based unique ID to filename.',
             default: true
-          }
+          },
+          sessionCredentials: getSessionCredentialsSchema()
         }
       }
     };
@@ -57,34 +59,36 @@ export class UploadAttachmentTool extends BaseTool {
   async execute(params) {
     const { filePath, fileContent, fileUrl, fileName, mimeType, appendUniqueIdToFileName = true } = params;
 
-    // Validate that exactly one input method is provided
-    const inputMethods = [filePath, fileContent, fileUrl].filter(Boolean);
-    if (inputMethods.length === 0) {
-      return {
-        error: 'No file input provided. Please specify one of: filePath, fileContent, or fileUrl.'
-      };
-    }
-    if (inputMethods.length > 1) {
-      return {
-        error: 'Multiple file input methods provided. Please specify only one of: filePath, fileContent, or fileUrl.'
-      };
-    }
-
-    // Validate fileName when using fileContent or fileUrl
-    if ((fileContent || fileUrl) && (!fileName || typeof fileName !== 'string' || fileName.trim() === '')) {
-      return {
-        error: 'fileName parameter is required when using fileContent or fileUrl input methods.'
-      };
-    }
-
-    // Validate appendUniqueIdToFileName type
-    if (typeof appendUniqueIdToFileName !== 'boolean') {
-      return {
-        error: 'appendUniqueIdToFileName parameter must be a boolean value.'
-      };
-    }
-
+    let sessionInfo = null;
     try {
+      sessionInfo = this.initializeSessionConfig(params);
+
+      // Validate that exactly one input method is provided
+      const inputMethods = [filePath, fileContent, fileUrl].filter(Boolean);
+      if (inputMethods.length === 0) {
+        return {
+          error: 'No file input provided. Please specify one of: filePath, fileContent, or fileUrl.'
+        };
+      }
+      if (inputMethods.length > 1) {
+        return {
+          error: 'Multiple file input methods provided. Please specify only one of: filePath, fileContent, or fileUrl.'
+        };
+      }
+
+      // Validate fileName when using fileContent or fileUrl
+      if ((fileContent || fileUrl) && (!fileName || typeof fileName !== 'string' || fileName.trim() === '')) {
+        return {
+          error: 'fileName parameter is required when using fileContent or fileUrl input methods.'
+        };
+      }
+
+      // Validate appendUniqueIdToFileName type
+      if (typeof appendUniqueIdToFileName !== 'boolean') {
+        return {
+          error: 'appendUniqueIdToFileName parameter must be a boolean value.'
+        };
+      }
       let fileBuffer, finalFileName, finalMimeType;
 
       // Process file input based on method provided
@@ -118,16 +122,20 @@ export class UploadAttachmentTool extends BaseTool {
           mimeType: finalMimeType,
           appendUniqueIdToFileName
         }),
-        { 
+        {
           fileName: finalFileName,
           mimeType: finalMimeType,
           fileSize: fileBuffer.length,
-          appendUniqueIdToFileName
+          appendUniqueIdToFileName,
+          sessionInfo
         }
       );
     } catch (error) {
       return {
-        error: `Unexpected error while uploading attachment: ${error.message}`
+        content: [{
+          type: 'text',
+          text: `## Error: Upload Attachment\n\n**Unexpected Error**: ${error.message}\n\n${sessionInfo ? `**Session**: ${sessionInfo.sessionId} (${sessionInfo.authMode} mode)\n` : ''}*Error occurred at: ${new Date().toISOString()}*`
+        }]
       };
     }
   }
@@ -302,11 +310,18 @@ export class UploadAttachmentTool extends BaseTool {
    * Override formatSuccessResponse to add upload attachment specific formatting
    */
   formatSuccessResponse(operation, data, options = {}) {
-    const { fileName, mimeType, fileSize, appendUniqueIdToFileName } = options;
+    const { fileName, mimeType, fileSize, appendUniqueIdToFileName, sessionInfo } = options;
     
     let response = `## ${operation}\n\n`;
-    
+
     response += `*Operation completed at: ${new Date().toISOString()}*\n\n`;
+
+    if (sessionInfo) {
+      response += `### Session Information\n`;
+      response += `- **Session ID**: ${sessionInfo.sessionId}\n`;
+      response += `- **Authentication Mode**: ${sessionInfo.authMode.toUpperCase()}\n`;
+      response += `- **Configuration Source**: ${sessionInfo.configSource}\n\n`;
+    }
     
     // Display temporary attachment ID prominently
     if (data.ID) {

@@ -1,4 +1,5 @@
 import { BaseTool } from '../../registry/base-tool.js';
+import { getSessionCredentialsSchema } from '../../utils/tool-schema.js';
 
 export class ChangeToStageTool extends BaseTool {
   /**
@@ -40,7 +41,8 @@ export class ChangeToStageTool extends BaseTool {
             type: 'boolean',
             description: 'Whether to clean up the processes, including assignments, of the stage being switched away from. Default is true. Set to false to opt out of this cleanup feature.',
             default: true
-          }
+          },
+          sessionCredentials: getSessionCredentialsSchema()
         },
         required: ['caseID', 'stageID']
       }
@@ -53,6 +55,11 @@ export class ChangeToStageTool extends BaseTool {
   async execute(params) {
     console.log(`[DEBUG] change_to_stage execute called with params:`, JSON.stringify(params, null, 2));
     const { caseID, stageID, eTag, viewType, cleanupProcesses } = params;
+    let sessionInfo = null;
+
+    try {
+      // Initialize session configuration if provided
+      sessionInfo = this.initializeSessionConfig(params);
 
     // Validate required parameters using base class
     const requiredValidation = this.validateRequiredParams(params, ['caseID', 'stageID']);
@@ -119,11 +126,19 @@ export class ChangeToStageTool extends BaseTool {
       };
     }
 
-    // Execute with standardized error handling
-    return await this.executeWithErrorHandling(
-      `Change to Stage: ${caseID} -> ${stageID}${autoFetchedETag ? ' (auto-fetched eTag)' : ''}`,
-      async () => await this.pegaClient.changeToStage(caseID.trim(), stageID.trim(), finalETag.trim(), { viewType, cleanupProcesses }),
-      { viewType, cleanupProcesses, autoFetchedETag }
-    );
+      // Execute with standardized error handling
+      return await this.executeWithErrorHandling(
+        `Change to Stage: ${caseID} -> ${stageID}${autoFetchedETag ? ' (auto-fetched eTag)' : ''}`,
+        async () => await this.pegaClient.changeToStage(caseID.trim(), stageID.trim(), finalETag.trim(), { viewType, cleanupProcesses }),
+        { viewType, cleanupProcesses, autoFetchedETag, sessionInfo }
+      );
+    } catch (error) {
+      return {
+        content: [{
+          type: 'text',
+          text: `## Error: Change to Stage\n\n**Unexpected Error**: ${error.message}\n\n${sessionInfo ? `**Session**: ${sessionInfo.sessionId} (${sessionInfo.authMode} mode)\n` : ''}*Error occurred at: ${new Date().toISOString()}*`
+        }]
+      };
+    }
   }
 }

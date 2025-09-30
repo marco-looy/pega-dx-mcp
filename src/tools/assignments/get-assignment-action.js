@@ -1,4 +1,5 @@
 import { BaseTool } from '../../registry/base-tool.js';
+import { getSessionCredentialsSchema } from '../../utils/tool-schema.js';
 
 export class GetAssignmentActionTool extends BaseTool {
   /**
@@ -36,7 +37,8 @@ export class GetAssignmentActionTool extends BaseTool {
             type: 'boolean',
             description: 'When true, excludes information on all actions performable on the case. Set to true if action information was already retrieved in a previous call. When false, response includes data.caseInfo.availableActions and data.caseInfo.assignments.actions fields',
             default: false
-          }
+          },
+          sessionCredentials: getSessionCredentialsSchema()
         },
         required: ['assignmentID', 'actionID']
       }
@@ -48,53 +50,74 @@ export class GetAssignmentActionTool extends BaseTool {
    */
   async execute(params) {
     const { assignmentID, actionID, viewType = 'page', excludeAdditionalActions = false } = params;
+    let sessionInfo = null;
 
-    // Basic parameter validation using base class
-    const requiredValidation = this.validateRequiredParams(params, ['assignmentID', 'actionID']);
-    if (requiredValidation) {
-      return requiredValidation;
-    }
+    try {
+      // Initialize session configuration if provided
+      sessionInfo = this.initializeSessionConfig(params);
 
-    // Validate enum parameters using base class
-    const enumValidation = this.validateEnumParams(params, {
-      viewType: ['form', 'page']
-    });
-    if (enumValidation) {
-      return enumValidation;
-    }
+      // Basic parameter validation using base class
+      const requiredValidation = this.validateRequiredParams(params, ['assignmentID', 'actionID']);
+      if (requiredValidation) {
+        return requiredValidation;
+      }
 
-    // Validate excludeAdditionalActions if provided
-    if (excludeAdditionalActions !== undefined && typeof excludeAdditionalActions !== 'boolean') {
+      // Validate enum parameters using base class
+      const enumValidation = this.validateEnumParams(params, {
+        viewType: ['form', 'page']
+      });
+      if (enumValidation) {
+        return enumValidation;
+      }
+
+      // Validate excludeAdditionalActions if provided
+      if (excludeAdditionalActions !== undefined && typeof excludeAdditionalActions !== 'boolean') {
+        return {
+          error: 'Invalid excludeAdditionalActions parameter. Must be a boolean value.'
+        };
+      }
+
+      // Execute with standardized error handling
+      return await this.executeWithErrorHandling(
+        `Assignment Action: ${actionID} for ${assignmentID}`,
+        async () => await this.pegaClient.getAssignmentAction(
+          assignmentID.trim(),
+          actionID.trim(),
+          {
+            viewType,
+            excludeAdditionalActions
+          }
+        ),
+        { assignmentID, actionID, viewType, excludeAdditionalActions, sessionInfo }
+      );
+    } catch (error) {
       return {
-        error: 'Invalid excludeAdditionalActions parameter. Must be a boolean value.'
+        content: [{
+          type: 'text',
+          text: `## Error: Assignment Action\n\n**Unexpected Error**: ${error.message}\n\n${sessionInfo ? `**Session**: ${sessionInfo.sessionId} (${sessionInfo.authMode} mode)\n` : ''}*Error occurred at: ${new Date().toISOString()}*`
+        }]
       };
     }
-
-    // Execute with standardized error handling
-    return await this.executeWithErrorHandling(
-      `Assignment Action: ${actionID} for ${assignmentID}`,
-      async () => await this.pegaClient.getAssignmentAction(
-        assignmentID.trim(), 
-        actionID.trim(), 
-        {
-          viewType,
-          excludeAdditionalActions
-        }
-      ),
-      { assignmentID, actionID, viewType, excludeAdditionalActions }
-    );
   }
 
   /**
    * Override formatSuccessResponse to add assignment action specific formatting
    */
   formatSuccessResponse(operation, data, options = {}) {
-    const { assignmentID, actionID, viewType, excludeAdditionalActions } = options;
+    const { assignmentID, actionID, viewType, excludeAdditionalActions, sessionInfo } = options;
     const eTag = data.eTag || data.etag;
-    
+
     let response = `## ${operation}\n\n`;
-    
+
     response += `*Operation completed at: ${new Date().toISOString()}*\n\n`;
+
+    // Session Information (if applicable)
+    if (sessionInfo) {
+      response += `### Session Information\n`;
+      response += `- **Session ID**: ${sessionInfo.sessionId}\n`;
+      response += `- **Authentication Mode**: ${sessionInfo.authMode.toUpperCase()}\n`;
+      response += `- **Configuration Source**: ${sessionInfo.configSource}\n\n`;
+    }
     
     response += `**Assignment ID**: ${assignmentID}\n`;
     response += `**Action ID**: ${actionID}\n`;

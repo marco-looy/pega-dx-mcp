@@ -1,4 +1,5 @@
 import { BaseTool } from '../../registry/base-tool.js';
+import { getSessionCredentialsSchema } from '../../utils/tool-schema.js';
 
 export class DeleteAttachmentTool extends BaseTool {
   /**
@@ -21,7 +22,8 @@ export class DeleteAttachmentTool extends BaseTool {
           attachmentID: {
             type: 'string',
             description: 'Full ID of the attachment to delete. Format example: "LINK-ATTACHMENT ONNS8O-TESTAPP-WORK B-2001!20211115T061748.900 GMT". This is the complete Link-Attachment instance pzInsKey that uniquely identifies the attachment in the Pega system. The attachment must exist and the user must have delete privileges for the attachment category.'
-          }
+          },
+          sessionCredentials: getSessionCredentialsSchema()
         },
         required: ['attachmentID']
       }
@@ -34,26 +36,38 @@ export class DeleteAttachmentTool extends BaseTool {
   async execute(params) {
     const { attachmentID } = params;
 
-    // Basic parameter validation using base class
-    const requiredValidation = this.validateRequiredParams(params, ['attachmentID']);
-    if (requiredValidation) {
-      return requiredValidation;
-    }
+    let sessionInfo = null;
+    try {
+      sessionInfo = this.initializeSessionConfig(params);
 
-    // Additional comprehensive parameter validation
-    const validationResult = this.validateParameters(attachmentID);
-    if (!validationResult.valid) {
+      // Basic parameter validation using base class
+      const requiredValidation = this.validateRequiredParams(params, ['attachmentID']);
+      if (requiredValidation) {
+        return requiredValidation;
+      }
+
+      // Additional comprehensive parameter validation
+      const validationResult = this.validateParameters(attachmentID);
+      if (!validationResult.valid) {
+        return {
+          error: validationResult.error
+        };
+      }
+
+      // Execute with standardized error handling
+      return await this.executeWithErrorHandling(
+        `Delete Attachment: ${attachmentID}`,
+        async () => await this.pegaClient.deleteAttachment(attachmentID),
+        { attachmentID, sessionInfo }
+      );
+    } catch (error) {
       return {
-        error: validationResult.error
+        content: [{
+          type: 'text',
+          text: `## Error: Delete Attachment\n\n**Unexpected Error**: ${error.message}\n\n${sessionInfo ? `**Session**: ${sessionInfo.sessionId} (${sessionInfo.authMode} mode)\n` : ''}*Error occurred at: ${new Date().toISOString()}*`
+        }]
       };
     }
-
-    // Execute with standardized error handling
-    return await this.executeWithErrorHandling(
-      `Delete Attachment: ${attachmentID}`,
-      async () => await this.pegaClient.deleteAttachment(attachmentID),
-      { attachmentID }
-    );
   }
 
   /**
@@ -83,11 +97,18 @@ export class DeleteAttachmentTool extends BaseTool {
    * Override formatSuccessResponse for delete-specific formatting
    */
   formatSuccessResponse(operation, data, options = {}) {
-    const { attachmentID } = options;
+    const { attachmentID, sessionInfo } = options;
     
     let response = `## ${operation}\n\n`;
-    
+
     response += `*Operation completed at: ${new Date().toISOString()}*\n\n`;
+
+    if (sessionInfo) {
+      response += `### Session Information\n`;
+      response += `- **Session ID**: ${sessionInfo.sessionId}\n`;
+      response += `- **Authentication Mode**: ${sessionInfo.authMode.toUpperCase()}\n`;
+      response += `- **Configuration Source**: ${sessionInfo.configSource}\n\n`;
+    }
 
     response += `### ✅ Attachment Successfully Deleted\n\n`;
     response += `**Attachment ID**: ${attachmentID}\n\n`;

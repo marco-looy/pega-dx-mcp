@@ -1,4 +1,5 @@
 import { BaseTool } from '../../registry/base-tool.js';
+import { getSessionCredentialsSchema } from '../../utils/tool-schema.js';
 
 export class PerformBulkActionTool extends BaseTool {
   /**
@@ -60,7 +61,8 @@ export class PerformBulkActionTool extends BaseTool {
             items: {
               type: 'object'
             }
-          }
+          },
+          sessionCredentials: getSessionCredentialsSchema()
         },
         required: ['actionID', 'cases']
       }
@@ -73,6 +75,11 @@ export class PerformBulkActionTool extends BaseTool {
    */
   async execute(params) {
     const { actionID, cases, runningMode, content, pageInstructions, attachments } = params;
+    let sessionInfo = null;
+
+    try {
+      // Initialize session configuration if provided
+      sessionInfo = this.initializeSessionConfig(params);
 
     // 1. Basic parameter validation using base class
     const requiredValidation = this.validateRequiredParams(params, ['actionID', 'cases']);
@@ -129,18 +136,26 @@ export class PerformBulkActionTool extends BaseTool {
       };
     }
 
-    // 5. Execute with standardized error handling
-    return await this.executeWithErrorHandling(
-      `Bulk Action: ${actionID} on ${cases.length} cases`,
-      async () => await this.pegaClient.performBulkAction(actionID.trim(), {
-        cases,
-        runningMode,
-        content,
-        pageInstructions,
-        attachments
-      }),
-      { actionID, cases, runningMode, content, pageInstructions, attachments }
-    );
+      // 5. Execute with standardized error handling
+      return await this.executeWithErrorHandling(
+        `Bulk Action: ${actionID} on ${cases.length} cases`,
+        async () => await this.pegaClient.performBulkAction(actionID.trim(), {
+          cases,
+          runningMode,
+          content,
+          pageInstructions,
+          attachments
+        }),
+        { actionID, cases, runningMode, content, pageInstructions, attachments, sessionInfo }
+      );
+    } catch (error) {
+      return {
+        content: [{
+          type: 'text',
+          text: `## Error: Perform Bulk Action\n\n**Unexpected Error**: ${error.message}\n\n${sessionInfo ? `**Session**: ${sessionInfo.sessionId} (${sessionInfo.authMode} mode)\n` : ''}*Error occurred at: ${new Date().toISOString()}*`
+        }]
+      };
+    }
   }
 
   /**
@@ -148,11 +163,19 @@ export class PerformBulkActionTool extends BaseTool {
    * IMPORTANT: Include ALL data fields and formatting specified by user
    */
   formatSuccessResponse(operation, data, options = {}) {
-    const { actionID, cases, runningMode, content, pageInstructions, attachments } = options;
-    
+    const { actionID, cases, runningMode, content, pageInstructions, attachments, sessionInfo } = options;
+
     let response = `## ${operation}\n\n`;
-    
+
     response += `*Operation completed at: ${new Date().toISOString()}*\n\n`;
+
+    // Session Information (if applicable)
+    if (sessionInfo) {
+      response += `### Session Information\n`;
+      response += `- **Session ID**: ${sessionInfo.sessionId}\n`;
+      response += `- **Authentication Mode**: ${sessionInfo.authMode.toUpperCase()}\n`;
+      response += `- **Configuration Source**: ${sessionInfo.configSource}\n\n`;
+    }
     
     response += `**Execution Mode**: ${runningMode === 'async' ? 'Asynchronous (Launchpad)' : 'Synchronous (Infinity)'}\n\n`;
     

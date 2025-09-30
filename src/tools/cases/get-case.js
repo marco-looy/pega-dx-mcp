@@ -1,4 +1,5 @@
 import { BaseTool } from '../../registry/base-tool.js';
+import { getSessionCredentialsSchema } from '../../utils/tool-schema.js';
 
 export class GetCaseTool extends BaseTool {
   /**
@@ -35,7 +36,8 @@ export class GetCaseTool extends BaseTool {
           originChannel: {
             type: 'string',
             description: 'Origin of this service. E.g. - Web, Mobile etc.'
-          }
+          },
+          sessionCredentials: getSessionCredentialsSchema()
         },
         required: ['caseID']
       }
@@ -47,8 +49,13 @@ export class GetCaseTool extends BaseTool {
    */
   async execute(params) {
     const { caseID, viewType, pageName, originChannel } = params;
+    let sessionInfo = null;
 
-    // Validate required parameters using base class
+    try {
+      // Initialize session configuration if provided
+      sessionInfo = this.initializeSessionConfig(params);
+
+      // Validate required parameters using base class
     const requiredValidation = this.validateRequiredParams(params, ['caseID']);
     if (requiredValidation) {
       return requiredValidation;
@@ -69,22 +76,42 @@ export class GetCaseTool extends BaseTool {
       };
     }
 
-    // Execute with standardized error handling
-    return await this.executeWithErrorHandling(
-      `Case Details: ${caseID}`,
-      async () => await this.pegaClient.getCase(caseID.trim(), { viewType, pageName, originChannel }),
-      { caseID, viewType, pageName, originChannel }
-    );
+      // Execute with standardized error handling
+      return await this.executeWithErrorHandling(
+        `Case Details: ${caseID}`,
+        async () => await this.pegaClient.getCase(caseID.trim(), { viewType, pageName, originChannel }),
+        { caseID, viewType, pageName, originChannel, sessionInfo }
+      );
+    } catch (error) {
+      return {
+        content: [{
+          type: 'text',
+          text: `## Error: Get Case
+
+**Unexpected Error**: ${error.message}
+
+${sessionInfo ? `**Session**: ${sessionInfo.sessionId} (${sessionInfo.authMode} mode)\n` : ''}*Error occurred at: ${new Date().toISOString()}*`
+        }]
+      };
+    }
   }
 
   /**
    * Override formatSuccessResponse to display eTag information
    */
   formatSuccessResponse(operation, data, options = {}) {
-    const { caseID } = options;
-    
+    const { caseID, sessionInfo } = options;
+
     let response = `## ${operation}\n\n`;
     response += `*Operation completed at: ${new Date().toISOString()}*\n\n`;
+
+    // Session Information (if applicable)
+    if (sessionInfo) {
+      response += `### Session Information\n`;
+      response += `- **Session ID**: ${sessionInfo.sessionId}\n`;
+      response += `- **Authentication Mode**: ${sessionInfo.authMode.toUpperCase()}\n`;
+      response += `- **Configuration Source**: ${sessionInfo.configSource}\n\n`;
+    }
     
     // Display eTag information prominently if available
     if (data.eTag) {

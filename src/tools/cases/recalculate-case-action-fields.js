@@ -1,4 +1,5 @@
 import { BaseTool } from '../../registry/base-tool.js';
+import { getSessionCredentialsSchema } from '../../utils/tool-schema.js';
 
 export class RecalculateCaseActionFieldsTool extends BaseTool {
   /**
@@ -89,7 +90,8 @@ export class RecalculateCaseActionFieldsTool extends BaseTool {
           originChannel: {
             type: 'string',
             description: 'Optional origin channel identifier for this service request. Indicates the source of the request for tracking and audit purposes. Examples: "Web", "Mobile", "WebChat". Default value is "Web" if not specified.'
-          }
+          },
+          sessionCredentials: getSessionCredentialsSchema()
         },
         required: ['caseID', 'actionID', 'calculations']
       }
@@ -100,15 +102,20 @@ export class RecalculateCaseActionFieldsTool extends BaseTool {
    * Execute the recalculate case action fields operation
    */
   async execute(params) {
-    const { 
-      caseID, 
-      actionID, 
+    const {
+      caseID,
+      actionID,
       eTag,
       calculations,
-      content, 
+      content,
       pageInstructions,
-      originChannel 
+      originChannel
     } = params;
+    let sessionInfo = null;
+
+    try {
+      // Initialize session configuration if provided
+      sessionInfo = this.initializeSessionConfig(params);
 
     // Basic parameter validation using base class
     const requiredValidation = this.validateRequiredParams(params, ['caseID', 'actionID', 'calculations']);
@@ -251,11 +258,10 @@ export class RecalculateCaseActionFieldsTool extends BaseTool {
       };
     }
 
-    // Execute the API call directly and handle custom formatting
-    try {
+      // Execute the API call directly and handle custom formatting
       const apiResult = await this.pegaClient.recalculateCaseActionFields(
-        caseID.trim(), 
-        actionID.trim(), 
+        caseID.trim(),
+        actionID.trim(),
         finalETag.trim(),
         calculations,
         {
@@ -264,7 +270,7 @@ export class RecalculateCaseActionFieldsTool extends BaseTool {
           originChannel
         }
       );
-      
+
       if (apiResult.success) {
         return {
           content: [
@@ -274,7 +280,8 @@ export class RecalculateCaseActionFieldsTool extends BaseTool {
                 calculations,
                 content,
                 pageInstructions,
-                originChannel
+                originChannel,
+                sessionInfo
               })
             }
           ]
@@ -297,7 +304,10 @@ export class RecalculateCaseActionFieldsTool extends BaseTool {
       }
     } catch (error) {
       return {
-        error: `Unexpected error during recalculating fields and whens for case action ${actionID} on case ${caseID}: ${error.message}`
+        content: [{
+          type: 'text',
+          text: `## Error: Recalculate Case Action Fields\n\n**Unexpected Error**: ${error.message}\n\n${sessionInfo ? `**Session**: ${sessionInfo.sessionId} (${sessionInfo.authMode} mode)\n` : ''}*Error occurred at: ${new Date().toISOString()}*`
+        }]
       };
     }
   }
@@ -306,9 +316,19 @@ export class RecalculateCaseActionFieldsTool extends BaseTool {
    * Format successful response for display
    */
   formatSuccessResponse(caseID, actionID, data, eTag, options) {
-    const { calculations, content, pageInstructions, originChannel } = options;
-    
+    const { calculations, content, pageInstructions, originChannel, sessionInfo } = options;
+
     let response = `## Case Action Field Recalculation Results: ${actionID}\n\n`;
+    response += `*Operation completed at: ${new Date().toISOString()}*\n\n`;
+
+    // Session Information (if applicable)
+    if (sessionInfo) {
+      response += `### Session Information\n`;
+      response += `- **Session ID**: ${sessionInfo.sessionId}\n`;
+      response += `- **Authentication Mode**: ${sessionInfo.authMode.toUpperCase()}\n`;
+      response += `- **Configuration Source**: ${sessionInfo.configSource}\n\n`;
+    }
+
     response += `**Case ID**: ${caseID}\n`;
     response += `**Action ID**: ${actionID}\n`;
     response += `**eTag Used**: ${eTag}\n`;

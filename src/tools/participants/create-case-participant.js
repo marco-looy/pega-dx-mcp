@@ -1,4 +1,5 @@
 import { BaseTool } from '../../registry/base-tool.js';
+import { getSessionCredentialsSchema } from '../../utils/tool-schema.js';
 
 export class CreateCaseParticipantTool extends BaseTool {
   /**
@@ -66,7 +67,8 @@ export class CreateCaseParticipantTool extends BaseTool {
               description: 'Page operation object with instruction type and target'
             },
             description: 'Optional list of page-related operations for embedded pages, page lists, or page groups included in the participant creation view.'
-          }
+          },
+          sessionCredentials: getSessionCredentialsSchema()
         },
         required: ['caseID', 'content', 'participantRoleID']
       }
@@ -78,73 +80,84 @@ export class CreateCaseParticipantTool extends BaseTool {
    */
   async execute(params) {
     const { caseID, eTag, content, participantRoleID, viewType, pageInstructions } = params;
+    let sessionInfo = null;
 
-    // Validate required parameters using base class
-    const requiredValidation = this.validateRequiredParams(params, ['caseID', 'content', 'participantRoleID']);
-    if (requiredValidation) {
-      return requiredValidation;
-    }
+    try {
+      sessionInfo = this.initializeSessionConfig(params);
 
-    // Validate enum parameters
-    const enumValidation = this.validateEnumParams(params, {
-      viewType: ['form', 'none']
-    });
-    if (enumValidation) {
-      return enumValidation;
-    }
+      // Validate required parameters using base class
+      const requiredValidation = this.validateRequiredParams(params, ['caseID', 'content', 'participantRoleID']);
+      if (requiredValidation) {
+        return requiredValidation;
+      }
 
-    // Execute with standardized error handling
-// Auto-fetch eTag if not provided
-    let finalETag = eTag;
-    let autoFetchedETag = false;
-    
-    if (!finalETag) {
-      try {
-        console.log(`Auto-fetching latest eTag for participant operation on ${caseID}...`);
-        const caseResponse = await this.pegaClient.getCase(caseID.trim());
-        
-        if (!caseResponse || !caseResponse.success) {
-          const errorMsg = `Failed to auto-fetch eTag: ${caseResponse?.error?.message || 'Unknown error'}`;
+      // Validate enum parameters
+      const enumValidation = this.validateEnumParams(params, {
+        viewType: ['form', 'none']
+      });
+      if (enumValidation) {
+        return enumValidation;
+      }
+
+      // Auto-fetch eTag if not provided
+      let finalETag = eTag;
+      let autoFetchedETag = false;
+
+      if (!finalETag) {
+        try {
+          console.log(`Auto-fetching latest eTag for participant operation on ${caseID}...`);
+          const caseResponse = await this.pegaClient.getCase(caseID.trim());
+
+          if (!caseResponse || !caseResponse.success) {
+            const errorMsg = `Failed to auto-fetch eTag: ${caseResponse?.error?.message || 'Unknown error'}`;
+            return {
+              error: errorMsg
+            };
+          }
+
+          finalETag = caseResponse.eTag;
+          autoFetchedETag = true;
+          console.log(`Successfully auto-fetched eTag: ${finalETag}`);
+
+          if (!finalETag) {
+            const errorMsg = 'Auto-fetch succeeded but no eTag was returned from get_case. This may indicate a server issue.';
+            return {
+              error: errorMsg
+            };
+          }
+        } catch (error) {
+          const errorMsg = `Failed to auto-fetch eTag: ${error.message}`;
           return {
             error: errorMsg
           };
         }
-        
-        finalETag = caseResponse.eTag;
-        autoFetchedETag = true;
-        console.log(`Successfully auto-fetched eTag: ${finalETag}`);
-        
-        if (!finalETag) {
-          const errorMsg = 'Auto-fetch succeeded but no eTag was returned from get_case. This may indicate a server issue.';
-          return {
-            error: errorMsg
-          };
-        }
-      } catch (error) {
-        const errorMsg = `Failed to auto-fetch eTag: ${error.message}`;
+      }
+
+      // Validate eTag format (should be a timestamp-like string)
+      if (typeof finalETag !== 'string' || finalETag.trim().length === 0) {
         return {
-          error: errorMsg
+          error: 'Invalid eTag parameter. Must be a non-empty string representing case save date time.'
         };
       }
-    }
-    
-    // Validate eTag format (should be a timestamp-like string)
-    if (typeof finalETag !== 'string' || finalETag.trim().length === 0) {
+
+      return await this.executeWithErrorHandling(
+        `Create Participant: ${caseID}`,
+        async () => await this.pegaClient.createCaseParticipant(caseID.trim(), {
+          eTag: finalETag,
+          content,
+          participantRoleID,
+          viewType,
+          pageInstructions
+        }),
+        { caseID: caseID.trim(), participantRoleID, sessionInfo }
+      );
+    } catch (error) {
       return {
-        error: 'Invalid eTag parameter. Must be a non-empty string representing case save date time.'
+        content: [{
+          type: 'text',
+          text: `## Error: Create Participant: ${caseID}\\n\\n**Unexpected Error**: ${error.message}\\n\\n${sessionInfo ? `**Session**: ${sessionInfo.sessionId} (${sessionInfo.authMode} mode)\\n` : ''}*Error occurred at: ${new Date().toISOString()}*`
+        }]
       };
     }
-
-    return await this.executeWithErrorHandling(
-      `Create Participant: ${caseID}`,
-      async () => await this.pegaClient.createCaseParticipant(caseID.trim(), {
-        eTag: finalETag,
-        content,
-        participantRoleID,
-        viewType,
-        pageInstructions
-      }),
-      { caseID: caseID.trim(), participantRoleID }
-    );
   }
 }

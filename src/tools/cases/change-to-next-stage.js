@@ -1,4 +1,5 @@
 import { BaseTool } from '../../registry/base-tool.js';
+import { getSessionCredentialsSchema } from '../../utils/tool-schema.js';
 
 export class ChangeToNextStageTool extends BaseTool {
   /**
@@ -36,7 +37,8 @@ export class ChangeToNextStageTool extends BaseTool {
             type: 'boolean',
             description: 'Whether to clean up the processes, including assignments, of the stage being switched away from. Default is true. Set to false to opt out of this cleanup feature.',
             default: true
-          }
+          },
+          sessionCredentials: getSessionCredentialsSchema()
         },
         required: ['caseID']
       }
@@ -48,6 +50,11 @@ export class ChangeToNextStageTool extends BaseTool {
    */
   async execute(params) {
     const { caseID, eTag, viewType, cleanupProcesses } = params;
+    let sessionInfo = null;
+
+    try {
+      // Initialize session configuration if provided
+      sessionInfo = this.initializeSessionConfig(params);
 
     // Validate required parameters using base class
     const requiredValidation = this.validateRequiredParams(params, ['caseID']);
@@ -107,11 +114,19 @@ export class ChangeToNextStageTool extends BaseTool {
       };
     }
 
-    // Execute with standardized error handling
-    return await this.executeWithErrorHandling(
-      `Change to Next Stage: ${caseID}${autoFetchedETag ? ' (auto-fetched eTag)' : ''}`,
-      async () => await this.pegaClient.changeToNextStage(caseID.trim(), finalETag.trim(), { viewType, cleanupProcesses }),
-      { viewType, cleanupProcesses, autoFetchedETag }
-    );
+      // Execute with standardized error handling
+      return await this.executeWithErrorHandling(
+        `Change to Next Stage: ${caseID}${autoFetchedETag ? ' (auto-fetched eTag)' : ''}`,
+        async () => await this.pegaClient.changeToNextStage(caseID.trim(), finalETag.trim(), { viewType, cleanupProcesses }),
+        { viewType, cleanupProcesses, autoFetchedETag, sessionInfo }
+      );
+    } catch (error) {
+      return {
+        content: [{
+          type: 'text',
+          text: `## Error: Change to Next Stage\n\n**Unexpected Error**: ${error.message}\n\n${sessionInfo ? `**Session**: ${sessionInfo.sessionId} (${sessionInfo.authMode} mode)\n` : ''}*Error occurred at: ${new Date().toISOString()}*`
+        }]
+      };
+    }
   }
 }

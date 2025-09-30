@@ -1,4 +1,5 @@
 import { BaseTool } from '../../registry/base-tool.js';
+import { getSessionCredentialsSchema } from '../../utils/tool-schema.js';
 
 export class GetDocumentTool extends BaseTool {
   /**
@@ -21,7 +22,8 @@ export class GetDocumentTool extends BaseTool {
           documentID: {
             type: 'string',
             description: 'Document ID to retrieve content for. This is the unique identifier that identifies the specific document in the Pega system. The document must exist and be accessible to the current user.'
-          }
+          },
+          sessionCredentials: getSessionCredentialsSchema()
         },
         required: ['documentID']
       }
@@ -33,27 +35,39 @@ export class GetDocumentTool extends BaseTool {
    */
   async execute(params) {
     const { documentID } = params;
+    let sessionInfo = null;
 
-    // Basic parameter validation using base class
-    const requiredValidation = this.validateRequiredParams(params, ['documentID']);
-    if (requiredValidation) {
-      return requiredValidation;
-    }
+    try {
+      sessionInfo = this.initializeSessionConfig(params);
 
-    // Additional comprehensive parameter validation
-    const validationResult = this.validateParameters(documentID);
-    if (!validationResult.valid) {
+      // Basic parameter validation using base class
+      const requiredValidation = this.validateRequiredParams(params, ['documentID']);
+      if (requiredValidation) {
+        return requiredValidation;
+      }
+
+      // Additional comprehensive parameter validation
+      const validationResult = this.validateParameters(documentID);
+      if (!validationResult.valid) {
+        return {
+          error: validationResult.error
+        };
+      }
+
+      // Execute with standardized error handling
+      return await this.executeWithErrorHandling(
+        `Document Content: ${documentID}`,
+        async () => await this.pegaClient.getDocumentContent(documentID),
+        { documentID, sessionInfo }
+      );
+    } catch (error) {
       return {
-        error: validationResult.error
+        content: [{
+          type: 'text',
+          text: `## Error: Document Content: ${documentID}\n\n**Unexpected Error**: ${error.message}\n\n${sessionInfo ? `**Session**: ${sessionInfo.sessionId} (${sessionInfo.authMode} mode)\n` : ''}*Error occurred at: ${new Date().toISOString()}*`
+        }]
       };
     }
-
-    // Execute with standardized error handling
-    return await this.executeWithErrorHandling(
-      `Document Content: ${documentID}`,
-      async () => await this.pegaClient.getDocumentContent(documentID),
-      { documentID }
-    );
   }
 
   /**
@@ -75,13 +89,20 @@ export class GetDocumentTool extends BaseTool {
    * Override formatSuccessResponse to add document content specific formatting
    */
   formatSuccessResponse(operation, data, options = {}) {
-    const { documentID } = options;
+    const { documentID, sessionInfo } = options;
     const content = data.data || data;
     const headers = data.headers || {};
     
     let response = `## ${operation}\n\n`;
-    
+
     response += `*Operation completed at: ${new Date().toISOString()}*\n\n`;
+
+    if (sessionInfo) {
+      response += `### Session Information\n`;
+      response += `- **Session ID**: ${sessionInfo.sessionId}\n`;
+      response += `- **Authentication Mode**: ${sessionInfo.authMode.toUpperCase()}\n`;
+      response += `- **Configuration Source**: ${sessionInfo.configSource}\n\n`;
+    }
 
     // Determine content type from headers
     const contentType = headers['content-type'] || headers['Content-Type'] || 'unknown';

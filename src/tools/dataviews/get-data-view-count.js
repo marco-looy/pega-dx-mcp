@@ -1,4 +1,5 @@
 import { BaseTool } from '../../registry/base-tool.js';
+import { getSessionCredentialsSchema } from '../../utils/tool-schema.js';
 
 export class GetDataViewCountTool extends BaseTool {
   /**
@@ -127,7 +128,8 @@ Note: Maximum result count is 5000 for queryable data views. The hasMoreResults 
                 description: 'Maximum number of results to consider in count calculation when data is not paginated. Cannot be used with pageNumber/pageSize.'
               }
             }
-          }
+          },
+          sessionCredentials: getSessionCredentialsSchema()
         },
         required: ['dataViewID']
       }
@@ -139,32 +141,45 @@ Note: Maximum result count is 5000 for queryable data views. The hasMoreResults 
    */
   async execute(params) {
     const { dataViewID, dataViewParameters, query, paging } = params;
+    let sessionInfo = null;
 
-    // Validate required parameters
-    const requiredValidation = this.validateRequiredParams(params, ['dataViewID']);
-    if (requiredValidation) {
-      return requiredValidation;
+    try {
+      sessionInfo = this.initializeSessionConfig(params);
+
+      // Validate required parameters
+      const requiredValidation = this.validateRequiredParams(params, ['dataViewID']);
+      if (requiredValidation) {
+        return requiredValidation;
+      }
+
+      // Build request body from optional parameters
+      const requestBody = {};
+
+      if (dataViewParameters) {
+        requestBody.dataViewParameters = dataViewParameters;
+      }
+
+      if (query) {
+        requestBody.query = query;
+      }
+
+      if (paging) {
+        requestBody.paging = paging;
+      }
+
+      // Execute with standardized error handling
+      return await this.executeWithErrorHandling(
+        `Data View Count: ${dataViewID}${query ? ' (with query)' : ''}${paging ? ' (with paging)' : ''}`,
+        async () => await this.pegaClient.getDataViewCount(dataViewID, requestBody),
+        { sessionInfo }
+      );
+    } catch (error) {
+      return {
+        content: [{
+          type: 'text',
+          text: `## Error: Data View Count: ${dataViewID}\n\n**Unexpected Error**: ${error.message}\n\n${sessionInfo ? `**Session**: ${sessionInfo.sessionId} (${sessionInfo.authMode} mode)\n` : ''}*Error occurred at: ${new Date().toISOString()}*`
+        }]
+      };
     }
-
-    // Build request body from optional parameters
-    const requestBody = {};
-
-    if (dataViewParameters) {
-      requestBody.dataViewParameters = dataViewParameters;
-    }
-
-    if (query) {
-      requestBody.query = query;
-    }
-
-    if (paging) {
-      requestBody.paging = paging;
-    }
-
-    // Execute with standardized error handling
-    return await this.executeWithErrorHandling(
-      `Data View Count: ${dataViewID}${query ? ' (with query)' : ''}${paging ? ' (with paging)' : ''}`,
-      async () => await this.pegaClient.getDataViewCount(dataViewID, requestBody)
-    );
   }
 }

@@ -1,4 +1,5 @@
 import { BaseTool } from '../../registry/base-tool.js';
+import { getSessionCredentialsSchema } from '../../utils/tool-schema.js';
 
 export class DeleteCaseTagTool extends BaseTool {
   /**
@@ -25,7 +26,8 @@ export class DeleteCaseTagTool extends BaseTool {
           tagID: {
             type: 'string',
             description: 'Tag ID to be deleted from the case. This is the unique identifier of the specific tag to remove.'
-          }
+          },
+          sessionCredentials: getSessionCredentialsSchema()
         },
         required: ['caseID', 'tagID']
       }
@@ -37,17 +39,30 @@ export class DeleteCaseTagTool extends BaseTool {
    */
   async execute(params) {
     const { caseID, tagID } = params;
+    let sessionInfo = null;
 
-    // Validate required parameters using base class
-    const requiredValidation = this.validateRequiredParams(params, ['caseID', 'tagID']);
-    if (requiredValidation) {
-      return requiredValidation;
+    try {
+      sessionInfo = this.initializeSessionConfig(params);
+
+      // Validate required parameters using base class
+      const requiredValidation = this.validateRequiredParams(params, ['caseID', 'tagID']);
+      if (requiredValidation) {
+        return requiredValidation;
+      }
+
+      // Execute with standardized error handling
+      return await this.executeWithErrorHandling(
+        `Delete Tag: ${tagID} from Case: ${caseID}`,
+        async () => await this.pegaClient.deleteCaseTag(caseID.trim(), tagID.trim()),
+        { sessionInfo }
+      );
+    } catch (error) {
+      return {
+        content: [{
+          type: 'text',
+          text: `## Error: Delete Tag: ${tagID} from Case: ${caseID}\n\n**Unexpected Error**: ${error.message}\n\n${sessionInfo ? `**Session**: ${sessionInfo.sessionId} (${sessionInfo.authMode} mode)\n` : ''}*Error occurred at: ${new Date().toISOString()}*`
+        }]
+      };
     }
-
-    // Execute with standardized error handling
-    return await this.executeWithErrorHandling(
-      `Delete Tag: ${tagID} from Case: ${caseID}`,
-      async () => await this.pegaClient.deleteCaseTag(caseID.trim(), tagID.trim())
-    );
   }
 }

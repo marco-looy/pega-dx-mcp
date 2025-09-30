@@ -1,4 +1,5 @@
 import { BaseTool } from '../../registry/base-tool.js';
+import { getSessionCredentialsSchema } from '../../utils/tool-schema.js';
 
 export class CreateCaseTool extends BaseTool {
   /**
@@ -79,7 +80,8 @@ export class CreateCaseTool extends BaseTool {
           pageName: {
             type: 'string',
             description: 'If provided, view metadata for specific page name will be returned (only used when viewType is "page")'
-          }
+          },
+          sessionCredentials: getSessionCredentialsSchema()
         },
         required: ['caseTypeID']
       }
@@ -91,9 +93,14 @@ export class CreateCaseTool extends BaseTool {
    */
   async execute(params) {
     const { caseTypeID, parentCaseID, content, pageInstructions, attachments, viewType, pageName } = params;
+    let sessionInfo = null;
 
-    // Validate required parameters using base class
-    const requiredValidation = this.validateRequiredParams(params, ['caseTypeID']);
+    try {
+      // Initialize session configuration if provided
+      sessionInfo = this.initializeSessionConfig(params);
+
+      // Validate required parameters using base class
+      const requiredValidation = this.validateRequiredParams(params, ['caseTypeID']);
     if (requiredValidation) {
       return requiredValidation;
     }
@@ -137,15 +144,27 @@ export class CreateCaseTool extends BaseTool {
         viewType,
         pageName
       }),
-      { caseTypeID, viewType, pageName }
+      { caseTypeID, viewType, pageName, sessionInfo }
     );
 
-    // REACTIVE: If the result contains a field-related error, auto-discover and guide
-    if (this.isFieldRelatedErrorInResult(result)) {
-      return await this.discoverFieldsAndGuide(caseTypeID, { message: this.extractErrorMessage(result) }, content);
-    }
+      // REACTIVE: If the result contains a field-related error, auto-discover and guide
+      if (this.isFieldRelatedErrorInResult(result)) {
+        return await this.discoverFieldsAndGuide(caseTypeID, { message: this.extractErrorMessage(result) }, content);
+      }
 
-    return result;
+      return result;
+    } catch (error) {
+      return {
+        content: [{
+          type: 'text',
+          text: `## Error: Create Case
+
+**Unexpected Error**: ${error.message}
+
+${sessionInfo ? `**Session**: ${sessionInfo.sessionId} (${sessionInfo.authMode} mode)\n` : ''}*Error occurred at: ${new Date().toISOString()}*`
+        }]
+      };
+    }
   }
 
   /**
@@ -672,12 +691,19 @@ export class CreateCaseTool extends BaseTool {
    * Override formatSuccessResponse to add case-specific formatting
    */
   formatSuccessResponse(operation, data, options = {}) {
-    const { caseTypeID, viewType } = options;
-    
+    const { caseTypeID, viewType, sessionInfo } = options;
+
     let response = `## ${operation}\n\n`;
-    
-    // Add timestamp
+
     response += `*Operation completed at: ${new Date().toISOString()}*\n\n`;
+
+    // Session Information (if applicable)
+    if (sessionInfo) {
+      response += `### Session Information\n`;
+      response += `- **Session ID**: ${sessionInfo.sessionId}\n`;
+      response += `- **Authentication Mode**: ${sessionInfo.authMode.toUpperCase()}\n`;
+      response += `- **Configuration Source**: ${sessionInfo.configSource}\n\n`;
+    }
     
     // Display case ID prominently
     if (data.ID) {

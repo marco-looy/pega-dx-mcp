@@ -1,4 +1,5 @@
 import { BaseTool } from '../../registry/base-tool.js';
+import { getSessionCredentialsSchema } from '../../utils/tool-schema.js';
 
 export class GetCaseParticipantsTool extends BaseTool {
   /**
@@ -21,7 +22,8 @@ export class GetCaseParticipantsTool extends BaseTool {
           caseID: {
             type: 'string',
             description: 'Full case handle (case ID) to retrieve participants from. Example: "ON6E5R-DIYRecipe-Work-RecipeCollection R-1008". Must be a complete case identifier including spaces and special characters.'
-          }
+          },
+          sessionCredentials: getSessionCredentialsSchema()
         },
         required: ['caseID']
       }
@@ -33,18 +35,30 @@ export class GetCaseParticipantsTool extends BaseTool {
    */
   async execute(params) {
     const { caseID } = params;
+    let sessionInfo = null;
 
-    // Validate required parameters using base class
-    const requiredValidation = this.validateRequiredParams(params, ['caseID']);
-    if (requiredValidation) {
-      return requiredValidation;
+    try {
+      sessionInfo = this.initializeSessionConfig(params);
+
+      // Validate required parameters using base class
+      const requiredValidation = this.validateRequiredParams(params, ['caseID']);
+      if (requiredValidation) {
+        return requiredValidation;
+      }
+
+      // Execute with standardized error handling
+      return await this.executeWithErrorHandling(
+        `Case Participants: ${caseID}`,
+        async () => await this.pegaClient.getCaseParticipants(caseID.trim()),
+        { caseID: caseID.trim(), sessionInfo }
+      );
+    } catch (error) {
+      return {
+        content: [{
+          type: 'text',
+          text: `## Error: Case Participants: ${caseID}\n\n**Unexpected Error**: ${error.message}\n\n${sessionInfo ? `**Session**: ${sessionInfo.sessionId} (${sessionInfo.authMode} mode)\n` : ''}*Error occurred at: ${new Date().toISOString()}*`
+        }]
+      };
     }
-
-    // Execute with standardized error handling
-    return await this.executeWithErrorHandling(
-      `Case Participants: ${caseID}`,
-      async () => await this.pegaClient.getCaseParticipants(caseID.trim()),
-      { caseID: caseID.trim() }
-    );
   }
 }

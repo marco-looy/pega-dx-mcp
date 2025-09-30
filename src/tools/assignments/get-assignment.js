@@ -1,4 +1,5 @@
 import { BaseTool } from '../../registry/base-tool.js';
+import { getSessionCredentialsSchema } from '../../utils/tool-schema.js';
 
 export class GetAssignmentTool extends BaseTool {
   /**
@@ -31,7 +32,8 @@ export class GetAssignmentTool extends BaseTool {
           pageName: {
             type: 'string',
             description: 'If provided, returns view metadata for the pageName view (only used when viewType is "page")'
-          }
+          },
+          sessionCredentials: getSessionCredentialsSchema()
         },
         required: ['assignmentID']
       }
@@ -43,48 +45,69 @@ export class GetAssignmentTool extends BaseTool {
    */
   async execute(params) {
     const { assignmentID, viewType = 'page', pageName } = params;
+    let sessionInfo = null;
 
-    // Basic parameter validation using base class
-    const requiredValidation = this.validateRequiredParams(params, ['assignmentID']);
-    if (requiredValidation) {
-      return requiredValidation;
-    }
+    try {
+      // Initialize session configuration if provided
+      sessionInfo = this.initializeSessionConfig(params);
 
-    // Validate enum parameters using base class
-    const enumValidation = this.validateEnumParams(params, {
-      viewType: ['form', 'page']
-    });
-    if (enumValidation) {
-      return enumValidation;
-    }
+      // Basic parameter validation using base class
+      const requiredValidation = this.validateRequiredParams(params, ['assignmentID']);
+      if (requiredValidation) {
+        return requiredValidation;
+      }
 
-    // Validate pageName usage
-    if (pageName && viewType !== 'page') {
+      // Validate enum parameters using base class
+      const enumValidation = this.validateEnumParams(params, {
+        viewType: ['form', 'page']
+      });
+      if (enumValidation) {
+        return enumValidation;
+      }
+
+      // Validate pageName usage
+      if (pageName && viewType !== 'page') {
+        return {
+          error: 'pageName parameter can only be used when viewType is set to "page".'
+        };
+      }
+
+      // Execute with standardized error handling
+      return await this.executeWithErrorHandling(
+        `Assignment Details: ${assignmentID}`,
+        async () => await this.pegaClient.getAssignment(assignmentID.trim(), {
+          viewType,
+          pageName
+        }),
+        { assignmentID, viewType, pageName, sessionInfo }
+      );
+    } catch (error) {
       return {
-        error: 'pageName parameter can only be used when viewType is set to "page".'
+        content: [{
+          type: 'text',
+          text: `## Error: Assignment Details\n\n**Unexpected Error**: ${error.message}\n\n${sessionInfo ? `**Session**: ${sessionInfo.sessionId} (${sessionInfo.authMode} mode)\n` : ''}*Error occurred at: ${new Date().toISOString()}*`
+        }]
       };
     }
-
-    // Execute with standardized error handling
-    return await this.executeWithErrorHandling(
-      `Assignment Details: ${assignmentID}`,
-      async () => await this.pegaClient.getAssignment(assignmentID.trim(), {
-        viewType,
-        pageName
-      }),
-      { assignmentID, viewType, pageName }
-    );
   }
 
   /**
    * Override formatSuccessResponse to add assignment specific formatting
    */
   formatSuccessResponse(operation, data, options = {}) {
-    const { assignmentID, viewType } = options;
-    
+    const { assignmentID, viewType, sessionInfo } = options;
+
     let response = `## ${operation}\n\n`;
-    
+
     response += `*Operation completed at: ${new Date().toISOString()}*\n\n`;
+
+    // Session Information (if applicable)
+    if (sessionInfo) {
+      response += `### Session Information\n`;
+      response += `- **Session ID**: ${sessionInfo.sessionId}\n`;
+      response += `- **Authentication Mode**: ${sessionInfo.authMode.toUpperCase()}\n`;
+      response += `- **Configuration Source**: ${sessionInfo.configSource}\n\n`;
+    }
     
     if (data.data) {
       // Display assignment information

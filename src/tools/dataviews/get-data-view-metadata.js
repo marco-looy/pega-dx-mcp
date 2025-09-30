@@ -1,4 +1,5 @@
 import { BaseTool } from '../../registry/base-tool.js';
+import { getSessionCredentialsSchema } from '../../utils/tool-schema.js';
 
 export class GetDataViewMetadataTool extends BaseTool {
   /**
@@ -21,7 +22,8 @@ export class GetDataViewMetadataTool extends BaseTool {
           dataViewID: {
             type: 'string',
             description: 'ID of the data view to retrieve metadata for. Example: "D_CaseList", "D_WorkBasket"'
-          }
+          },
+          sessionCredentials: getSessionCredentialsSchema()
         },
         required: ['dataViewID']
       }
@@ -33,17 +35,30 @@ export class GetDataViewMetadataTool extends BaseTool {
    */
   async execute(params) {
     const { dataViewID } = params;
+    let sessionInfo = null;
 
-    // Validate required parameters using base class
-    const requiredValidation = this.validateRequiredParams(params, ['dataViewID']);
-    if (requiredValidation) {
-      return requiredValidation;
+    try {
+      sessionInfo = this.initializeSessionConfig(params);
+
+      // Validate required parameters using base class
+      const requiredValidation = this.validateRequiredParams(params, ['dataViewID']);
+      if (requiredValidation) {
+        return requiredValidation;
+      }
+
+      // Execute with standardized error handling
+      return await this.executeWithErrorHandling(
+        `Data View Metadata: ${dataViewID}`,
+        async () => await this.pegaClient.getDataViewMetadata(dataViewID.trim()),
+        { sessionInfo }
+      );
+    } catch (error) {
+      return {
+        content: [{
+          type: 'text',
+          text: `## Error: Data View Metadata: ${dataViewID}\n\n**Unexpected Error**: ${error.message}\n\n${sessionInfo ? `**Session**: ${sessionInfo.sessionId} (${sessionInfo.authMode} mode)\n` : ''}*Error occurred at: ${new Date().toISOString()}*`
+        }]
+      };
     }
-
-    // Execute with standardized error handling
-    return await this.executeWithErrorHandling(
-      `Data View Metadata: ${dataViewID}`,
-      async () => await this.pegaClient.getDataViewMetadata(dataViewID.trim())
-    );
   }
 }

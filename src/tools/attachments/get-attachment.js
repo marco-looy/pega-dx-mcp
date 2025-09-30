@@ -1,4 +1,5 @@
 import { BaseTool } from '../../registry/base-tool.js';
+import { getSessionCredentialsSchema } from '../../utils/tool-schema.js';
 
 export class GetAttachmentTool extends BaseTool {
   /**
@@ -21,7 +22,8 @@ export class GetAttachmentTool extends BaseTool {
           attachmentID: {
             type: 'string',
             description: 'Link-Attachment instance pzInsKey (attachment ID) to retrieve content for. Format example: "LINK-ATTACHMENT MYCO-PAC-WORK E-47009!20231016T062800.275 GMT". This is the complete instance handle key that uniquely identifies the attachment in the Pega system. The attachment must exist and be accessible to the current user.'
-          }
+          },
+          sessionCredentials: getSessionCredentialsSchema()
         },
         required: ['attachmentID']
       }
@@ -34,32 +36,44 @@ export class GetAttachmentTool extends BaseTool {
   async execute(params) {
     const { attachmentID } = params;
 
-    // Basic parameter validation using base class
-    const requiredValidation = this.validateRequiredParams(params, ['attachmentID']);
-    if (requiredValidation) {
-      return requiredValidation;
-    }
+    let sessionInfo = null;
+    try {
+      sessionInfo = this.initializeSessionConfig(params);
 
-    // Additional comprehensive parameter validation for complex logic
-    const validationResult = this.validateParameters(attachmentID);
-    if (!validationResult.valid) {
-      // Return proper MCP error response format
+      // Basic parameter validation using base class
+      const requiredValidation = this.validateRequiredParams(params, ['attachmentID']);
+      if (requiredValidation) {
+        return requiredValidation;
+      }
+
+      // Additional comprehensive parameter validation for complex logic
+      const validationResult = this.validateParameters(attachmentID);
+      if (!validationResult.valid) {
+        // Return proper MCP error response format
+        return {
+          content: [
+            {
+              type: 'text',
+              text: `## Parameter Validation Error\n\n**Error**: ${validationResult.error}\n\n**Solution**: Please provide a valid Link-Attachment instance pzInsKey and try again.`
+            }
+          ]
+        };
+      }
+
+      // Execute with standardized error handling
+      return await this.executeWithErrorHandling(
+        `Attachment Content: ${attachmentID}`,
+        async () => await this.pegaClient.getAttachmentContent(attachmentID),
+        { attachmentID, sessionInfo }
+      );
+    } catch (error) {
       return {
-        content: [
-          {
-            type: 'text',
-            text: `## Parameter Validation Error\n\n**Error**: ${validationResult.error}\n\n**Solution**: Please provide a valid Link-Attachment instance pzInsKey and try again.`
-          }
-        ]
+        content: [{
+          type: 'text',
+          text: `## Error: Attachment Content\n\n**Unexpected Error**: ${error.message}\n\n${sessionInfo ? `**Session**: ${sessionInfo.sessionId} (${sessionInfo.authMode} mode)\n` : ''}*Error occurred at: ${new Date().toISOString()}*`
+        }]
       };
     }
-
-    // Execute with standardized error handling
-    return await this.executeWithErrorHandling(
-      `Attachment Content: ${attachmentID}`,
-      async () => await this.pegaClient.getAttachmentContent(attachmentID),
-      { attachmentID }
-    );
   }
 
   /**
@@ -89,13 +103,20 @@ export class GetAttachmentTool extends BaseTool {
    * Override formatSuccessResponse to add attachment content specific formatting
    */
   formatSuccessResponse(operation, data, options = {}) {
-    const { attachmentID } = options;
+    const { attachmentID, sessionInfo } = options;
     const content = data.data || data;
     const headers = data.headers || {};
     
     let response = `## ${operation}\n\n`;
-    
+
     response += `*Operation completed at: ${new Date().toISOString()}*\n\n`;
+
+    if (sessionInfo) {
+      response += `### Session Information\n`;
+      response += `- **Session ID**: ${sessionInfo.sessionId}\n`;
+      response += `- **Authentication Mode**: ${sessionInfo.authMode.toUpperCase()}\n`;
+      response += `- **Configuration Source**: ${sessionInfo.configSource}\n\n`;
+    }
 
     // Determine content type from headers
     const contentType = headers['content-type'] || headers['Content-Type'] || 'unknown';

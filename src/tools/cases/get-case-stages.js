@@ -1,4 +1,5 @@
 import { BaseTool } from '../../registry/base-tool.js';
+import { getSessionCredentialsSchema } from '../../utils/tool-schema.js';
 
 export class GetCaseStagesTool extends BaseTool {
   /**
@@ -21,7 +22,8 @@ export class GetCaseStagesTool extends BaseTool {
           caseID: {
             type: 'string',
             description: 'Full case handle (e.g.,ON6E5R-DIYRECIPE-WORK-RECIPECOLLECTION R-1008)'
-          }
+          },
+          sessionCredentials: getSessionCredentialsSchema()
         },
         required: ['caseID']
       }
@@ -33,30 +35,51 @@ export class GetCaseStagesTool extends BaseTool {
    */
   async execute(params) {
     const { caseID } = params;
+    let sessionInfo = null;
 
-    // Validate required parameters using base class
-    const requiredValidation = this.validateRequiredParams(params, ['caseID']);
-    if (requiredValidation) {
-      return requiredValidation;
+    try {
+      // Initialize session configuration if provided
+      sessionInfo = this.initializeSessionConfig(params);
+
+      // Validate required parameters using base class
+      const requiredValidation = this.validateRequiredParams(params, ['caseID']);
+      if (requiredValidation) {
+        return requiredValidation;
+      }
+
+      // Execute with standardized error handling
+      return await this.executeWithErrorHandling(
+        `Case Stages: ${caseID}`,
+        async () => await this.pegaClient.getCaseStages(caseID.trim()),
+        { caseID, sessionInfo }
+      );
+    } catch (error) {
+      return {
+        content: [{
+          type: 'text',
+          text: `## Error: Get Case Stages\n\n**Unexpected Error**: ${error.message}\n\n${sessionInfo ? `**Session**: ${sessionInfo.sessionId} (${sessionInfo.authMode} mode)\n` : ''}*Error occurred at: ${new Date().toISOString()}*`
+        }]
+      };
     }
-
-    // Execute with standardized error handling
-    return await this.executeWithErrorHandling(
-      `Case Stages: ${caseID}`,
-      async () => await this.pegaClient.getCaseStages(caseID.trim()),
-      { caseID }
-    );
   }
 
   /**
    * Override formatSuccessResponse to add case stages specific formatting
    */
   formatSuccessResponse(operation, data, options = {}) {
-    const { caseID } = options;
-    
+    const { caseID, sessionInfo } = options;
+
     let response = `## ${operation}\n\n`;
-    
+
     response += `*Operation completed at: ${new Date().toISOString()}*\n\n`;
+
+    // Session Information (if applicable)
+    if (sessionInfo) {
+      response += `### Session Information\n`;
+      response += `- **Session ID**: ${sessionInfo.sessionId}\n`;
+      response += `- **Authentication Mode**: ${sessionInfo.authMode.toUpperCase()}\n`;
+      response += `- **Configuration Source**: ${sessionInfo.configSource}\n\n`;
+    }
 
     // Display case stages information
     if (data.stages && Array.isArray(data.stages)) {

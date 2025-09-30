@@ -1,4 +1,5 @@
 import { BaseTool } from '../../registry/base-tool.js';
+import { getSessionCredentialsSchema } from '../../utils/tool-schema.js';
 
 export class RelateCasesTool extends BaseTool {
   /**
@@ -38,7 +39,8 @@ export class RelateCasesTool extends BaseTool {
             },
             minItems: 1,
             maxItems: 50
-          }
+          },
+          sessionCredentials: getSessionCredentialsSchema()
         },
         required: ['caseID', 'cases']
       }
@@ -50,35 +52,19 @@ export class RelateCasesTool extends BaseTool {
    */
   async execute(params) {
     const { caseID, cases } = params;
+    let sessionInfo = null;
 
-    // Validate required parameters using base class
-    const requiredValidation = this.validateRequiredParams(params, ['caseID', 'cases']);
-    if (requiredValidation) {
-      return requiredValidation;
-    }
+    try {
+      sessionInfo = this.initializeSessionConfig(params);
 
-    // Additional validation for cases array
-    if (!Array.isArray(cases) || cases.length === 0) {
-      return {
-        content: [{
-          type: 'text',
-          text: this.formatErrorResponse(
-            `Relate Cases to: ${caseID}`,
-            {
-              type: 'VALIDATION_ERROR',
-              message: 'Invalid cases parameter',
-              details: 'cases parameter must be a non-empty array of case objects with ID properties.',
-              status: 400
-            }
-          )
-        }]
-      };
-    }
+      // Validate required parameters using base class
+      const requiredValidation = this.validateRequiredParams(params, ['caseID', 'cases']);
+      if (requiredValidation) {
+        return requiredValidation;
+      }
 
-    // Validate each case object has required ID property
-    for (let i = 0; i < cases.length; i++) {
-      const caseObj = cases[i];
-      if (!caseObj || typeof caseObj !== 'object' || !caseObj.ID || typeof caseObj.ID !== 'string') {
+      // Additional validation for cases array
+      if (!Array.isArray(cases) || cases.length === 0) {
         return {
           content: [{
             type: 'text',
@@ -86,20 +72,49 @@ export class RelateCasesTool extends BaseTool {
               `Relate Cases to: ${caseID}`,
               {
                 type: 'VALIDATION_ERROR',
-                message: 'Invalid case object structure',
-                details: `cases[${i}] must be an object with a required 'ID' string property.`,
+                message: 'Invalid cases parameter',
+                details: 'cases parameter must be a non-empty array of case objects with ID properties.',
                 status: 400
               }
             )
           }]
         };
       }
-    }
 
-    // Execute with standardized error handling
-    return await this.executeWithErrorHandling(
-      `Relate Cases to: ${caseID} (${cases.length} case${cases.length > 1 ? 's' : ''})`,
-      async () => await this.pegaClient.relateCases(caseID.trim(), cases)
-    );
+      // Validate each case object has required ID property
+      for (let i = 0; i < cases.length; i++) {
+        const caseObj = cases[i];
+        if (!caseObj || typeof caseObj !== 'object' || !caseObj.ID || typeof caseObj.ID !== 'string') {
+          return {
+            content: [{
+              type: 'text',
+              text: this.formatErrorResponse(
+                `Relate Cases to: ${caseID}`,
+                {
+                  type: 'VALIDATION_ERROR',
+                  message: 'Invalid case object structure',
+                  details: `cases[${i}] must be an object with a required 'ID' string property.`,
+                  status: 400
+                }
+              )
+            }]
+          };
+        }
+      }
+
+      // Execute with standardized error handling
+      return await this.executeWithErrorHandling(
+        `Relate Cases to: ${caseID} (${cases.length} case${cases.length > 1 ? 's' : ''})`,
+        async () => await this.pegaClient.relateCases(caseID.trim(), cases),
+        { sessionInfo }
+      );
+    } catch (error) {
+      return {
+        content: [{
+          type: 'text',
+          text: `## Error: Relate Cases to: ${caseID}\n\n**Unexpected Error**: ${error.message}\n\n${sessionInfo ? `**Session**: ${sessionInfo.sessionId} (${sessionInfo.authMode} mode)\n` : ''}*Error occurred at: ${new Date().toISOString()}*`
+        }]
+      };
+    }
   }
 }

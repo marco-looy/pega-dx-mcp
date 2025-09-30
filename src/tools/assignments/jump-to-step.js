@@ -1,4 +1,5 @@
 import { BaseTool } from '../../registry/base-tool.js';
+import { getSessionCredentialsSchema } from '../../utils/tool-schema.js';
 
 export class JumpToStepTool extends BaseTool {
   /**
@@ -81,7 +82,8 @@ export class JumpToStepTool extends BaseTool {
             enum: ['form', 'page', 'none'],
             description: 'Type of view data to return in the response. "none" returns no UI resources (default), "form" returns form UI metadata in read-only review mode without page-specific metadata, "page" returns full page UI metadata in read-only review mode. The response will include navigation breadcrumb information under uiResources.navigation regardless of viewType to support navigation UI construction.',
             default: 'form'
-          }
+          },
+          sessionCredentials: getSessionCredentialsSchema()
         },
         required: ['assignmentID', 'stepID']
       }
@@ -93,8 +95,13 @@ export class JumpToStepTool extends BaseTool {
    */
   async execute(params) {
     const { assignmentID, stepID, eTag, content, pageInstructions, attachments, viewType } = params;
+    let sessionInfo = null;
 
-    // Basic parameter validation using base class
+    try {
+      // Initialize session configuration if provided
+      sessionInfo = this.initializeSessionConfig(params);
+
+      // Basic parameter validation using base class
     const requiredValidation = this.validateRequiredParams(params, ['assignmentID', 'stepID']);
     if (requiredValidation) {
       return requiredValidation;
@@ -184,8 +191,16 @@ export class JumpToStepTool extends BaseTool {
     return await this.executeWithErrorHandling(
       `Jump to Step: ${stepID} in Assignment: ${assignmentID}`,
       async () => await this.pegaClient.jumpToAssignmentStep(assignmentID, stepID, finalETag, options),
-      { params: { assignmentID, stepID, eTag: finalETag, viewType, content, pageInstructions, attachments } }
+      { params: { assignmentID, stepID, eTag: finalETag, viewType, content, pageInstructions, attachments }, sessionInfo }
     );
+    } catch (error) {
+      return {
+        content: [{
+          type: 'text',
+          text: `## Error: Jump to Step\n\n**Unexpected Error**: ${error.message}\n\n${sessionInfo ? `**Session**: ${sessionInfo.sessionId} (${sessionInfo.authMode} mode)\n` : ''}*Error occurred at: ${new Date().toISOString()}*`
+        }]
+      };
+    }
   }
 
   /**
@@ -199,10 +214,19 @@ export class JumpToStepTool extends BaseTool {
    * Build success response markdown with navigation context
    */
   buildSuccessMarkdown(data, params) {
+    const { sessionInfo } = params;
     let markdown = `# Assignment Step Navigation Successful\n\n`;
     markdown += `**Assignment ID:** ${params.assignmentID}\n`;
     markdown += `**Target Step ID:** ${params.stepID}\n`;
     markdown += `**Navigation Completed:** ${new Date().toISOString()}\n\n`;
+
+    // Session Information (if applicable)
+    if (sessionInfo) {
+      markdown += `## Session Information\n\n`;
+      markdown += `- **Session ID**: ${sessionInfo.sessionId}\n`;
+      markdown += `- **Authentication Mode**: ${sessionInfo.authMode.toUpperCase()}\n`;
+      markdown += `- **Configuration Source**: ${sessionInfo.configSource}\n\n`;
+    }
 
     // Current Step Information
     if (data.data && data.data.caseInfo) {

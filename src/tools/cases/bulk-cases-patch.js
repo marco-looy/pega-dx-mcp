@@ -1,4 +1,5 @@
 import { BaseTool } from '../../registry/base-tool.js';
+import { getSessionCredentialsSchema } from '../../utils/tool-schema.js';
 
 export class BulkCasesPatchTool extends BaseTool {
   /**
@@ -60,7 +61,8 @@ export class BulkCasesPatchTool extends BaseTool {
             items: {
               type: 'object'
             }
-          }
+          },
+          sessionCredentials: getSessionCredentialsSchema()
         },
         required: ['actionID', 'cases']
       }
@@ -73,6 +75,11 @@ export class BulkCasesPatchTool extends BaseTool {
    */
   async execute(params) {
     const { actionID, cases, runningMode, content, pageInstructions, attachments } = params;
+    let sessionInfo = null;
+
+    try {
+      // Initialize session configuration if provided
+      sessionInfo = this.initializeSessionConfig(params);
 
     // 1. Basic parameter validation using base class
     const requiredValidation = this.validateRequiredParams(params, ['actionID', 'cases']);
@@ -144,18 +151,26 @@ export class BulkCasesPatchTool extends BaseTool {
       };
     }
 
-    // 6. Execute with standardized error handling
-    return await this.executeWithErrorHandling(
-      `Bulk Cases PATCH: ${actionID} on ${cases.length} cases`,
-      async () => await this.pegaClient.patchCasesBulk(actionID.trim(), {
-        cases,
-        runningMode,
-        content,
-        pageInstructions,
-        attachments
-      }),
-      { actionID, cases, runningMode, content, pageInstructions, attachments }
-    );
+      // 6. Execute with standardized error handling
+      return await this.executeWithErrorHandling(
+        `Bulk Cases PATCH: ${actionID} on ${cases.length} cases`,
+        async () => await this.pegaClient.patchCasesBulk(actionID.trim(), {
+          cases,
+          runningMode,
+          content,
+          pageInstructions,
+          attachments
+        }),
+        { actionID, cases, runningMode, content, pageInstructions, attachments, sessionInfo }
+      );
+    } catch (error) {
+      return {
+        content: [{
+          type: 'text',
+          text: `## Error: Bulk Cases PATCH\n\n**Unexpected Error**: ${error.message}\n\n${sessionInfo ? `**Session**: ${sessionInfo.sessionId} (${sessionInfo.authMode} mode)\n` : ''}*Error occurred at: ${new Date().toISOString()}*`
+        }]
+      };
+    }
   }
 
   /**
@@ -163,11 +178,19 @@ export class BulkCasesPatchTool extends BaseTool {
    * Implements exact response formatting from PATCH /api/application/v2/cases specification
    */
   formatSuccessResponse(operation, data, options = {}) {
-    const { actionID, cases, runningMode, content, pageInstructions, attachments } = options;
-    
+    const { actionID, cases, runningMode, content, pageInstructions, attachments, sessionInfo } = options;
+
     let response = `## ${operation}\n\n`;
-    
+
     response += `*Operation completed at: ${new Date().toISOString()}*\n\n`;
+
+    // Session Information (if applicable)
+    if (sessionInfo) {
+      response += `### Session Information\n`;
+      response += `- **Session ID**: ${sessionInfo.sessionId}\n`;
+      response += `- **Authentication Mode**: ${sessionInfo.authMode.toUpperCase()}\n`;
+      response += `- **Configuration Source**: ${sessionInfo.configSource}\n\n`;
+    }
     
     // Determine platform based on response structure and running mode
     const isLaunchpadAsync = runningMode === 'async' || (data && data.jobID);

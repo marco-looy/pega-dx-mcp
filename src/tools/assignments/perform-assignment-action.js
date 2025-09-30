@@ -1,4 +1,5 @@
 import { BaseTool } from '../../registry/base-tool.js';
+import { getSessionCredentialsSchema } from '../../utils/tool-schema.js';
 
 export class PerformAssignmentActionTool extends BaseTool {
   /**
@@ -85,7 +86,8 @@ export class PerformAssignmentActionTool extends BaseTool {
           originChannel: {
             type: 'string',
             description: 'Optional origin channel identifier for this service request. Indicates the source of the request for tracking and audit purposes. Examples: "Web", "Mobile", "WebChat". Default value is "Web" if not specified.'
-          }
+          },
+          sessionCredentials: getSessionCredentialsSchema()
         },
         required: ['assignmentID', 'actionID']
       }
@@ -97,8 +99,13 @@ export class PerformAssignmentActionTool extends BaseTool {
    */
   async execute(params) {
     const { assignmentID, actionID, eTag, content, pageInstructions, attachments, viewType, originChannel } = params;
+    let sessionInfo = null;
 
-    // Basic parameter validation using base class
+    try {
+      // Initialize session configuration if provided
+      sessionInfo = this.initializeSessionConfig(params);
+
+      // Basic parameter validation using base class
     const requiredValidation = this.validateRequiredParams(params, ['assignmentID', 'actionID']);
     if (requiredValidation) {
       return requiredValidation;
@@ -195,7 +202,7 @@ export class PerformAssignmentActionTool extends BaseTool {
       // Check if API call was successful
       if (result.success) {
         // Format and return successful response
-        return this.formatSuccessResponse(result.data, params);
+        return this.formatSuccessResponse(result.data, { ...params, sessionInfo });
       } else {
         // Format and return error response from API
         return this.formatErrorResponse(result.error);
@@ -204,6 +211,14 @@ export class PerformAssignmentActionTool extends BaseTool {
     } catch (error) {
       // Format and return error response
       return this.formatErrorResponse(error);
+    }
+    } catch (error) {
+      return {
+        content: [{
+          type: 'text',
+          text: `## Error: Perform Assignment Action\n\n**Unexpected Error**: ${error.message}\n\n${sessionInfo ? `**Session**: ${sessionInfo.sessionId} (${sessionInfo.authMode} mode)\n` : ''}*Error occurred at: ${new Date().toISOString()}*`
+        }]
+      };
     }
   }
 
@@ -225,10 +240,19 @@ export class PerformAssignmentActionTool extends BaseTool {
    * Build success response markdown
    */
   buildSuccessMarkdown(data, params) {
+    const { sessionInfo } = params;
     let markdown = `# Assignment Action Executed Successfully\n\n`;
     markdown += `**Assignment ID:** ${params.assignmentID}\n`;
     markdown += `**Action ID:** ${params.actionID}\n`;
     markdown += `**Timestamp:** ${new Date().toISOString()}\n\n`;
+
+    // Session Information (if applicable)
+    if (sessionInfo) {
+      markdown += `## Session Information\n\n`;
+      markdown += `- **Session ID**: ${sessionInfo.sessionId}\n`;
+      markdown += `- **Authentication Mode**: ${sessionInfo.authMode.toUpperCase()}\n`;
+      markdown += `- **Configuration Source**: ${sessionInfo.configSource}\n\n`;
+    }
 
     // Case Information
     if (data.data && data.data.caseInfo) {

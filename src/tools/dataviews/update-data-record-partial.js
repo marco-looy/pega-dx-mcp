@@ -1,4 +1,5 @@
 import { BaseTool } from '../../registry/base-tool.js';
+import { getSessionCredentialsSchema } from '../../utils/tool-schema.js';
 
 export class UpdateDataRecordPartialTool extends BaseTool {
   /**
@@ -37,7 +38,8 @@ export class UpdateDataRecordPartialTool extends BaseTool {
             items: {
               type: 'object'
             }
-          }
+          },
+          sessionCredentials: getSessionCredentialsSchema()
         },
         required: ['dataViewID', 'data']
       }
@@ -49,24 +51,37 @@ export class UpdateDataRecordPartialTool extends BaseTool {
    */
   async execute(params) {
     const { dataViewID, data, eTag, pageInstructions } = params;
+    let sessionInfo = null;
 
-    // Validate required parameters
-    const requiredValidation = this.validateRequiredParams(params, ['dataViewID', 'data']);
-    if (requiredValidation) {
-      return requiredValidation;
-    }
+    try {
+      sessionInfo = this.initializeSessionConfig(params);
 
-    // Validate that data is an object
-    if (!data || typeof data !== 'object' || Array.isArray(data)) {
+      // Validate required parameters
+      const requiredValidation = this.validateRequiredParams(params, ['dataViewID', 'data']);
+      if (requiredValidation) {
+        return requiredValidation;
+      }
+
+      // Validate that data is an object
+      if (!data || typeof data !== 'object' || Array.isArray(data)) {
+        return {
+          error: 'Invalid data parameter. data must be a valid object containing the record properties to update.'
+        };
+      }
+
+      // Execute with standardized error handling
+      return await this.executeWithErrorHandling(
+        `Partial Data Record Update: ${dataViewID}`,
+        async () => await this.pegaClient.updateDataRecordPartial(dataViewID, data, { eTag, pageInstructions }),
+        { sessionInfo }
+      );
+    } catch (error) {
       return {
-        error: 'Invalid data parameter. data must be a valid object containing the record properties to update.'
+        content: [{
+          type: 'text',
+          text: `## Error: Partial Data Record Update: ${dataViewID}\n\n**Unexpected Error**: ${error.message}\n\n${sessionInfo ? `**Session**: ${sessionInfo.sessionId} (${sessionInfo.authMode} mode)\n` : ''}*Error occurred at: ${new Date().toISOString()}*`
+        }]
       };
     }
-
-    // Execute with standardized error handling
-    return await this.executeWithErrorHandling(
-      `Partial Data Record Update: ${dataViewID}`,
-      async () => await this.pegaClient.updateDataRecordPartial(dataViewID, data, { eTag, pageInstructions })
-    );
   }
 }

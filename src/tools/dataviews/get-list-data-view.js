@@ -1,4 +1,5 @@
 import { BaseTool } from '../../registry/base-tool.js';
+import { getSessionCredentialsSchema } from '../../utils/tool-schema.js';
 
 export class GetListDataViewTool extends BaseTool {
   /**
@@ -138,7 +139,8 @@ Aggregation functions: COUNT, MAX, MIN, DISTINCT_COUNT. For numbers: SUM, AVG.`,
             type: 'boolean',
             description: 'Optional flag that works only if the data view is sourced by a report definition. When set to true, increases timeout to 45 seconds. Otherwise, timeout is 10 seconds.',
             default: false
-          }
+          },
+          sessionCredentials: getSessionCredentialsSchema()
         },
         required: ['dataViewID']
       }
@@ -150,36 +152,49 @@ Aggregation functions: COUNT, MAX, MIN, DISTINCT_COUNT. For numbers: SUM, AVG.`,
    */
   async execute(params) {
     const { dataViewID, dataViewParameters, query, paging, useExtendedTimeout } = params;
+    let sessionInfo = null;
 
-    // Validate required parameters
-    const requiredValidation = this.validateRequiredParams(params, ['dataViewID']);
-    if (requiredValidation) {
-      return requiredValidation;
+    try {
+      sessionInfo = this.initializeSessionConfig(params);
+
+      // Validate required parameters
+      const requiredValidation = this.validateRequiredParams(params, ['dataViewID']);
+      if (requiredValidation) {
+        return requiredValidation;
+      }
+
+      // Build request body from optional parameters
+      const requestBody = {};
+
+      if (dataViewParameters) {
+        requestBody.dataViewParameters = dataViewParameters;
+      }
+
+      if (query) {
+        requestBody.query = query;
+      }
+
+      if (paging) {
+        requestBody.paging = paging;
+      }
+
+      if (useExtendedTimeout !== undefined) {
+        requestBody.useExtendedTimeout = useExtendedTimeout;
+      }
+
+      // Execute with standardized error handling
+      return await this.executeWithErrorHandling(
+        `List Data View: ${dataViewID}${query ? ' (with query)' : ''}${paging ? ' (paginated)' : ''}`,
+        async () => await this.pegaClient.getListDataView(dataViewID, requestBody),
+        { sessionInfo }
+      );
+    } catch (error) {
+      return {
+        content: [{
+          type: 'text',
+          text: `## Error: List Data View: ${dataViewID}\n\n**Unexpected Error**: ${error.message}\n\n${sessionInfo ? `**Session**: ${sessionInfo.sessionId} (${sessionInfo.authMode} mode)\n` : ''}*Error occurred at: ${new Date().toISOString()}*`
+        }]
+      };
     }
-
-    // Build request body from optional parameters
-    const requestBody = {};
-
-    if (dataViewParameters) {
-      requestBody.dataViewParameters = dataViewParameters;
-    }
-
-    if (query) {
-      requestBody.query = query;
-    }
-
-    if (paging) {
-      requestBody.paging = paging;
-    }
-
-    if (useExtendedTimeout !== undefined) {
-      requestBody.useExtendedTimeout = useExtendedTimeout;
-    }
-
-    // Execute with standardized error handling
-    return await this.executeWithErrorHandling(
-      `List Data View: ${dataViewID}${query ? ' (with query)' : ''}${paging ? ' (paginated)' : ''}`,
-      async () => await this.pegaClient.getListDataView(dataViewID, requestBody)
-    );
   }
 }

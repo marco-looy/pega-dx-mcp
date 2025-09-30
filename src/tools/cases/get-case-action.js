@@ -1,4 +1,5 @@
 import { BaseTool } from '../../registry/base-tool.js';
+import { getSessionCredentialsSchema } from '../../utils/tool-schema.js';
 
 export class GetCaseActionTool extends BaseTool {
   /**
@@ -36,7 +37,8 @@ export class GetCaseActionTool extends BaseTool {
             type: 'boolean',
             description: 'When true, excludes information on all actions performable on the case. Set to true if action information was already retrieved in a previous call',
             default: false
-          }
+          },
+          sessionCredentials: getSessionCredentialsSchema()
         },
         required: ['caseID', 'actionID']
       }
@@ -48,8 +50,13 @@ export class GetCaseActionTool extends BaseTool {
    */
   async execute(params) {
     const { caseID, actionID, viewType, excludeAdditionalActions } = params;
+    let sessionInfo = null;
 
-    // Validate required parameters using base class
+    try {
+      // Initialize session configuration if provided
+      sessionInfo = this.initializeSessionConfig(params);
+
+      // Validate required parameters using base class
     const requiredValidation = this.validateRequiredParams(params, ['caseID', 'actionID']);
     if (requiredValidation) {
       return requiredValidation;
@@ -70,32 +77,52 @@ export class GetCaseActionTool extends BaseTool {
       };
     }
 
-    // Map viewType 'none' to 'form' since getCaseAction API doesn't accept 'none'
-    const apiViewType = viewType === 'none' ? 'form' : viewType;
-    
-    // Execute with standardized error handling
-    return await this.executeWithErrorHandling(
-      `Case Action Details: ${actionID} for ${caseID}`,
-      async () => await this.pegaClient.getCaseAction(caseID.trim(), actionID.trim(), {
-        viewType: apiViewType,
-        excludeAdditionalActions
-      }),
-      { caseID, actionID, viewType, excludeAdditionalActions }
-    );
+      // Map viewType 'none' to 'form' since getCaseAction API doesn't accept 'none'
+      const apiViewType = viewType === 'none' ? 'form' : viewType;
+
+      // Execute with standardized error handling
+      return await this.executeWithErrorHandling(
+        `Case Action Details: ${actionID} for ${caseID}`,
+        async () => await this.pegaClient.getCaseAction(caseID.trim(), actionID.trim(), {
+          viewType: apiViewType,
+          excludeAdditionalActions
+        }),
+        { caseID, actionID, viewType, excludeAdditionalActions, sessionInfo }
+      );
+    } catch (error) {
+      return {
+        content: [{
+          type: 'text',
+          text: `## Error: Get Case Action
+
+**Unexpected Error**: ${error.message}
+
+${sessionInfo ? `**Session**: ${sessionInfo.sessionId} (${sessionInfo.authMode} mode)\n` : ''}*Error occurred at: ${new Date().toISOString()}*`
+        }]
+      };
+    }
   }
 
   /**
    * Override formatSuccessResponse to add case action specific formatting
    */
   formatSuccessResponse(operation, data, options = {}) {
-    const { caseID, viewType, excludeAdditionalActions } = options;
+    const { caseID, viewType, excludeAdditionalActions, sessionInfo } = options;
     
     // Extract eTag from the top-level response if available
     const responseETag = data.eTag;
     
     let response = `## ${operation}\n\n`;
-    
+
     response += `*Operation completed at: ${new Date().toISOString()}*\n\n`;
+
+    // Session Information (if applicable)
+    if (sessionInfo) {
+      response += `### Session Information\n`;
+      response += `- **Session ID**: ${sessionInfo.sessionId}\n`;
+      response += `- **Authentication Mode**: ${sessionInfo.authMode.toUpperCase()}\n`;
+      response += `- **Configuration Source**: ${sessionInfo.configSource}\n\n`;
+    }
     
     if (data.data) {
       // Display case information

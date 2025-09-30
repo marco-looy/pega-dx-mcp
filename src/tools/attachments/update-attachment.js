@@ -1,4 +1,5 @@
 import { BaseTool } from '../../registry/base-tool.js';
+import { getSessionCredentialsSchema } from '../../utils/tool-schema.js';
 
 export class UpdateAttachmentTool extends BaseTool {
   /**
@@ -29,7 +30,8 @@ export class UpdateAttachmentTool extends BaseTool {
           category: {
             type: 'string',
             description: 'New attachment category. Must be a valid attachment category that exists in the system and that the user has edit permissions for. The category determines the attachment type and associated permissions.'
-          }
+          },
+          sessionCredentials: getSessionCredentialsSchema()
         },
         required: ['attachmentID', 'name', 'category']
       }
@@ -42,24 +44,36 @@ export class UpdateAttachmentTool extends BaseTool {
   async execute(params) {
     const { attachmentID, name, category } = params;
 
-    // Basic parameter validation using base class
-    const requiredValidation = this.validateRequiredParams(params, ['attachmentID', 'name', 'category']);
-    if (requiredValidation) {
-      return requiredValidation;
-    }
+    let sessionInfo = null;
+    try {
+      sessionInfo = this.initializeSessionConfig(params);
 
-    // Additional comprehensive parameter validation
-    const validationResult = this.validateParameters(attachmentID, name, category);
-    if (!validationResult.valid) {
-      return validationResult;
-    }
+      // Basic parameter validation using base class
+      const requiredValidation = this.validateRequiredParams(params, ['attachmentID', 'name', 'category']);
+      if (requiredValidation) {
+        return requiredValidation;
+      }
 
-    // Execute with standardized error handling
-    return await this.executeWithErrorHandling(
-      `Attachment Update: ${attachmentID}`,
-      async () => await this.pegaClient.updateAttachment(attachmentID, { name, category }),
-      { attachmentID, name, category }
-    );
+      // Additional comprehensive parameter validation
+      const validationResult = this.validateParameters(attachmentID, name, category);
+      if (!validationResult.valid) {
+        return validationResult;
+      }
+
+      // Execute with standardized error handling
+      return await this.executeWithErrorHandling(
+        `Attachment Update: ${attachmentID}`,
+        async () => await this.pegaClient.updateAttachment(attachmentID, { name, category }),
+        { attachmentID, name, category, sessionInfo }
+      );
+    } catch (error) {
+      return {
+        content: [{
+          type: 'text',
+          text: `## Error: Attachment Update\n\n**Unexpected Error**: ${error.message}\n\n${sessionInfo ? `**Session**: ${sessionInfo.sessionId} (${sessionInfo.authMode} mode)\n` : ''}*Error occurred at: ${new Date().toISOString()}*`
+        }]
+      };
+    }
   }
 
   /**
@@ -121,12 +135,19 @@ export class UpdateAttachmentTool extends BaseTool {
    * Override formatSuccessResponse to add attachment update specific formatting
    */
   formatSuccessResponse(operation, data, options = {}) {
-    const { attachmentID, name, category } = options;
+    const { attachmentID, name, category, sessionInfo } = options;
     const responseData = data.data || data;
     
     let response = `## ${operation}\n\n`;
-    
+
     response += `*Operation completed at: ${new Date().toISOString()}*\n\n`;
+
+    if (sessionInfo) {
+      response += `### Session Information\n`;
+      response += `- **Session ID**: ${sessionInfo.sessionId}\n`;
+      response += `- **Authentication Mode**: ${sessionInfo.authMode.toUpperCase()}\n`;
+      response += `- **Configuration Source**: ${sessionInfo.configSource}\n\n`;
+    }
 
     // Display update information
     response += `### ✅ Attachment Updated Successfully\n`;

@@ -1,4 +1,5 @@
 import { BaseTool } from '../../registry/base-tool.js';
+import { getSessionCredentialsSchema } from '../../utils/tool-schema.js';
 
 export class RemoveCaseDocumentTool extends BaseTool {
   /**
@@ -25,7 +26,8 @@ export class RemoveCaseDocumentTool extends BaseTool {
           documentID: {
             type: 'string',
             description: 'Document ID to be removed from the case. This is the unique identifier that identifies the specific document in the Pega system. The document must exist, be linked to the specified case, and be accessible to the current user.'
-          }
+          },
+          sessionCredentials: getSessionCredentialsSchema()
         },
         required: ['caseID', 'documentID']
       }
@@ -37,27 +39,39 @@ export class RemoveCaseDocumentTool extends BaseTool {
    */
   async execute(params) {
     const { caseID, documentID } = params;
+    let sessionInfo = null;
 
-    // Basic parameter validation using base class
-    const requiredValidation = this.validateRequiredParams(params, ['caseID', 'documentID']);
-    if (requiredValidation) {
-      return requiredValidation;
-    }
+    try {
+      sessionInfo = this.initializeSessionConfig(params);
 
-    // Additional comprehensive parameter validation
-    const validationResult = this.validateParameters(caseID, documentID);
-    if (!validationResult.valid) {
+      // Basic parameter validation using base class
+      const requiredValidation = this.validateRequiredParams(params, ['caseID', 'documentID']);
+      if (requiredValidation) {
+        return requiredValidation;
+      }
+
+      // Additional comprehensive parameter validation
+      const validationResult = this.validateParameters(caseID, documentID);
+      if (!validationResult.valid) {
+        return {
+          error: validationResult.error
+        };
+      }
+
+      // Execute with standardized error handling
+      return await this.executeWithErrorHandling(
+        `Remove Document from Case: ${documentID} from ${caseID}`,
+        async () => await this.pegaClient.removeCaseDocument(caseID, documentID),
+        { caseID, documentID, sessionInfo }
+      );
+    } catch (error) {
       return {
-        error: validationResult.error
+        content: [{
+          type: 'text',
+          text: `## Error: Remove Document from Case: ${documentID} from ${caseID}\n\n**Unexpected Error**: ${error.message}\n\n${sessionInfo ? `**Session**: ${sessionInfo.sessionId} (${sessionInfo.authMode} mode)\n` : ''}*Error occurred at: ${new Date().toISOString()}*`
+        }]
       };
     }
-
-    // Execute with standardized error handling
-    return await this.executeWithErrorHandling(
-      `Remove Document from Case: ${documentID} from ${caseID}`,
-      async () => await this.pegaClient.removeCaseDocument(caseID, documentID),
-      { caseID, documentID }
-    );
   }
 
   /**
@@ -87,13 +101,20 @@ export class RemoveCaseDocumentTool extends BaseTool {
    * Override formatSuccessResponse to add document removal specific formatting
    */
   formatSuccessResponse(operation, data, options = {}) {
-    const { caseID, documentID } = options;
+    const { caseID, documentID, sessionInfo } = options;
     const content = data.data || data;
     const headers = data.headers || {};
     
     let response = `## ${operation}\n\n`;
-    
+
     response += `*Operation completed at: ${new Date().toISOString()}*\n\n`;
+
+    if (sessionInfo) {
+      response += `### Session Information\n`;
+      response += `- **Session ID**: ${sessionInfo.sessionId}\n`;
+      response += `- **Authentication Mode**: ${sessionInfo.authMode.toUpperCase()}\n`;
+      response += `- **Configuration Source**: ${sessionInfo.configSource}\n\n`;
+    }
 
     response += `### ✅ Document Removal Successful\n`;
     response += `- **Case ID**: ${caseID}\n`;

@@ -1,4 +1,5 @@
 import { BaseTool } from '../../registry/base-tool.js';
+import { getSessionCredentialsSchema } from '../../utils/tool-schema.js';
 
 export class GetCaseTypeBulkActionTool extends BaseTool {
   /**
@@ -25,7 +26,8 @@ export class GetCaseTypeBulkActionTool extends BaseTool {
           actionID: {
             type: 'string',
             description: 'ID of the action for which the metadata is being retrieved (e.g., "Clone")'
-          }
+          },
+          sessionCredentials: getSessionCredentialsSchema()
         },
         required: ['caseTypeID', 'actionID']
       }
@@ -37,30 +39,51 @@ export class GetCaseTypeBulkActionTool extends BaseTool {
    */
   async execute(params) {
     const { caseTypeID, actionID } = params;
+    let sessionInfo = null;
 
-    // Validate required parameters using base class
-    const requiredValidation = this.validateRequiredParams(params, ['caseTypeID', 'actionID']);
-    if (requiredValidation) {
-      return requiredValidation;
+    try {
+      // Initialize session configuration if provided
+      sessionInfo = this.initializeSessionConfig(params);
+
+      // Validate required parameters using base class
+      const requiredValidation = this.validateRequiredParams(params, ['caseTypeID', 'actionID']);
+      if (requiredValidation) {
+        return requiredValidation;
+      }
+
+      // Execute with standardized error handling
+      return await this.executeWithErrorHandling(
+        `Case Type Bulk Action: ${caseTypeID} - ${actionID}`,
+        async () => await this.pegaClient.getCaseTypeBulkAction(caseTypeID.trim(), actionID.trim()),
+        { caseTypeID, actionID, sessionInfo }
+      );
+    } catch (error) {
+      return {
+        content: [{
+          type: 'text',
+          text: `## Error: Get Case Type Bulk Action\n\n**Unexpected Error**: ${error.message}\n\n${sessionInfo ? `**Session**: ${sessionInfo.sessionId} (${sessionInfo.authMode} mode)\n` : ''}*Error occurred at: ${new Date().toISOString()}*`
+        }]
+      };
     }
-
-    // Execute with standardized error handling
-    return await this.executeWithErrorHandling(
-      `Case Type Bulk Action: ${caseTypeID} - ${actionID}`,
-      async () => await this.pegaClient.getCaseTypeBulkAction(caseTypeID.trim(), actionID.trim()),
-      { caseTypeID, actionID }
-    );
   }
 
   /**
    * Override formatSuccessResponse to add case type bulk action specific formatting
    */
   formatSuccessResponse(operation, data, options = {}) {
-    const { caseTypeID, actionID } = options;
-    
+    const { caseTypeID, actionID, sessionInfo } = options;
+
     let response = `## ${operation}\n\n`;
-    
+
     response += `*Operation completed at: ${new Date().toISOString()}*\n\n`;
+
+    // Session Information (if applicable)
+    if (sessionInfo) {
+      response += `### Session Information\n`;
+      response += `- **Session ID**: ${sessionInfo.sessionId}\n`;
+      response += `- **Authentication Mode**: ${sessionInfo.authMode.toUpperCase()}\n`;
+      response += `- **Configuration Source**: ${sessionInfo.configSource}\n\n`;
+    }
     
     if (data.data) {
       response += '### Action Metadata\n';

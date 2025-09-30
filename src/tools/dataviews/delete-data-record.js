@@ -1,4 +1,5 @@
 import { BaseTool } from '../../registry/base-tool.js';
+import { getSessionCredentialsSchema } from '../../utils/tool-schema.js';
 
 export class DeleteDataRecordTool extends BaseTool {
   /**
@@ -25,7 +26,8 @@ export class DeleteDataRecordTool extends BaseTool {
           dataViewParameters: {
             type: 'string',
             description: 'Primary key(s) as JSON string to uniquely identify the data record to delete. Must be a valid JSON object containing key-value pairs. For example: "{\\"CustomerID\\": \\"12345\\"}" or "{\\"OrderID\\": \\"O-1001\\", \\"CustomerID\\": \\"C-5678\\"}". Note: String format like "CustomerID=12345" will cause validation errors.'
-          }
+          },
+          sessionCredentials: getSessionCredentialsSchema()
         },
         required: ['dataViewID', 'dataViewParameters']
       }
@@ -37,17 +39,30 @@ export class DeleteDataRecordTool extends BaseTool {
    */
   async execute(params) {
     const { dataViewID, dataViewParameters } = params;
+    let sessionInfo = null;
 
-    // Validate required parameters
-    const requiredValidation = this.validateRequiredParams(params, ['dataViewID', 'dataViewParameters']);
-    if (requiredValidation) {
-      return requiredValidation;
+    try {
+      sessionInfo = this.initializeSessionConfig(params);
+
+      // Validate required parameters
+      const requiredValidation = this.validateRequiredParams(params, ['dataViewID', 'dataViewParameters']);
+      if (requiredValidation) {
+        return requiredValidation;
+      }
+
+      // Execute with standardized error handling
+      return await this.executeWithErrorHandling(
+        `Delete Data Record: ${dataViewID}`,
+        async () => await this.pegaClient.deleteDataRecord(dataViewID, dataViewParameters),
+        { sessionInfo }
+      );
+    } catch (error) {
+      return {
+        content: [{
+          type: 'text',
+          text: `## Error: Delete Data Record: ${dataViewID}\n\n**Unexpected Error**: ${error.message}\n\n${sessionInfo ? `**Session**: ${sessionInfo.sessionId} (${sessionInfo.authMode} mode)\n` : ''}*Error occurred at: ${new Date().toISOString()}*`
+        }]
+      };
     }
-
-    // Execute with standardized error handling
-    return await this.executeWithErrorHandling(
-      `Delete Data Record: ${dataViewID}`,
-      async () => await this.pegaClient.deleteDataRecord(dataViewID, dataViewParameters)
-    );
   }
 }
