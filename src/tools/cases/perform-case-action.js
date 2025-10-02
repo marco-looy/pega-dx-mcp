@@ -25,7 +25,7 @@ export class PerformCaseActionTool extends BaseTool {
           },
           actionID: {
             type: 'string',
-            description: 'Name of the case or stage wide optional action to be performed - ID of the flow action rule. This corresponds to a specific flow action configured in the Pega application. Example: "pyUpdateCaseDetails", "CompleteReview", "Approve".'
+            description: 'Name of the case or stage wide optional action to be performed - ID of the flow action rule. This corresponds to a specific flow action configured in the Pega application. IMPORTANT: Action IDs typically do not contain spaces even if the display name does. For example, "Edit details" has ID "pyUpdateCaseDetails". Use get_case to retrieve the correct action ID from the availableActions array. Common IDs: "pyUpdateCaseDetails", "pyChangeStage", "pyApproval", "pyReject".'
           },
           eTag: {
             type: 'string',

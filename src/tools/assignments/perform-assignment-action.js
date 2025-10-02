@@ -27,7 +27,7 @@ export class PerformAssignmentActionTool extends BaseTool {
           },
           actionID: {
             type: 'string',
-            description: 'Name of the assignment action to perform - ID of the flow action rule to be executed on the assignment. This corresponds to a specific flow action configured in the Pega application. Example: "CompleteVerification", "Approve", "Reject".'
+            description: 'Name of the assignment action to perform - ID of the flow action rule to be executed on the assignment. This corresponds to a specific flow action configured in the Pega application. IMPORTANT: Action IDs typically do not contain spaces even if the display name does. For example, if the action displays as "Complete Review", the ID is likely "CompleteReview". Use get_assignment or get_case to retrieve the correct action ID from the actions array. Example IDs: "pyApproval", "pyReject", "Submit".'
           },
           eTag: {
             type: 'string',

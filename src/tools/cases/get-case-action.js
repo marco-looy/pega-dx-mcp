@@ -25,7 +25,7 @@ export class GetCaseActionTool extends BaseTool {
           },
           actionID: {
             type: 'string',
-            description: 'Flow action name of a case/stage action that the client requests'
+            description: 'Flow action name of a case/stage action that the client requests - ID of the flow action rule. IMPORTANT: Action IDs typically do not contain spaces even if the display name does. Use get_case to retrieve the correct action ID from the availableActions array. Common IDs: "pyUpdateCaseDetails", "pyChangeStage", "pyApproval", "pyReject".'
           },
           viewType: {
             type: 'string',

@@ -25,7 +25,7 @@ export class GetAssignmentActionTool extends BaseTool {
           },
           actionID: {
             type: 'string',
-            description: 'Name of the action to be retrieved - ID of the flow action rule. Example: Verify, Approve, Reject'
+            description: 'Name of the action to be retrieved - ID of the flow action rule. IMPORTANT: Action IDs typically do not contain spaces even if the display name does. Use get_assignment to retrieve the correct action ID from the actions array. Example IDs: "pyApproval", "pyReject", "Submit".'
           },
           viewType: {
             type: 'string',
