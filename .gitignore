@@ -166,3 +166,10 @@ todo/*
 unit-test-logs/*
 unit-test-results/*
 mcp-tests/*
+memory.json
+PROGRESS.md
+memory.md
+PLANNING.md
+PROGRESS-PHASE2.md
+V1-IMPLEMENTATION-GUIDE.md
+V1-V2-COMPARISON.md
