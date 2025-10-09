@@ -19,6 +19,14 @@ function loadConfig() {
     console.warn(`   Using cleaned URL: ${baseUrl}`);
   }
 
+  // Validate and normalize API version
+  let apiVersion = (process.env.PEGA_API_VERSION || 'v2').toLowerCase();
+  if (apiVersion !== 'v1' && apiVersion !== 'v2') {
+    console.warn(`⚠️  WARNING: Invalid PEGA_API_VERSION "${apiVersion}". Must be "v1" or "v2".`);
+    console.warn('   Defaulting to "v2".');
+    apiVersion = 'v2';
+  }
+
   _config = {
     pega: {
       baseUrl: baseUrl,
@@ -26,15 +34,20 @@ function loadConfig() {
       clientSecret: process.env.PEGA_CLIENT_SECRET,
       scope: process.env.PEGA_SCOPE || '',
       requestTimeout: 30000,
+      _apiVersion: apiVersion,  // Store the normalized version
       // Derived URLs from base URL
       get tokenUrl() {
         return `${this.baseUrl}/prweb/PRRestService/oauth2/v1/token`;
       },
       get apiBaseUrl() {
+        // Version-aware API base URL
+        if (this._apiVersion === 'v1') {
+          return `${this.baseUrl}/prweb/api/v1`;
+        }
         return `${this.baseUrl}/prweb/api/application/v2`;
       },
       get apiVersion() {
-        return 'v2';
+        return this._apiVersion;
       }
     }
   };
