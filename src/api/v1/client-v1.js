@@ -62,7 +62,8 @@ export class PegaV1Client extends BaseApiClient {
     try {
       errorData = await response.json();
     } catch (e) {
-      errorData = { message: await response.text() };
+      // Can't read body twice - use status text as fallback
+      errorData = { message: response.statusText || 'Unknown error' };
     }
 
     const errorResponse = {

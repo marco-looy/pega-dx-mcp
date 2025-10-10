@@ -111,9 +111,8 @@ export class BaseApiClient {
         try {
           data = await response.json();
         } catch (jsonError) {
-          // Fallback for invalid JSON - treat as text
-          const textResponse = await response.text();
-          data = { message: textResponse || 'Operation completed successfully' };
+          // Can't read body twice - use generic success message
+          data = { message: 'Operation completed successfully' };
         }
       }
 
