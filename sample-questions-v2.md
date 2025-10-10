@@ -1,12 +1,8 @@
-# Sample Questions for Pega DX MCP Tools
+# Sample Questions for Pega Constellation DX API (V2) Tools
 
-Simple questions you can ask the MCP to perform tasks with each tool.
+Simple questions you can ask the MCP to perform tasks with V2 endpoints.
 
-**Version-Specific Questions:**
-- **V1 API**: See [sample-questions-v1.md](./sample-questions-v1.md) for Traditional DX API (V1) specific examples
-- **V2 API**: See [sample-questions-v2.md](./sample-questions-v2.md) for Constellation DX API (V2) specific examples
-
-This file contains questions for both API versions.
+**Important**: Set `PEGA_API_VERSION=v2` in your `.env` file (or omit it, as V2 is the default).
 
 ## ping_pega_service
 - "Can you check if I have a valid connection to my Pega application?"
@@ -30,13 +26,6 @@ This file contains questions for both API versions.
 - "Show me the details of this case"
 - "Get information about case ON6E5R-DIYRECIPE-WORK R-1009"
 - "What's the current status of my Recipe Collection case?"
-
-## get_cases (V1 EXCLUSIVE)
-- "Show me all cases I've created"
-- "List all my cases in the default work pool"
-- "Get all cases I created, ordered from oldest to newest"
-- "How many cases have I created in total?"
-- "Show me a summary of all my cases grouped by status"
 
 ## get_case_action
 - "What can I do with the pyUpdateCaseDetails action on my case?"
