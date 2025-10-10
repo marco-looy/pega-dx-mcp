@@ -1,4 +1,4 @@
-import { PegaAPIClient } from '../api/pega-client.js';
+import { PegaClient } from '../api/pega-client.js';
 import { getSessionConfig, createSessionFromCredentials } from '../config/session-config.js';
 
 /**
@@ -13,14 +13,14 @@ export class BaseTool {
   }
 
   /**
-   * Get PegaAPIClient instance with lazy initialization
+   * Get PegaClient instance with lazy initialization
    * This ensures config is only loaded when actually executing tools
    */
   get pegaClient() {
     if (!this._pegaClient) {
       // If we have session config, ensure we don't fall back to environment config
       // by passing the session config directly. If no session config, pass null to use environment.
-      this._pegaClient = new PegaAPIClient(this._sessionConfig);
+      this._pegaClient = new PegaClient(this._sessionConfig);
     }
     return this._pegaClient;
   }

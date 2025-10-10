@@ -178,6 +178,27 @@ export class OAuth2Client {
   }
 
   /**
+   * Explicitly set access token (useful for direct token provisioning)
+   * @param {string} token - Access token to store
+   * @param {number} expiresInSeconds - Token expiry in seconds from now (default: 3600)
+   */
+  setAccessToken(token, expiresInSeconds = 3600) {
+    if (!token || typeof token !== 'string') {
+      throw new Error('Invalid token: must be a non-empty string');
+    }
+
+    this.accessToken = token;
+    this.tokenExpiry = Date.now() + (expiresInSeconds * 1000);
+
+    // Update auth mode to token if not already set
+    if (this.authMode !== 'token') {
+      this.authMode = 'token';
+    }
+
+    console.log(`🔐 Access token explicitly set for ${this.cacheKey} (expires in ${expiresInSeconds}s)`);
+  }
+
+  /**
    * Get token info for debugging
    */
   getTokenInfo() {
