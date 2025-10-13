@@ -449,6 +449,51 @@ export class PegaV1Client extends BaseApiClient {
     });
   }
 
+  // ========================================
+  // DATA ENDPOINTS
+  // ========================================
+
+  /**
+   * Get list of available data objects
+   * Note: V1 may not have this endpoint - providing stub for tool compatibility
+   *
+   * @param {Object} options - Optional parameters
+   * @param {string} options.type - Data object type filter ("data" or "case")
+   * @returns {Promise<Object>} API response with data objects list
+   */
+  async getDataObjects(options = {}) {
+    // V1 may not support this endpoint - return error for now
+    // TODO: Check if V1 has equivalent endpoint
+    return {
+      success: false,
+      error: {
+        type: 'NOT_SUPPORTED',
+        message: 'getDataObjects is not supported in V1 API',
+        details: 'This feature is only available in Constellation DX API (V2). V1 API does not provide data object introspection.'
+      }
+    };
+  }
+
+  /**
+   * Get data view metadata by data view ID
+   * Note: V1 may not have this endpoint - providing stub for tool compatibility
+   *
+   * @param {string} dataViewID - ID of the data view to retrieve metadata for
+   * @returns {Promise<Object>} API response with data view metadata
+   */
+  async getDataViewMetadata(dataViewID) {
+    // V1 may not support this endpoint - return error for now
+    // TODO: Check if V1 has equivalent endpoint
+    return {
+      success: false,
+      error: {
+        type: 'NOT_SUPPORTED',
+        message: 'getDataViewMetadata is not supported in V1 API',
+        details: 'This feature is only available in Constellation DX API (V2). V1 API does not provide data view metadata introspection.'
+      }
+    };
+  }
+
   // Additional V1 methods will be added as Stage 5 progresses
   // This provides a solid foundation for Stage 4 completion
 

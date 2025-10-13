@@ -127,8 +127,43 @@ export class CreateCaseTool extends BaseTool {
       };
     }
 
-    // PROACTIVE: Auto-discover when no content provided
+    // PROACTIVE: Auto-discover when no content provided (V2 only)
     if (!content || Object.keys(content).length === 0) {
+      // Check if V1 API - field discovery not supported in V1
+      const apiVersion = this.pegaClient.getApiVersion();
+      if (apiVersion === 'v1') {
+        return {
+          content: [{
+            type: 'text',
+            text: `## Field Discovery Not Supported in V1 API
+
+**Note**: Traditional DX API (V1) does not support automatic field discovery.
+
+To create a case with V1 API, you must provide the content object directly.
+
+### Example Request:
+
+\`\`\`json
+{
+  "caseTypeID": "${caseTypeID}",
+  "content": {
+    "YourField1": "value1",
+    "YourField2": "value2"
+  }
+}
+\`\`\`
+
+### V1-Specific Parameters:
+
+- **processID** (optional): Defaults to "pyStartCase" if not provided
+- **parentCaseID** (optional): For creating child cases
+- **content** (required): Case properties and data
+
+**Tip**: Consult your Pega application's case type configuration to determine which fields are required for case creation.`
+          }]
+        };
+      }
+
       return await this.discoverFieldsAndGuide(caseTypeID);
     }
 

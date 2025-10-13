@@ -25,6 +25,22 @@ This file contains questions for both API versions.
 - "What fields do I need to create a Recipe Collection case?"
 - "Create a new Recipe Collection case for me"
 - "Help me create a case with sample recipe data"
+- "Create a Change Request case with empty content" (V1 API)
+- "Create a new case of type OZNR3E-MyTest-Work-ChangeRequest" (V1 & V2)
+- "What happens if I try to create a case without providing content?" (V1 shows guidance, V2 does field discovery)
+
+### 💡 V1 vs V2 Differences
+**V1 API (Traditional DX)**:
+- Supports `processID` parameter (defaults to 'pyStartCase')
+- Returns simple response: `{ID, nextAssignmentID, nextPageID}`
+- No field discovery - must provide content or use empty object
+- Works with case types that don't require fields
+
+**V2 API (Constellation DX)**:
+- No `processID` parameter
+- Rich response with `data.caseInfo` and `uiResources`
+- Automatic field discovery when content not provided
+- Supports `pageInstructions` and `attachments` in request
 
 ## get_case
 - "Show me the details of this case"
