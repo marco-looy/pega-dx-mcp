@@ -35,36 +35,40 @@
 ---
 
 ## update_case (V1 EXCLUSIVE) ✅
-- "Update case C-3 with empty content"
-- "Update the case with eTag validation"
-- "Perform pyUpdateCaseDetails action on case C-3"
 
-**V1 Note**: eTag is automatically fetched if not provided (similar to V2 behavior)
+### Sample Questions
+- "Update the change request title for case C-3"
+- "Update case C-3 with a new description and requested by field"
+- "Set the RequestedBy field to 'John Doe' for case C-3"
+- "Update the ChangeRequestTitle to 'Emergency Change' in case C-3"
+- "Update case C-3 change request description"
 
-**Important**: Update case is V1-only. V2 uses case actions (PATCH /cases/{caseID}/actions/{actionID})
-
-**Example Usage**:
+### Real Example (Tested via MCP)
 ```javascript
-// Simple update (eTag auto-fetched) ⭐ RECOMMENDED
-await client.updateCase('OZNR3E-MYTEST-WORK C-3', {
-  content: {}
-});
-
-// Manual eTag (for advanced use cases)
-const caseResult = await client.getCase('OZNR3E-MYTEST-WORK C-3');
-await client.updateCase('OZNR3E-MYTEST-WORK C-3', {
-  content: {},
-  eTag: caseResult.eTag
-});
+update_case({
+  caseID: "OZNR3E-MYTEST-WORK C-3",
+  content: {
+    "ChangeRequestTitle": "Updated via MCP - Testing Auto-Fetch",
+    "ChangeRequestDescription": "This demonstrates real content update with automatic eTag fetching",
+    "RequestedBy": "Claude Code Testing"
+  }
+})
 ```
+**Result**: ✅ All 3 fields updated successfully!
 
-**Auto-Fetch Benefits**:
-- ✅ No manual eTag management needed
-- ✅ Consistent with V2 tool behavior
-- ✅ Prevents "Missing If-Match header" errors
-- ✅ Same performance as manual approach
+### Valid Fields for Updates
+For case type `OZNR3E-MyTest-Work-ChangeRequest`:
+- `ChangeRequestID`, `ChangeRequestTitle`, `ChangeRequestDescription`
+- `RequestedBy`, `RequestedDate`, `AssignedTo`, `AssignedDate`
+- `ActualEndDate`
 
----
+See `sample-data-v1.md` for complete schema.
+
+### Important Notes
+- ✅ **eTag auto-fetched** if not provided (V2-style behavior)
+- ✅ **No manual GET required** - just call update_case directly
+- ⚠️ **V1 EXCLUSIVE** - V2 uses `perform_case_action` instead
+- ⚠️ Use valid property names (invalid names return 400 error)
 
 ## 🚧 Not Yet Implemented
 - get_case_page (V1 EXCLUSIVE)
