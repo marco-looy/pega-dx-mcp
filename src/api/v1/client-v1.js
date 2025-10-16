@@ -397,18 +397,19 @@ export class PegaV1Client extends BaseApiClient {
    *
    * Performs case-wide local action or stage-wide local action on the case.
    * If actionID is not specified, pyUpdateCaseDetails is performed by default.
+   * If eTag is not provided, automatically fetches latest eTag from case.
    *
    * @param {string} caseID - Case ID
    * @param {Object} options - Update options
    * @param {Object} options.content - Updated content properties
    * @param {string} [options.actionID] - Optional action ID (defaults to pyUpdateCaseDetails)
-   * @param {string} [options.eTag] - Optional eTag for optimistic locking (if-match header)
+   * @param {string} [options.eTag] - Optional eTag for optimistic locking. If not provided, automatically fetches latest eTag.
    * @param {Array} [options.pageInstructions] - Optional page-related operations
    * @param {Array} [options.attachments] - Optional attachments to add
    * @returns {Promise<Object>} Success response (204 No Content)
    *
    * @example
-   * // Simple update
+   * // Simple update (eTag auto-fetched)
    * const result = await client.updateCase('MYCO-PAC-WORK E-26', {
    *   content: {
    *     ExpenseAmount: '600.00',
@@ -417,7 +418,7 @@ export class PegaV1Client extends BaseApiClient {
    * });
    *
    * @example
-   * // Update with eTag validation
+   * // Update with manual eTag
    * const result = await client.updateCase('MYCO-PAC-WORK E-26', {
    *   content: { ExpenseAmount: '750.00' },
    *   eTag: '20250116T120000.000 GMT'
@@ -432,6 +433,43 @@ export class PegaV1Client extends BaseApiClient {
    */
   async updateCase(caseID, options = {}) {
     const { content = {}, actionID, eTag, pageInstructions = [], attachments = [] } = options;
+
+    // Auto-fetch eTag if not provided (V1 API requires eTag for updates)
+    let finalETag = eTag;
+    let autoFetchedETag = false;
+
+    if (!finalETag) {
+      console.log(`Auto-fetching latest eTag for case ${caseID}...`);
+      const caseResponse = await this.getCase(caseID);
+
+      if (!caseResponse.success) {
+        return {
+          success: false,
+          error: {
+            type: 'AUTO_FETCH_FAILED',
+            message: 'Failed to auto-fetch eTag',
+            details: caseResponse.error?.message || 'Could not retrieve case to obtain eTag',
+            originalError: caseResponse.error
+          }
+        };
+      }
+
+      finalETag = caseResponse.eTag;
+      autoFetchedETag = true;
+
+      if (!finalETag) {
+        return {
+          success: false,
+          error: {
+            type: 'ETAG_MISSING',
+            message: 'eTag required for case update',
+            details: 'Auto-fetch succeeded but no eTag was returned from getCase. This may indicate a server issue.'
+          }
+        };
+      }
+
+      console.log(`Successfully auto-fetched eTag: ${finalETag}`);
+    }
 
     const encodedID = this.encodeParam(caseID);
     let url = `${this.getApiBaseUrl()}/cases/${encodedID}`;
@@ -456,14 +494,10 @@ export class PegaV1Client extends BaseApiClient {
       requestBody.attachments = attachments;
     }
 
-    // Build headers
+    // Build headers with required eTag
     const headers = {
-      'x-origin-channel': 'Web'
-    };
-
-    // Add if-match header if eTag provided
-    if (eTag) {
-      headers['if-match'] = eTag;
+      'x-origin-channel': 'Web',
+      'if-match': finalETag
     }
 
     const response = await this.makeRequest(url, {
@@ -485,9 +519,11 @@ export class PegaV1Client extends BaseApiClient {
           message: 'Case updated successfully',
           caseID: caseID
         },
+        eTag: response.eTag || null,  // New eTag from response header
         metadata: {
           statusCode: 204,
-          apiVersion: 'v1'
+          apiVersion: 'v1',
+          autoFetchedETag
         }
       };
     }
@@ -498,8 +534,10 @@ export class PegaV1Client extends BaseApiClient {
     return {
       success: true,
       ...transformed,
+      eTag: response.eTag || null,  // New eTag from response header
       metadata: {
-        apiVersion: 'v1'
+        apiVersion: 'v1',
+        autoFetchedETag
       }
     };
   }

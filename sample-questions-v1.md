@@ -39,20 +39,30 @@
 - "Update the case with eTag validation"
 - "Perform pyUpdateCaseDetails action on case C-3"
 
-**V1 Note**: Requires eTag (if-match header) for all updates - get case first to obtain eTag
+**V1 Note**: eTag is automatically fetched if not provided (similar to V2 behavior)
 
 **Important**: Update case is V1-only. V2 uses case actions (PATCH /cases/{caseID}/actions/{actionID})
 
 **Example Usage**:
 ```javascript
-// Get case first to obtain eTag
+// Simple update (eTag auto-fetched) ⭐ RECOMMENDED
+await client.updateCase('OZNR3E-MYTEST-WORK C-3', {
+  content: {}
+});
+
+// Manual eTag (for advanced use cases)
 const caseResult = await client.getCase('OZNR3E-MYTEST-WORK C-3');
-// Update with eTag
 await client.updateCase('OZNR3E-MYTEST-WORK C-3', {
   content: {},
   eTag: caseResult.eTag
 });
 ```
+
+**Auto-Fetch Benefits**:
+- ✅ No manual eTag management needed
+- ✅ Consistent with V2 tool behavior
+- ✅ Prevents "Missing If-Match header" errors
+- ✅ Same performance as manual approach
 
 ---
 
