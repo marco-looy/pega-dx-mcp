@@ -386,7 +386,8 @@ export class PegaV1Client extends BaseApiClient {
 
     return {
       success: true,
-      ...transformed
+      ...transformed,
+      eTag: response.eTag || null  // Preserve eTag from response header
     };
   }
 
@@ -394,38 +395,112 @@ export class PegaV1Client extends BaseApiClient {
    * Update case
    * V1 EXCLUSIVE - V2 uses case actions instead
    *
+   * Performs case-wide local action or stage-wide local action on the case.
+   * If actionID is not specified, pyUpdateCaseDetails is performed by default.
+   *
    * @param {string} caseID - Case ID
-   * @param {Object} content - Updated content
-   * @returns {Promise<Object>} Updated case details
+   * @param {Object} options - Update options
+   * @param {Object} options.content - Updated content properties
+   * @param {string} [options.actionID] - Optional action ID (defaults to pyUpdateCaseDetails)
+   * @param {string} [options.eTag] - Optional eTag for optimistic locking (if-match header)
+   * @param {Array} [options.pageInstructions] - Optional page-related operations
+   * @param {Array} [options.attachments] - Optional attachments to add
+   * @returns {Promise<Object>} Success response (204 No Content)
    *
    * @example
+   * // Simple update
    * const result = await client.updateCase('MYCO-PAC-WORK E-26', {
-   *   ExpenseAmount: '600.00',
-   *   Status: 'Approved'
+   *   content: {
+   *     ExpenseAmount: '600.00',
+   *     Status: 'Approved'
+   *   }
+   * });
+   *
+   * @example
+   * // Update with eTag validation
+   * const result = await client.updateCase('MYCO-PAC-WORK E-26', {
+   *   content: { ExpenseAmount: '750.00' },
+   *   eTag: '20250116T120000.000 GMT'
+   * });
+   *
+   * @example
+   * // Update with specific action
+   * const result = await client.updateCase('MYCO-PAC-WORK E-26', {
+   *   content: { Status: 'Approved' },
+   *   actionID: 'ApproveCase'
    * });
    */
-  async updateCase(caseID, content) {
+  async updateCase(caseID, options = {}) {
+    const { content = {}, actionID, eTag, pageInstructions = [], attachments = [] } = options;
+
     const encodedID = this.encodeParam(caseID);
-    const url = `${this.getApiBaseUrl()}/cases/${encodedID}`;
+    let url = `${this.getApiBaseUrl()}/cases/${encodedID}`;
+
+    // Add actionID as query parameter if provided
+    if (actionID) {
+      url += `?actionID=${encodeURIComponent(actionID)}`;
+    }
+
+    // Build request body
+    const requestBody = {
+      content
+    };
+
+    // Add pageInstructions if provided
+    if (pageInstructions.length > 0) {
+      requestBody.pageInstructions = pageInstructions;
+    }
+
+    // Add attachments if provided
+    if (attachments.length > 0) {
+      requestBody.attachments = attachments;
+    }
+
+    // Build headers
+    const headers = {
+      'x-origin-channel': 'Web'
+    };
+
+    // Add if-match header if eTag provided
+    if (eTag) {
+      headers['if-match'] = eTag;
+    }
 
     const response = await this.makeRequest(url, {
       method: 'PUT',
-      headers: {
-        'x-origin-channel': 'Web'
-      },
-      body: JSON.stringify({ content })
+      headers,
+      body: JSON.stringify(requestBody)
     });
 
     if (!response.success) {
       return response;
     }
 
-    // Transform to V2-like structure
+    // PUT /cases/{ID} returns 204 No Content
+    // Response data might be empty, so handle that case
+    if (response.status === 204 || !response.data) {
+      return {
+        success: true,
+        data: {
+          message: 'Case updated successfully',
+          caseID: caseID
+        },
+        metadata: {
+          statusCode: 204,
+          apiVersion: 'v1'
+        }
+      };
+    }
+
+    // If response has data, transform it
     const transformed = this.transformCaseResponse(response.data);
 
     return {
       success: true,
-      ...transformed
+      ...transformed,
+      metadata: {
+        apiVersion: 'v1'
+      }
     };
   }
 
