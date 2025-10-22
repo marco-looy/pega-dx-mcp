@@ -50,10 +50,27 @@ export class BulkCasesPatchTool extends BaseTool {
           },
           pageInstructions: {
             type: 'array',
-            description: 'A list of page-related operations to be performed on embedded pages, page lists, or page group properties during action execution.',
             items: {
-              type: 'object'
-            }
+              type: 'object',
+              properties: {
+                instruction: {
+                  type: 'string',
+                  enum: ['UPDATE', 'REPLACE', 'DELETE', 'APPEND', 'INSERT', 'MOVE'],
+                  description: 'The type of page instruction: UPDATE (add fields to page), REPLACE (replace entire page), DELETE (remove page), APPEND (add item to page list), INSERT (insert item in page list), MOVE (reorder page list items)'
+                },
+                target: {
+                  type: 'string',
+                  description: 'The target embedded page name'
+                },
+                content: {
+                  type: 'object',
+                  description: 'Content to set on the embedded page (required for UPDATE and REPLACE)'
+                }
+              },
+              required: ['instruction', 'target'],
+              description: 'Page operation for embedded pages. Use REPLACE instruction to set embedded page references with full object including pzInsKey. Example: {"instruction": "REPLACE", "target": "PageName", "content": {"Property": "value", "pyID": "ID-123", "pzInsKey": "CLASS-NAME ID-123"}}'
+            },
+            description: 'Optional list of page-related operations for embedded pages, page lists, or page groups. Required for setting embedded page references.'
           },
           attachments: {
             type: 'array',

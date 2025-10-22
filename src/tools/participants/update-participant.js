@@ -63,11 +63,27 @@ export class UpdateParticipantTool extends BaseTool {
           },
           pageInstructions: {
             type: 'array',
-            description: 'Optional page-related operations for embedded pages, page lists, or page groups. Used for complex data structure manipulation within the participant record.',
             items: {
               type: 'object',
-              description: 'Page instruction object for embedded page operations'
-            }
+              properties: {
+                instruction: {
+                  type: 'string',
+                  enum: ['UPDATE', 'REPLACE', 'DELETE', 'APPEND', 'INSERT', 'MOVE'],
+                  description: 'The type of page instruction: UPDATE (add fields to page), REPLACE (replace entire page), DELETE (remove page), APPEND (add item to page list), INSERT (insert item in page list), MOVE (reorder page list items)'
+                },
+                target: {
+                  type: 'string',
+                  description: 'The target embedded page name'
+                },
+                content: {
+                  type: 'object',
+                  description: 'Content to set on the embedded page (required for UPDATE and REPLACE)'
+                }
+              },
+              required: ['instruction', 'target'],
+              description: 'Page operation for embedded pages. Use REPLACE instruction to set embedded page references with full object including pzInsKey. Example: {"instruction": "REPLACE", "target": "PageName", "content": {"Property": "value", "pyID": "ID-123", "pzInsKey": "CLASS-NAME ID-123"}}'
+            },
+            description: 'Optional list of page-related operations for embedded pages, page lists, or page groups. Required for setting embedded page references.'
           },
           viewType: {
             type: 'string',

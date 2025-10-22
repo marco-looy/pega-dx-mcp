@@ -39,7 +39,9 @@ export class PingServiceTool extends BaseTool {
       // Perform connectivity test (uses existing auth)
       const result = await this.testConnectivity();
 
-      if (result.success) {
+      // Always show the full ping response with test details
+      // Even when tests fail, we want to see what passed and what failed
+      if (result.data) {
         return {
           content: [
             {
@@ -49,6 +51,7 @@ export class PingServiceTool extends BaseTool {
           ]
         };
       } else {
+        // Only use error response if we have no data at all
         return this.createResponse(false, 'Ping Pega Service', result.error);
       }
     } catch (error) {
@@ -94,7 +97,7 @@ export class PingServiceTool extends BaseTool {
             length: token ? token.length : 0,
             prefix: token ? token.substring(0, 10) + '...' : 'None',
             acquired: !!token,
-            cached: tokenInfo.cached,
+            cached: tokenInfo.hasToken,
             expiresInMinutes: tokenInfo.expiresInMinutes
           }
         });
@@ -177,22 +180,39 @@ export class PingServiceTool extends BaseTool {
       const totalDuration = Date.now() - startTime;
       const allTestsPassed = tests.every(test => test.success);
 
-      return {
-        success: allTestsPassed,
-        data: {
-          timestamp: new Date().toISOString(),
-          totalDuration: `${totalDuration}ms`,
-          apiVersion: this.pegaClient.getApiVersion(),
-          configuration: {
-            baseUrl: this.pegaClient.client.config.pega.baseUrl,
-            apiVersion: this.pegaClient.client.config.pega.apiVersion,
-            apiBaseUrl: this.pegaClient.client.config.pega.apiBaseUrl,
-            authMode: oauth2Client.authMode,
-            configSource: tokenInfo.configSource
-          },
-          tests
-        }
+      const responseData = {
+        timestamp: new Date().toISOString(),
+        totalDuration: `${totalDuration}ms`,
+        apiVersion: this.pegaClient.getApiVersion(),
+        configuration: {
+          baseUrl: this.pegaClient.client.config.pega.baseUrl,
+          apiVersion: this.pegaClient.client.config.pega.apiVersion,
+          apiBaseUrl: this.pegaClient.client.config.pega.apiBaseUrl,
+          authMode: oauth2Client.authMode,
+          configSource: tokenInfo.configSource
+        },
+        tests
       };
+
+      if (allTestsPassed) {
+        return {
+          success: true,
+          data: responseData
+        };
+      } else {
+        // Some tests failed - return error with test details
+        const failedTests = tests.filter(test => !test.success);
+        return {
+          success: false,
+          error: {
+            type: 'CONNECTIVITY_TEST_FAILED',
+            message: `${failedTests.length} test(s) failed`,
+            details: failedTests.map(t => t.error || t.message).join('; '),
+            tests
+          },
+          data: responseData
+        };
+      }
 
     } catch (error) {
       return {
