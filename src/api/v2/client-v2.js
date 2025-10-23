@@ -1140,7 +1140,7 @@ export class PegaV2Client extends BaseApiClient {
         method: 'POST',
         headers: headers,
         body: formData,
-        timeout: config.pega.requestTimeout || 30000
+        timeout: this.config.pega.requestTimeout || 30000
       });
 
       // Handle non-2xx responses

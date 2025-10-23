@@ -65,20 +65,6 @@ export class PerformAssignmentActionTool extends BaseTool {
             type: 'array',
             items: {
               type: 'object',
-              properties: {
-                fileName: {
-                  type: 'string',
-                  description: 'Name of the attachment file'
-                },
-                fileContent: {
-                  type: 'string',
-                  description: 'Base64 encoded file content'
-                },
-                mimeType: {
-                  type: 'string',
-                  description: 'MIME type of the attachment'
-                }
-              },
               description: 'Attachment object with file details and metadata'
             },
             description: 'Optional list of attachments to be added to or deleted from specific attachment fields included in the assignment action\'s view. Each attachment entry specifies the operation (add/delete) and attachment details. Only attachment fields included in the assignment action\'s view can be modified.'
