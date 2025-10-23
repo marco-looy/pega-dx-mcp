@@ -15,6 +15,11 @@ This package transforms Pega Infinity&trade; interactions into intuitive, conver
 
 The Pega DX MCP Server is an experimental project exploring the intersection of Model Context Protocol and Pega Infinity&trade; capabilities. This is not an official Pegasystems product and is not generally available. All commands, parameters, and other features are subject to change or deprecation at any time, with or without notice. Do not use this MCP server for production functionality. This experiment demonstrates the potential of natural language interfaces for Pega Infinity&trade; interactions. We welcome feedback and contributions to help shape the future of GenAI-powered business automation.
 
+## 📡 API Support
+
+- **Constellation DX API (V2)**: ✅ Fully supported with 60+ tools
+- **Traditional DX API (V1)**: 🚧 Work in progress - Basic support for cases and case types
+
 ## 🌟 Key Features
 
 - **🤖 Natural Language Interface** - Demonstrates conversational case creation: "Create a travel claim for John"
