@@ -47,11 +47,18 @@ export class SessionConfig {
       baseUrl = baseUrl.replace(/\/prweb.*$/, '');
     }
 
+    // Validate and normalize API version
+    let apiVersion = (credentials.apiVersion || 'v2').toLowerCase();
+    if (apiVersion !== 'v1' && apiVersion !== 'v2') {
+      console.warn(`⚠️ Session API version "${apiVersion}" invalid. Must be "v1" or "v2". Defaulting to "v2".`);
+      apiVersion = 'v2';
+    }
+
     // Build configuration similar to env config structure
     const config = {
       pega: {
         baseUrl: baseUrl,
-        apiVersion: credentials.apiVersion || 'v2',
+        _apiVersion: apiVersion,  // Store normalized version
         requestTimeout: 30000,
 
         // Authentication-specific fields
@@ -70,7 +77,14 @@ export class SessionConfig {
           return `${this.baseUrl}/prweb/PRRestService/oauth2/v1/token`;
         },
         get apiBaseUrl() {
-          return `${this.baseUrl}/prweb/api/application/${this.apiVersion}`;
+          // Version-aware API base URL
+          if (this._apiVersion === 'v1') {
+            return `${this.baseUrl}/prweb/api/v1`;
+          }
+          return `${this.baseUrl}/prweb/api/application/${this._apiVersion}`;
+        },
+        get apiVersion() {
+          return this._apiVersion;
         }
       },
 

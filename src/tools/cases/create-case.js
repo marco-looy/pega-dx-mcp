@@ -38,16 +38,22 @@ export class CreateCaseTool extends BaseTool {
               properties: {
                 instruction: {
                   type: 'string',
-                  description: 'The type of page instruction to perform'
+                  enum: ['UPDATE', 'REPLACE', 'DELETE', 'APPEND', 'INSERT', 'MOVE'],
+                  description: 'The type of page instruction: UPDATE (add fields to page), REPLACE (replace entire page), DELETE (remove page), APPEND (add item to page list), INSERT (insert item in page list), MOVE (reorder page list items)'
                 },
                 target: {
                   type: 'string',
-                  description: 'The target page or page list for the instruction'
+                  description: 'The target embedded page name (e.g., "Collection", "Datasource")'
+                },
+                content: {
+                  type: 'object',
+                  description: 'Content to set on the embedded page (required for UPDATE and REPLACE)'
                 }
               },
-              description: 'Page operation object with instruction type and target'
+              required: ['instruction', 'target'],
+              description: 'Page operation for embedded pages. IMPORTANT: Use REPLACE instruction to set embedded page references like Collection or Datasource with full object including pzInsKey. Example: {"instruction": "REPLACE", "target": "Collection", "content": {"CollectionName": "knowledge", "pyID": "DC-1", "pzInsKey": "PEGAFW-QNA-WORK DC-1"}}'
             },
-            description: 'A list of page-related operations to be performed on embedded pages, page lists, or page group properties (optional)'
+            description: 'Optional list of page-related operations for embedded pages, page lists, or page groups. Required for setting embedded page references (e.g., Collection, Datasource). See Pega DX API documentation on page instructions for embedded pages.'
           },
           attachments: {
             type: 'array',
@@ -128,8 +134,63 @@ export class CreateCaseTool extends BaseTool {
     }
 
     // PROACTIVE: Auto-discover when no content provided
+    // Try creation with empty content first for both V1 and V2 (many case types accept empty content)
     if (!content || Object.keys(content).length === 0) {
-      return await this.discoverFieldsAndGuide(caseTypeID);
+      const apiVersion = this.pegaClient.getApiVersion();
+
+      // Try creation with empty content first (works for many case types)
+      const emptyResult = await this.executeWithErrorHandling(
+        `Case Creation: ${caseTypeID}`,
+        async () => await this.pegaClient.createCase({
+          caseTypeID: caseTypeID.trim(),
+          parentCaseID: parentCaseID?.trim(),
+          content: {},
+          pageInstructions,
+          attachments,
+          viewType,
+          pageName
+        }),
+        { caseTypeID, viewType, pageName, sessionInfo }
+      );
+
+      // If empty content worked, return success
+      if (emptyResult.content && emptyResult.content[0].text.includes('✅')) {
+        return emptyResult;
+      }
+
+      // If it failed, provide version-specific guidance
+      if (apiVersion === 'v1') {
+        // V1: Field discovery not supported, provide manual guidance
+        return {
+          content: [{
+            type: 'text',
+            text: `## V1 Case Creation Failed
+
+${emptyResult.content?.[0]?.text || 'Case creation with empty content failed.'}
+
+**Note**: Traditional DX API (V1) does not support automatic field discovery.
+
+### To create a case with V1 API:
+
+Provide the content object with your case fields directly:
+
+\`\`\`json
+{
+  "caseTypeID": "${caseTypeID}",
+  "content": {
+    "YourField1": "value1",
+    "YourField2": "value2"
+  }
+}
+\`\`\`
+
+**Tip**: Consult your Pega application's case type configuration to determine which fields are required.`
+          }]
+        };
+      }
+
+      // V2: Perform automatic field discovery to help user
+      return await this.discoverFieldsAndGuide(caseTypeID, { message: this.extractErrorMessage(emptyResult) });
     }
 
     // NORMAL: Try creation with provided content
@@ -542,7 +603,29 @@ ${sessionInfo ? `**Session**: ${sessionInfo.sessionId} (${sessionInfo.authMode} 
     response += `2. **OOTB Fields Filtered**: Pega system fields (px, py, pz) are excluded\n`;
     response += `3. **Field Types**: Match the expected data types shown above\n`;
     response += `4. **Case Categories**: Fields are organized by category for clarity\n`;
-    response += `5. **Validation**: Some fields may have additional validation rules not shown here\n\n`;
+    response += `5. **Validation**: Some fields may have additional validation rules not shown here\n`;
+    response += `6. **Embedded Pages**: For embedded page references, use pageInstructions parameter (see below)\n\n`;
+
+    response += `### 📄 Using pageInstructions for Embedded Pages\n\n`;
+    response += `If fields of type "Page" need to be set, use the \`pageInstructions\` parameter with REPLACE instruction:\n\n`;
+    response += `\`\`\`json\n`;
+    response += `{\n`;
+    response += `  "caseTypeID": "${caseTypeID}",\n`;
+    response += `  "content": { /* scalar fields */ },\n`;
+    response += `  "pageInstructions": [\n`;
+    response += `    {\n`;
+    response += `      "instruction": "REPLACE",\n`;
+    response += `      "target": "PagePropertyName",\n`;
+    response += `      "content": {\n`;
+    response += `        "PropertyName": "value",\n`;
+    response += `        "pyID": "ID-123",\n`;
+    response += `        "pzInsKey": "CLASS-NAME ID-123"\n`;
+    response += `      }\n`;
+    response += `    }\n`;
+    response += `  ]\n`;
+    response += `}\n`;
+    response += `\`\`\`\n\n`;
+    response += `**Available Instructions**: UPDATE (add fields), REPLACE (replace entire page), DELETE (remove page)\n\n`;
     
     // Add workflow guidance
     response += `### 🔄 Recommended Workflow\n\n`;
@@ -704,10 +787,11 @@ ${sessionInfo ? `**Session**: ${sessionInfo.sessionId} (${sessionInfo.authMode} 
       response += `- **Authentication Mode**: ${sessionInfo.authMode.toUpperCase()}\n`;
       response += `- **Configuration Source**: ${sessionInfo.configSource}\n\n`;
     }
-    
-    // Display case ID prominently
-    if (data.ID) {
-      response += `### ✅ New Case ID: ${data.ID}\n\n`;
+
+    // Display case ID prominently (check both formats for V1 and V2 compatibility)
+    const caseID = data.ID || data.caseInfo?.ID;
+    if (caseID) {
+      response += `### ✅ New Case ID: ${caseID}\n\n`;
     }
 
     // Display eTag for future updates  
@@ -740,14 +824,19 @@ ${sessionInfo ? `**Session**: ${sessionInfo.sessionId} (${sessionInfo.authMode} 
       }
     }
 
-    // Display next assignment information
-    if (data.nextAssignmentInfo) {
+    // Display next assignment information (check both formats for V1 and V2 compatibility)
+    const nextAssignmentID = data.nextAssignmentInfo?.ID || data.caseInfo?.nextAssignmentID;
+    if (nextAssignmentID) {
       response += '\n### Next Assignment\n';
-      const assignment = data.nextAssignmentInfo;
-      response += `- **Assignment ID**: ${assignment.ID || 'N/A'}\n`;
-      response += `- **Name**: ${assignment.name || 'N/A'}\n`;
-      response += `- **Type**: ${assignment.type || 'N/A'}\n`;
-      response += `- **Actions**: ${assignment.actions?.join(', ') || 'N/A'}\n`;
+      if (data.nextAssignmentInfo) {
+        const assignment = data.nextAssignmentInfo;
+        response += `- **Assignment ID**: ${assignment.ID || 'N/A'}\n`;
+        response += `- **Name**: ${assignment.name || 'N/A'}\n`;
+        response += `- **Type**: ${assignment.type || 'N/A'}\n`;
+        response += `- **Actions**: ${assignment.actions?.join(', ') || 'N/A'}\n`;
+      } else {
+        response += `- **Assignment ID**: ${nextAssignmentID}\n`;
+      }
     } else if (data.confirmationNote) {
       response += '\n### Confirmation\n';
       response += `${data.confirmationNote}\n`;

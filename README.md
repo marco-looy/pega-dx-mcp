@@ -48,12 +48,12 @@ Compatible with Claude Desktop, Claude Code, Cline, and many other MCP-enabled a
 Use the `claude mcp add-json` command to add the server:
 
 ```bash
-claude mcp add-json pega-dx-mcp '{"command":"node","args": ["-y", "@marco-looy/pega-dx-mcp"],"env":{"PEGA_BASE_URL":"https://your-pega-instance.com","PEGA_CLIENT_ID":"your-client-id","PEGA_CLIENT_SECRET":"your-client-secret","PEGA_ASSIGNMENT_TOOLS":"true","PEGA_ATTACHMENT_TOOLS":"true","PEGA_CASE_TOOLS":"true","PEGA_CASETYPE_TOOLS":"true","PEGA_DATAVIEW_TOOLS":"true","PEGA_DOCUMENT_TOOLS":"true","PEGA_FOLLOWER_TOOLS":"true","PEGA_PARTICIPANT_TOOLS":"true","PEGA_RELATED_CASE_TOOLS":"true","PEGA_SERVICE_TOOLS":"true","PEGA_TAG_TOOLS":"true","LOG_LEVEL":"info"}}'
+claude mcp add-json pega-dx-mcp '{"command":"npx","args": ["-y", "@marco-looy/pega-dx-mcp"],"env":{"PEGA_BASE_URL":"https://your-pega-instance.com","PEGA_CLIENT_ID":"your-client-id","PEGA_CLIENT_SECRET":"your-client-secret","PEGA_ASSIGNMENT_TOOLS":"true","PEGA_ATTACHMENT_TOOLS":"true","PEGA_CASE_TOOLS":"true","PEGA_CASETYPE_TOOLS":"true","PEGA_DATAVIEW_TOOLS":"true","PEGA_DOCUMENT_TOOLS":"true","PEGA_FOLLOWER_TOOLS":"true","PEGA_PARTICIPANT_TOOLS":"true","PEGA_RELATED_CASE_TOOLS":"true","PEGA_SERVICE_TOOLS":"true","PEGA_TAG_TOOLS":"true","LOG_LEVEL":"info"}}'
 ```
 
 Or for development/local testing, navigate to this project directory and run:
 ```bash
-claude mcp add-json pega-dx-mcp '{"command":"npx","args": ["-y", "@marco-looy/pega-dx-mcp"],"env":{"PEGA_BASE_URL":"https://pega.184a73b89c235.pegaenablement.com","PEGA_CLIENT_ID":"27825049298136835474","PEGA_CLIENT_SECRET":"D1DE86BC2CDD880280DA3CA6A0314591","PEGA_ASSIGNMENT_TOOLS":"true","PEGA_ATTACHMENT_TOOLS":"true","PEGA_CASE_TOOLS":"true","PEGA_CASETYPE_TOOLS":"true","PEGA_DATAVIEW_TOOLS":"true","PEGA_DOCUMENT_TOOLS":"true","PEGA_FOLLOWER_TOOLS":"true","PEGA_PARTICIPANT_TOOLS":"true","PEGA_RELATED_CASE_TOOLS":"true","PEGA_SERVICE_TOOLS":"true","PEGA_TAG_TOOLS":"true","LOG_LEVEL":"info"}}'
+claude mcp add-json pega-dx-mcp '{"command":"node","args": ["src/index.js"],"env":{"PEGA_BASE_URL":"https://your-pega-instance.com","PEGA_CLIENT_ID":"your-client-id","PEGA_CLIENT_SECRET":"your-client-secret","PEGA_ASSIGNMENT_TOOLS":"true","PEGA_ATTACHMENT_TOOLS":"true","PEGA_CASE_TOOLS":"true","PEGA_CASETYPE_TOOLS":"true","PEGA_DATAVIEW_TOOLS":"true","PEGA_DOCUMENT_TOOLS":"true","PEGA_FOLLOWER_TOOLS":"true","PEGA_PARTICIPANT_TOOLS":"true","PEGA_RELATED_CASE_TOOLS":"true","PEGA_SERVICE_TOOLS":"true","PEGA_TAG_TOOLS":"true","LOG_LEVEL":"info"}}'
 ```
 
 #### Other MCP Clients
@@ -66,6 +66,23 @@ Add to your MCP client's configuration file:
     "pega-dx-mcp": {
       "command": "npx",
       "args": ["-y", "@marco-looy/pega-dx-mcp"],
+      "env": {
+        "PEGA_BASE_URL": "https://your-pega-instance.com",
+        "PEGA_CLIENT_ID": "your-client-id",
+        "PEGA_CLIENT_SECRET": "your-client-secret"
+      }
+    }
+  }
+}
+```
+For local:
+
+```json
+{
+  "mcpServers": {
+    "pega-dx-mcp": {
+      "command": "node",
+      "args": ["src/index.js"],
       "env": {
         "PEGA_BASE_URL": "https://your-pega-instance.com",
         "PEGA_CLIENT_ID": "your-client-id",

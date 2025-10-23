@@ -1,6 +1,6 @@
 {
   "name": "@marco-looy/pega-dx-mcp",
-  "version": "0.1.10",
+  "version": "0.1.11",
   "description": "MCP Server enabling conversational AI interaction with Pega Infinity applications. Bridge GenAI agents, IDEs, and AI assistants to Pega DX APIs for natural language case management, workflow automation, and business process operations.",
   "keywords": [
     "Pega",
@@ -35,16 +35,20 @@
   "scripts": {
     "start": "node src/index.js",
     "update-config": "node tools/update-mcp-config.js",
-    "test:oauth": "node tests/oauth-debug.js",
-    "test:api": "node tests/api-test.js",
-    "test:mcp": "node tests/mcp-tool-test.js",
-    "test:ping": "node tests/ping-service-test.js",
-    "test:create": "node tests/mcp-create-case-test.js",
-    "test:delete": "node tests/delete-case-test.js",
-    "test:casetypes": "node tests/casetypes/get-case-types-test.js",
-    "test:bulk-action": "node tests/get-case-type-bulk-action-test.js",
-    "test:complete-workflow": "node tests/cases/complete-etag-workflow-test.js",
-    "test:auto-fetch": "node tests/cases/auto-fetch-etag-test.js"
+    "test": "npm run test:v1 && npm run test:v2",
+    "test:v1": "echo '🧪 Running V1 API tests...' && echo 'V1 tests coming soon in Stage 5'",
+    "test:v2": "echo '🧪 Running V2 API tests (regression)...'",
+    "test:compare": "echo '🔍 Running V1 vs V2 comparison tests...' && echo 'Comparison tests coming soon in Stage 7'",
+    "test:oauth": "node tests/v2/oauth-debug.js",
+    "test:api": "node tests/v2/api-test.js",
+    "test:mcp": "node tests/v2/mcp-tool-test.js",
+    "test:ping": "node tests/v2/ping-service-test.js",
+    "test:create": "node tests/v2/mcp-create-case-test.js",
+    "test:delete": "node tests/v2/delete-case-test.js",
+    "test:casetypes": "node tests/v2/casetypes/get-case-types-test.js",
+    "test:casetypes:bulk-action": "node tests/v2/get-case-type-bulk-action-test.js",
+    "test:casetypes:complete-workflow": "node tests/v2/cases/complete-etag-workflow-test.js",
+    "test:casetypes:auto-fetch": "node tests/v2/cases/auto-fetch-etag-test.js"
   },
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.13.3",
@@ -52,6 +56,7 @@
     "ajv-formats": "^3.0.1",
     "dotenv": "^17.2.2",
     "form-data": "^4.0.0",
-    "mime-types": "^2.1.35"
+    "mime-types": "^2.1.35",
+    "yaml": "^2.8.1"
   }
 }

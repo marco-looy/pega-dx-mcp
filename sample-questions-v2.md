@@ -1,6 +1,8 @@
-# Sample Questions for Pega DX MCP Tools
+# Sample Questions for Pega Constellation DX API (V2) Tools
 
-Simple questions you can ask the MCP to perform tasks with each tool.
+Simple questions you can ask the MCP to perform tasks with V2 endpoints.
+
+**Important**: Set `PEGA_API_VERSION=v2` in your `.env` file (or omit it, as V2 is the default).
 
 ## ping_pega_service
 - "Can you check if I have a valid connection to my Pega application?"

@@ -1,3582 +1,978 @@
+import { PegaV1Client } from './v1/client-v1.js';
+import { PegaV2Client } from './v2/client-v2.js';
 import { config } from '../config.js';
-import { OAuth2Client } from '../auth/oauth2-client.js';
-import FormData from 'form-data';
 
-export class PegaAPIClient {
+/**
+ * Pega API Client Router
+ *
+ * Routes requests to version-specific API clients (V1 or V2) based on configuration.
+ * Only ONE API version can be active at a time (version-exclusive architecture).
+ *
+ * Version Selection:
+ * - Determined by PEGA_API_VERSION environment variable
+ * - Supports session-based configuration override
+ * - Default: v2 (Constellation DX API)
+ *
+ * Supported Versions:
+ * - v1: Traditional DX API (Base URL: /api/v1/)
+ *   - Features: getAllCases, updateCase, getAllAssignments
+ *   - Limitations: No eTag support, no participants/followers/tags
+ *
+ * - v2: Constellation DX API (Base URL: /api/application/v2/)
+ *   - Features: Full feature set with eTag, participants, followers, tags, etc.
+ *   - Limitations: No getAllCases (use Data Views), no direct updateCase (use actions)
+ *
+ * @example
+ * // Use default environment configuration
+ * const client = new PegaClient();
+ *
+ * @example
+ * // Use session-specific configuration
+ * const sessionConfig = createSessionConfig({
+ *   baseUrl: 'https://custom-pega.com',
+ *   clientId: 'custom-client-id',
+ *   clientSecret: 'custom-secret',
+ *   apiVersion: 'v1'
+ * });
+ * const client = new PegaClient(sessionConfig);
+ */
+export class PegaClient {
+  /**
+   * Create router instance with version-specific client
+   * @param {Object|null} sessionConfig - Optional session-specific configuration
+   */
   constructor(sessionConfig = null) {
-    // Use session config if provided, otherwise fall back to environment config
-    this.config = sessionConfig || config;
-    this.oauth2Client = new OAuth2Client(this.config);
-    this.baseUrl = this.config.pega.apiBaseUrl;
+    // Use session config if provided, otherwise use environment config
+    const clientConfig = sessionConfig || config;
 
-    // Log configuration source for debugging
-    const configSource = this.config._sessionMeta ?
-      `session ${this.config._sessionMeta.sessionId}` : 'environment';
-    console.log(`🔧 PegaAPIClient initialized with ${configSource} config (${this.oauth2Client.authMode} mode)`);
+    // Get API version from config
+    const apiVersion = clientConfig.pega?.apiVersion || 'v2';
+
+    // Create version-specific client
+    if (apiVersion === 'v1') {
+      this.client = new PegaV1Client(clientConfig);
+      this.apiVersion = 'v1';
+    } else if (apiVersion === 'v2') {
+      this.client = new PegaV2Client(clientConfig);
+      this.apiVersion = 'v2';
+    } else {
+      throw new Error(`Unsupported API version: ${apiVersion}. Supported versions: v1, v2`);
+    }
+
+    // Store configuration source for debugging
+    this.configSource = sessionConfig ? 'session' : 'environment';
+
+    console.log(`🔀 PegaClient router initialized: API ${this.apiVersion.toUpperCase()} (${this.configSource} config)`);
   }
 
   /**
-   * Get case details by case ID
+   * Get current API version
+   * @returns {string} API version ('v1' or 'v2')
    */
-  async getCase(caseID, options = {}) {
-    const { viewType, pageName, originChannel } = options;
-    
-    // URL encode the case ID to handle spaces and special characters
-    const encodedCaseID = encodeURIComponent(caseID);
-    let url = `${this.baseUrl}/cases/${encodedCaseID}`;
+  getApiVersion() {
+    return this.apiVersion;
+  }
 
-    // Add query parameters if provided
-    const queryParams = new URLSearchParams();
-    if (viewType) {
-      queryParams.append('viewType', viewType);
-    }
-    if (pageName) {
-      queryParams.append('pageName', pageName);
-    }
-    
-    if (queryParams.toString()) {
-      url += `?${queryParams.toString()}`;
-    }
+  /**
+   * Check if a feature is available in the current API version
+   * @param {string} feature - Feature name to check
+   * @returns {boolean} True if feature is available
+   */
+  isFeatureAvailable(feature) {
+    // V1-only features (not available in V2)
+    const v1OnlyFeatures = [
+      'getAllCases',      // V1: GET /cases, V2: Use Data Views
+      'updateCase',       // V1: PUT /cases/{ID}, V2: Use case actions
+      'getAllAssignments' // V1: GET /assignments, V2: Use Data Views
+    ];
 
-    return await this.makeRequest(url, {
-      method: 'GET',
-      headers: {
-        'x-origin-channel': originChannel || 'Web'
-      }
-    });
+    // V2-only features (not available in V1)
+    const v2OnlyFeatures = [
+      'participants',         // Case participant management
+      'followers',           // Case follower management
+      'tags',                // Case tagging
+      'relatedCases',        // Case relationships
+      'stageNavigation',     // Stage-based navigation
+      'bulkOperations',      // Bulk case operations
+      'dataViewQuerying',    // Advanced data view queries
+      'eTagSupport',         // Optimistic locking with eTags
+      'uiMetadata'           // Separated UI resources
+    ];
+
+    if (this.apiVersion === 'v1') {
+      // In V1, check if it's a V2-only feature
+      return !v2OnlyFeatures.includes(feature);
+    } else {
+      // In V2, check if it's a V1-only feature
+      return !v1OnlyFeatures.includes(feature);
+    }
+  }
+
+  /**
+   * Throw error for unsupported features
+   * @private
+   * @param {string} feature - Feature name
+   * @param {string} method - Method name
+   */
+  throwUnsupportedFeatureError(feature, method) {
+    if (this.apiVersion === 'v1') {
+      throw new Error(
+        `${method}() is not available in Traditional DX API (V1). ` +
+        `This is a V2-only feature (${feature}). ` +
+        `Set PEGA_API_VERSION=v2 to use this feature.`
+      );
+    } else {
+      throw new Error(
+        `${method}() is not available in Constellation DX API (V2). ` +
+        `This is a V1-only feature (${feature}). ` +
+        `Set PEGA_API_VERSION=v1 to use this feature.`
+      );
+    }
+  }
+
+  // ========================================
+  // CONNECTIVITY METHODS
+  // ========================================
+
+  /**
+   * Test connectivity and authentication
+   * @returns {Promise<Object>} Ping test results
+   */
+  async ping() {
+    return this.client.ping();
+  }
+
+  // ========================================
+  // CASE METHODS
+  // ========================================
+
+  /**
+   * Get all cases created by authenticated user
+   * V1 EXCLUSIVE - Use Data Views in V2
+   * @returns {Promise<Object>} Cases array
+   */
+  async getAllCases() {
+    if (!this.isFeatureAvailable('getAllCases')) {
+      this.throwUnsupportedFeatureError('getAllCases', 'getAllCases');
+    }
+    return this.client.getAllCases();
   }
 
   /**
    * Create a new case
+   * @param {Object} options - Case creation options
+   * @returns {Promise<Object>} Created case information
    */
-  async createCase(options = {}) {
-    const { caseTypeID, parentCaseID, content, pageInstructions, attachments, viewType, pageName } = options;
-    
-    let url = `${this.baseUrl}/cases`;
-
-    // Add query parameters if provided
-    const queryParams = new URLSearchParams();
-    if (viewType) {
-      queryParams.append('viewType', viewType);
-    }
-    if (pageName) {
-      queryParams.append('pageName', pageName);
-    }
-    
-    if (queryParams.toString()) {
-      url += `?${queryParams.toString()}`;
-    }
-
-    // Build request body
-    const requestBody = {
-      caseTypeID
-    };
-
-    // Add optional parameters if provided
-    if (parentCaseID) {
-      requestBody.parentCaseID = parentCaseID;
-    }
-    if (content) {
-      requestBody.content = content;
-    }
-    if (pageInstructions) {
-      requestBody.pageInstructions = pageInstructions;
-    }
-    if (attachments) {
-      requestBody.attachments = attachments;
-    }
-
-    return await this.makeRequest(url, {
-      method: 'POST',
-      headers: {
-        'x-origin-channel': 'Web'
-      },
-      body: JSON.stringify(requestBody)
-    });
+  async createCase(options) {
+    return this.client.createCase(options);
   }
 
   /**
-   * Delete a case (only works for cases in create stage)
+   * Get case by ID
+   * @param {string} caseID - Case ID
+   * @param {Object} options - Optional parameters
+   * @returns {Promise<Object>} Case details
+   */
+  async getCase(caseID, options = {}) {
+    return this.client.getCase(caseID, options);
+  }
+
+  /**
+   * Update case
+   * V1 EXCLUSIVE - Use case actions in V2
+   * @param {string} caseID - Case ID
+   * @param {Object} content - Updated content
+   * @returns {Promise<Object>} Updated case details
+   */
+  async updateCase(caseID, content) {
+    if (!this.isFeatureAvailable('updateCase')) {
+      this.throwUnsupportedFeatureError('updateCase', 'updateCase');
+    }
+    return this.client.updateCase(caseID, content);
+  }
+
+  /**
+   * Delete case (only works for cases in create stage)
+   * @param {string} caseID - Case ID
+   * @returns {Promise<Object>} Deletion result
    */
   async deleteCase(caseID) {
-    // URL encode the case ID to handle spaces and special characters
-    const encodedCaseID = encodeURIComponent(caseID);
-    const url = `${this.baseUrl}/cases/${encodedCaseID}`;
-
-    return await this.makeRequest(url, {
-      method: 'DELETE',
-      headers: {
-        'x-origin-channel': 'Web'
-      }
-    });
+    return this.client.deleteCase(caseID);
   }
 
   /**
-   * Get case type action metadata with rich UI resources
-   * @param {string} caseTypeID - ID of the case type for which the case action metadata is being retrieved
-   * @param {string} actionID - Flow action name of a case/stage action that the client requests
-   * @returns {Promise<Object>} API response with detailed action metadata, UI resources, and form configuration
-   */
-  async getCaseTypeAction(caseTypeID, actionID) {
-    // URL encode both IDs to handle spaces and special characters
-    const encodedCaseTypeID = encodeURIComponent(caseTypeID);
-    const encodedActionID = encodeURIComponent(actionID);
-    const url = `${this.baseUrl}/casetypes/${encodedCaseTypeID}/actions/${encodedActionID}`;
-
-    return await this.makeRequest(url, {
-      method: 'GET',
-      headers: {
-        'x-origin-channel': 'Web'
-      }
-    });
-  }
-
-  /**
-   * Get case type bulk action metadata
-   * @param {string} caseTypeID - ID of the case type
-   * @param {string} actionID - ID of the action
-   * @returns {Promise<Object>} API response with action metadata
-   */
-  async getCaseTypeBulkAction(caseTypeID, actionID) {
-    // URL encode both IDs to handle spaces and special characters
-    const encodedCaseTypeID = encodeURIComponent(caseTypeID);
-    const encodedActionID = encodeURIComponent(actionID);
-    const url = `${this.baseUrl}/casetypes/${encodedCaseTypeID}/bulk-actions/${encodedActionID}`;
-
-    return await this.makeRequest(url, {
-      method: 'GET',
-      headers: {
-        'x-origin-channel': 'Web'
-      }
-    });
-  }
-
-  /**
-   * Get list of case types that the user can create
-   * @returns {Promise<Object>} API response with case types list
-   */
-  async getCaseTypes() {
-    const url = `${this.baseUrl}/casetypes`;
-
-    return await this.makeRequest(url, {
-      method: 'GET',
-      headers: {
-        'x-origin-channel': 'Web'
-      }
-    });
-  }
-
-  /**
-   * Get case view details by case ID and view ID
-   * @param {string} caseID - Full case handle
-   * @param {string} viewID - Name of the view
-   * @returns {Promise<Object>} API response with view data and UI resources
+   * Get case view details
+   * @param {string} caseID - Case ID
+   * @param {string} viewID - View ID
+   * @returns {Promise<Object>} View details
    */
   async getCaseView(caseID, viewID) {
-    // URL encode both the case ID and view ID to handle spaces and special characters
-    const encodedCaseID = encodeURIComponent(caseID);
-    const encodedViewID = encodeURIComponent(viewID);
-    const url = `${this.baseUrl}/cases/${encodedCaseID}/views/${encodedViewID}`;
-
-    return await this.makeRequest(url, {
-      method: 'GET',
-      headers: {
-        'x-origin-channel': 'Web'
-      }
-    });
+    return this.client.getCaseView(caseID, viewID);
   }
 
   /**
-   * Get case stages details by case ID
-   * @param {string} caseID - Full case handle
-   * @returns {Promise<Object>} API response with stages, processes, steps and visited status
+   * Get case stages
+   * @param {string} caseID - Case ID
+   * @returns {Promise<Object>} Stages information
    */
   async getCaseStages(caseID) {
-    // URL encode the case ID to handle spaces and special characters
-    const encodedCaseID = encodeURIComponent(caseID);
-    const url = `${this.baseUrl}/cases/${encodedCaseID}/stages`;
-
-    return await this.makeRequest(url, {
-      method: 'GET',
-      headers: {
-        'x-origin-channel': 'Web'
-      }
-    });
+    return this.client.getCaseStages(caseID);
   }
 
   /**
-   * Get case descendants - loops through all child cases recursively descending from the specific one
-   * @param {string} caseID - Full case handle to retrieve descendants from
-   * @returns {Promise<Object>} API response with child cases hierarchy including assignments and actions for each
+   * Get case descendants
+   * @param {string} caseID - Case ID
+   * @returns {Promise<Object>} Descendant cases
    */
   async getCaseDescendants(caseID) {
-    // URL encode the case ID to handle spaces and special characters
-    const encodedCaseID = encodeURIComponent(caseID);
-    const url = `${this.baseUrl}/cases/${encodedCaseID}/descendants`;
-
-    return await this.makeRequest(url, {
-      method: 'GET',
-      headers: {
-        'x-origin-channel': 'Web'
-      }
-    });
+    return this.client.getCaseDescendants(caseID);
   }
 
   /**
-   * Get case ancestors - retrieves ancestor hierarchy case list for the case ID passed in
-   * @param {string} caseID - Full case handle to retrieve ancestors from
-   * @returns {Promise<Object>} API response with ancestor cases hierarchy including ID, name, and HATEOAS links
+   * Get case ancestors
+   * @param {string} caseID - Case ID
+   * @returns {Promise<Object>} Ancestor cases
    */
   async getCaseAncestors(caseID) {
-    // URL encode the case ID to handle spaces and special characters
-    const encodedCaseID = encodeURIComponent(caseID);
-    const url = `${this.baseUrl}/cases/${encodedCaseID}/ancestors`;
-
-    return await this.makeRequest(url, {
-      method: 'GET',
-      headers: {
-        'x-origin-channel': 'Web'
-      }
-    });
+    return this.client.getCaseAncestors(caseID);
   }
 
   /**
-   * Get case action details by case ID and action ID
-   * @param {string} caseID - Full case handle
-   * @param {string} actionID - Flow action name
+   * Get case action details
+   * @param {string} caseID - Case ID
+   * @param {string} actionID - Action ID
    * @param {Object} options - Optional parameters
-   * @param {string} options.viewType - Type of view data to return ("form" or "page")
-   * @param {boolean} options.excludeAdditionalActions - Whether to exclude additional action information
-   * @returns {Promise<Object>} API response with action metadata and UI resources
+   * @returns {Promise<Object>} Action details
    */
   async getCaseAction(caseID, actionID, options = {}) {
-    const { viewType, excludeAdditionalActions } = options;
-    
-    // URL encode both the case ID and action ID to handle spaces and special characters
-    const encodedCaseID = encodeURIComponent(caseID);
-    const encodedActionID = encodeURIComponent(actionID);
-    let url = `${this.baseUrl}/cases/${encodedCaseID}/actions/${encodedActionID}`;
-
-    // Add query parameters if provided
-    const queryParams = new URLSearchParams();
-    if (viewType) {
-      queryParams.append('viewType', viewType);
-    }
-    if (excludeAdditionalActions !== undefined) {
-      queryParams.append('excludeAdditionalActions', excludeAdditionalActions.toString());
-    }
-    
-    if (queryParams.toString()) {
-      url += `?${queryParams.toString()}`;
-    }
-
-    return await this.makeRequest(url, {
-      method: 'GET',
-      headers: {
-        'x-origin-channel': 'Web'
-      }
-    });
+    return this.client.getCaseAction(caseID, actionID, options);
   }
 
   /**
-   * Perform case action by case ID and action ID
-   * @param {string} caseID - Full case handle
-   * @param {string} actionID - Flow action name
+   * Perform case action
+   * @param {string} caseID - Case ID
+   * @param {string} actionID - Action ID
    * @param {Object} options - Optional parameters
-   * @param {Object} options.content - Case content/form data to submit
-   * @param {Array} options.pageInstructions - Page-related operations for embedded pages
-   * @param {Array} options.attachments - Attachments to add to specific attachment fields
-   * @param {string} options.eTag - ETag for optimistic locking (from previous GET request)
-   * @param {string} options.viewType - Type of view data to return ("none", "form", or "page")
-   * @param {string} options.pageName - Specific page name to return view metadata for
-   * @returns {Promise<Object>} API response with updated case data
+   * @returns {Promise<Object>} Action result
    */
   async performCaseAction(caseID, actionID, options = {}) {
-    const { content, pageInstructions, attachments, eTag, viewType, pageName } = options;
-    
-    // URL encode both the case ID and action ID to handle spaces and special characters
-    const encodedCaseID = encodeURIComponent(caseID);
-    const encodedActionID = encodeURIComponent(actionID);
-    let url = `${this.baseUrl}/cases/${encodedCaseID}/actions/${encodedActionID}`;
-
-    // Add query parameters if provided
-    const queryParams = new URLSearchParams();
-    if (viewType) {
-      queryParams.append('viewType', viewType);
-    }
-    if (pageName) {
-      queryParams.append('pageName', pageName);
-    }
-    
-    if (queryParams.toString()) {
-      url += `?${queryParams.toString()}`;
-    }
-
-    // Build request body
-    const requestBody = {};
-
-    // Add optional parameters if provided
-    if (content) {
-      requestBody.content = content;
-    }
-    if (pageInstructions) {
-      requestBody.pageInstructions = pageInstructions;
-    }
-    if (attachments) {
-      requestBody.attachments = attachments;
-    }
-
-    // Prepare headers
-    const headers = {
-      'x-origin-channel': 'Web'
-    };
-
-    // Add ETag header for optimistic locking if provided
-    if (eTag) {
-      headers['If-Match'] = eTag;
-    }
-
-    return await this.makeRequest(url, {
-      method: 'PATCH',
-      headers: headers,
-      body: JSON.stringify(requestBody)
-    });
+    return this.client.performCaseAction(caseID, actionID, options);
   }
 
   /**
-   * Get next assignment details using Get Next Work functionality
+   * Get case view calculated fields
+   * V2 ONLY
+   * @param {string} caseID - Case ID
+   * @param {string} viewID - View ID
+   * @param {Object} calculations - Calculations object
+   * @returns {Promise<Object>} Calculated field results
+   */
+  async getCaseViewCalculatedFields(caseID, viewID, calculations) {
+    if (!this.isFeatureAvailable('uiMetadata')) {
+      this.throwUnsupportedFeatureError('uiMetadata', 'getCaseViewCalculatedFields');
+    }
+    return this.client.getCaseViewCalculatedFields(caseID, viewID, calculations);
+  }
+
+  /**
+   * Recalculate case action fields
+   * V2 ONLY
+   * @param {string} caseID - Case ID
+   * @param {string} actionID - Action ID
+   * @param {string} eTag - ETag for optimistic locking
+   * @param {Object} calculations - Calculations object
    * @param {Object} options - Optional parameters
-   * @param {string} options.viewType - Type of view data to return ("form" or "page", default: "page")
-   * @param {string} options.pageName - If provided, view metadata for specific page name will be returned (only used when viewType is "page")
-   * @returns {Promise<Object>} API response with next assignment details or 404 if no assignments available
+   * @returns {Promise<Object>} Recalculation results
+   */
+  async recalculateCaseActionFields(caseID, actionID, eTag, calculations, options = {}) {
+    if (!this.isFeatureAvailable('eTagSupport')) {
+      this.throwUnsupportedFeatureError('eTagSupport', 'recalculateCaseActionFields');
+    }
+    return this.client.recalculateCaseActionFields(caseID, actionID, eTag, calculations, options);
+  }
+
+  /**
+   * Refresh case action
+   * @param {string} caseID - Case ID
+   * @param {string} actionID - Action ID
+   * @param {string} eTag - ETag for optimistic locking (V2 only)
+   * @param {Object} options - Optional parameters
+   * @returns {Promise<Object>} Refresh results
+   */
+  async refreshCaseAction(caseID, actionID, eTag, options = {}) {
+    return this.client.refreshCaseAction(caseID, actionID, eTag, options);
+  }
+
+  /**
+   * Release case lock
+   * V2 ONLY
+   * @param {string} caseID - Case ID
+   * @param {Object} options - Optional parameters
+   * @returns {Promise<Object>} Release result
+   */
+  async releaseCaseLock(caseID, options = {}) {
+    if (!this.isFeatureAvailable('eTagSupport')) {
+      this.throwUnsupportedFeatureError('eTagSupport', 'releaseCaseLock');
+    }
+    return this.client.releaseCaseLock(caseID, options);
+  }
+
+  /**
+   * Change to next stage
+   * V2 ONLY
+   * @param {string} caseID - Case ID
+   * @param {string} eTag - ETag for optimistic locking
+   * @param {Object} options - Optional parameters
+   * @returns {Promise<Object>} Stage navigation result
+   */
+  async changeToNextStage(caseID, eTag, options = {}) {
+    if (!this.isFeatureAvailable('stageNavigation')) {
+      this.throwUnsupportedFeatureError('stageNavigation', 'changeToNextStage');
+    }
+    return this.client.changeToNextStage(caseID, eTag, options);
+  }
+
+  /**
+   * Change to specific stage
+   * V2 ONLY
+   * @param {string} caseID - Case ID
+   * @param {string} stageID - Stage ID
+   * @param {string} eTag - ETag for optimistic locking
+   * @param {Object} options - Optional parameters
+   * @returns {Promise<Object>} Stage navigation result
+   */
+  async changeToStage(caseID, stageID, eTag, options = {}) {
+    if (!this.isFeatureAvailable('stageNavigation')) {
+      this.throwUnsupportedFeatureError('stageNavigation', 'changeToStage');
+    }
+    return this.client.changeToStage(caseID, stageID, eTag, options);
+  }
+
+  /**
+   * Add optional process
+   * V2 ONLY
+   * @param {string} caseID - Case ID
+   * @param {string} processID - Process ID
+   * @param {Object} options - Optional parameters
+   * @returns {Promise<Object>} Process addition result
+   */
+  async addOptionalProcess(caseID, processID, options = {}) {
+    if (!this.isFeatureAvailable('stageNavigation')) {
+      this.throwUnsupportedFeatureError('stageNavigation', 'addOptionalProcess');
+    }
+    return this.client.addOptionalProcess(caseID, processID, options);
+  }
+
+  // ========================================
+  // CASE TYPE METHODS
+  // ========================================
+
+  /**
+   * Get list of case types
+   * @returns {Promise<Object>} Case types list
+   */
+  async getCaseTypes() {
+    return this.client.getCaseTypes();
+  }
+
+  /**
+   * Get case type action
+   * @param {string} caseTypeID - Case type ID
+   * @param {string} actionID - Action ID
+   * @returns {Promise<Object>} Action details
+   */
+  async getCaseTypeAction(caseTypeID, actionID) {
+    return this.client.getCaseTypeAction(caseTypeID, actionID);
+  }
+
+  /**
+   * Get case type bulk action
+   * V2 ONLY
+   * @param {string} caseTypeID - Case type ID
+   * @param {string} actionID - Action ID
+   * @returns {Promise<Object>} Bulk action details
+   */
+  async getCaseTypeBulkAction(caseTypeID, actionID) {
+    if (!this.isFeatureAvailable('bulkOperations')) {
+      this.throwUnsupportedFeatureError('bulkOperations', 'getCaseTypeBulkAction');
+    }
+    return this.client.getCaseTypeBulkAction(caseTypeID, actionID);
+  }
+
+  // ========================================
+  // ASSIGNMENT METHODS
+  // ========================================
+
+  /**
+   * Get all assignments
+   * V1 EXCLUSIVE - Use Data Views in V2
+   * @returns {Promise<Object>} Assignments array
+   */
+  async getAllAssignments() {
+    if (!this.isFeatureAvailable('getAllAssignments')) {
+      this.throwUnsupportedFeatureError('getAllAssignments', 'getAllAssignments');
+    }
+    return this.client.getAllAssignments();
+  }
+
+  /**
+   * Get next assignment
+   * @param {Object} options - Optional parameters
+   * @returns {Promise<Object>} Next assignment details
    */
   async getNextAssignment(options = {}) {
-    const { viewType, pageName } = options;
-    
-    let url = `${this.baseUrl}/assignments/next`;
-
-    // Add query parameters if provided
-    const queryParams = new URLSearchParams();
-    if (viewType) {
-      queryParams.append('viewType', viewType);
-    }
-    if (pageName) {
-      queryParams.append('pageName', pageName);
-    }
-    
-    if (queryParams.toString()) {
-      url += `?${queryParams.toString()}`;
-    }
-
-    return await this.makeRequest(url, {
-      method: 'GET',
-      headers: {
-        'x-origin-channel': 'Web'
-      }
-    });
+    return this.client.getNextAssignment(options);
   }
 
   /**
-   * Get assignment details by assignment ID
-   * @param {string} assignmentID - Full handle of an assignment (e.g., "ASSIGN-WORKLIST PBANK-LOAN-WORK V-76003!REVIEW_FLOW")
+   * Get assignment by ID
+   * @param {string} assignmentID - Assignment ID
    * @param {Object} options - Optional parameters
-   * @param {string} options.viewType - Type of view data to return ("form" or "page", default: "page")
-   * @param {string} options.pageName - If provided, view metadata for specific page name will be returned (only used when viewType is "page")
-   * @returns {Promise<Object>} API response with assignment details, instructions, and available actions
+   * @returns {Promise<Object>} Assignment details
    */
   async getAssignment(assignmentID, options = {}) {
-    const { viewType, pageName } = options;
-    
-    // URL encode the assignment ID to handle spaces and special characters
-    const encodedAssignmentID = encodeURIComponent(assignmentID);
-    let url = `${this.baseUrl}/assignments/${encodedAssignmentID}`;
-
-    // Add query parameters if provided
-    const queryParams = new URLSearchParams();
-    if (viewType) {
-      queryParams.append('viewType', viewType);
-    }
-    if (pageName) {
-      queryParams.append('pageName', pageName);
-    }
-    
-    if (queryParams.toString()) {
-      url += `?${queryParams.toString()}`;
-    }
-
-    return await this.makeRequest(url, {
-      method: 'GET',
-      headers: {
-        'x-origin-channel': 'Web'
-      }
-    });
+    return this.client.getAssignment(assignmentID, options);
   }
 
   /**
-   * Get assignment action details by assignment ID and action ID
-   * @param {string} assignmentID - Full handle of an assignment (e.g., "ASSIGN-WORKLIST O1UGTM-TESTAPP13-WORK T-36004!APPROVAL_FLOW")
-   * @param {string} actionID - Name of the action to retrieve - ID of the flow action rule (e.g., "Verify", "Approve")
+   * Get assignment action
+   * @param {string} assignmentID - Assignment ID
+   * @param {string} actionID - Action ID
    * @param {Object} options - Optional parameters
-   * @param {string} options.viewType - Type of view data to return ("form" or "page", default: "page")
-   * @param {boolean} options.excludeAdditionalActions - When true, excludes information on all actions performable on the case (default: false)
-   * @returns {Promise<Object>} API response with assignment action details, UI metadata, and case context
+   * @returns {Promise<Object>} Action details
    */
   async getAssignmentAction(assignmentID, actionID, options = {}) {
-    const { viewType, excludeAdditionalActions } = options;
-    
-    // URL encode both the assignment ID and action ID to handle spaces and special characters
-    const encodedAssignmentID = encodeURIComponent(assignmentID);
-    const encodedActionID = encodeURIComponent(actionID);
-    let url = `${this.baseUrl}/assignments/${encodedAssignmentID}/actions/${encodedActionID}`;
-
-    // Add query parameters if provided
-    const queryParams = new URLSearchParams();
-    if (viewType) {
-      queryParams.append('viewType', viewType);
-    }
-    if (excludeAdditionalActions !== undefined) {
-      queryParams.append('excludeAdditionalActions', excludeAdditionalActions.toString());
-    }
-    
-    if (queryParams.toString()) {
-      url += `?${queryParams.toString()}`;
-    }
-
-    return await this.makeRequest(url, {
-      method: 'GET',
-      headers: {
-        'x-origin-channel': 'Web'
-      }
-    });
+    return this.client.getAssignmentAction(assignmentID, actionID, options);
   }
+
+  /**
+   * Perform assignment action
+   * @param {string} assignmentID - Assignment ID
+   * @param {string} actionID - Action ID
+   * @param {string} eTag - ETag for optimistic locking (V2 only)
+   * @param {Object} options - Optional parameters
+   * @returns {Promise<Object>} Action result
+   */
+  async performAssignmentAction(assignmentID, actionID, eTag, options = {}) {
+    return this.client.performAssignmentAction(assignmentID, actionID, eTag, options);
+  }
+
+  /**
+   * Refresh assignment action
+   * @param {string} assignmentID - Assignment ID
+   * @param {string} actionID - Action ID
+   * @param {Object} options - Optional parameters
+   * @returns {Promise<Object>} Refresh results
+   */
+  async refreshAssignmentAction(assignmentID, actionID, options = {}) {
+    return this.client.refreshAssignmentAction(assignmentID, actionID, options);
+  }
+
+  /**
+   * Save assignment action
+   * V2 ONLY
+   * @param {string} assignmentID - Assignment ID
+   * @param {string} actionID - Action ID
+   * @param {string} eTag - ETag for optimistic locking
+   * @param {Object} options - Optional parameters
+   * @returns {Promise<Object>} Save result
+   */
+  async saveAssignmentAction(assignmentID, actionID, eTag, options = {}) {
+    if (!this.isFeatureAvailable('eTagSupport')) {
+      this.throwUnsupportedFeatureError('eTagSupport', 'saveAssignmentAction');
+    }
+    return this.client.saveAssignmentAction(assignmentID, actionID, eTag, options);
+  }
+
+  /**
+   * Navigate assignment to previous step
+   * V2 ONLY
+   * @param {string} assignmentID - Assignment ID
+   * @param {string} eTag - ETag for optimistic locking
+   * @param {Object} options - Optional parameters
+   * @returns {Promise<Object>} Navigation result
+   */
+  async navigateAssignmentPrevious(assignmentID, eTag, options = {}) {
+    if (!this.isFeatureAvailable('eTagSupport')) {
+      this.throwUnsupportedFeatureError('eTagSupport', 'navigateAssignmentPrevious');
+    }
+    return this.client.navigateAssignmentPrevious(assignmentID, eTag, options);
+  }
+
+  /**
+   * Jump to assignment step
+   * V2 ONLY
+   * @param {string} assignmentID - Assignment ID
+   * @param {string} stepID - Step ID
+   * @param {string} eTag - ETag for optimistic locking
+   * @param {Object} options - Optional parameters
+   * @returns {Promise<Object>} Navigation result
+   */
+  async jumpToAssignmentStep(assignmentID, stepID, eTag, options = {}) {
+    if (!this.isFeatureAvailable('eTagSupport')) {
+      this.throwUnsupportedFeatureError('eTagSupport', 'jumpToAssignmentStep');
+    }
+    return this.client.jumpToAssignmentStep(assignmentID, stepID, eTag, options);
+  }
+
+  /**
+   * Recalculate assignment fields
+   * V2 ONLY
+   * @param {string} assignmentID - Assignment ID
+   * @param {string} actionID - Action ID
+   * @param {string} eTag - ETag for optimistic locking
+   * @param {Object} calculations - Calculations object
+   * @param {Object} options - Optional parameters
+   * @returns {Promise<Object>} Recalculation results
+   */
+  async recalculateAssignmentFields(assignmentID, actionID, eTag, calculations, options = {}) {
+    if (!this.isFeatureAvailable('eTagSupport')) {
+      this.throwUnsupportedFeatureError('eTagSupport', 'recalculateAssignmentFields');
+    }
+    return this.client.recalculateAssignmentFields(assignmentID, actionID, eTag, calculations, options);
+  }
+
+  // ========================================
+  // BULK OPERATIONS (V2 ONLY)
+  // ========================================
 
   /**
    * Perform bulk action on multiple cases
-   * @param {string} actionID - ID of the case action to be performed on all specified cases
-   * @param {Object} options - Options containing cases and other parameters
-   * @param {Array} options.cases - Array of case objects with ID properties
-   * @param {string} options.runningMode - Execution mode for Launchpad ("async")
-   * @param {Object} options.content - Content to apply during action execution
-   * @param {Array} options.pageInstructions - Page-related operations
-   * @param {Array} options.attachments - Attachments to add
-   * @returns {Promise<Object>} API response with bulk operation results
+   * V2 ONLY
+   * @param {string} actionID - Action ID
+   * @param {Object} options - Options with cases array
+   * @returns {Promise<Object>} Bulk operation results
    */
   async performBulkAction(actionID, options = {}) {
-    const { cases, runningMode, content, pageInstructions, attachments } = options;
-    
-    // URL encode the action ID to handle spaces and special characters
-    const encodedActionID = encodeURIComponent(actionID);
-    let url = `${this.baseUrl}/cases`;
-
-    // Add query parameters if provided
-    const queryParams = new URLSearchParams();
-    queryParams.append('actionID', encodedActionID);
-    
-    if (runningMode) {
-      queryParams.append('runningMode', runningMode);
+    if (!this.isFeatureAvailable('bulkOperations')) {
+      this.throwUnsupportedFeatureError('bulkOperations', 'performBulkAction');
     }
-    
-    url += `?${queryParams.toString()}`;
-
-    // Build request body
-    const requestBody = {
-      cases
-    };
-
-    // Add optional parameters if provided
-    if (content) {
-      requestBody.content = content;
-    }
-    if (pageInstructions) {
-      requestBody.pageInstructions = pageInstructions;
-    }
-    if (attachments) {
-      requestBody.attachments = attachments;
-    }
-
-    return await this.makeRequest(url, {
-      method: 'PATCH',
-      headers: {
-        'x-origin-channel': 'Web'
-      },
-      body: JSON.stringify(requestBody)
-    });
+    return this.client.performBulkAction(actionID, options);
   }
 
   /**
-   * PATCH bulk cases operation - alternative implementation for bulk_cases_patch tool
-   * @param {string} actionID - ID of the case action to be performed on all specified cases
-   * @param {Object} options - Options containing cases and other parameters
-   * @param {Array} options.cases - Array of case objects with ID properties (required)
-   * @param {string} options.runningMode - Execution mode for Launchpad ("async" only)
-   * @param {Object} options.content - Content to apply during action execution
-   * @param {Array} options.pageInstructions - Page-related operations
-   * @param {Array} options.attachments - Attachments to add
-   * @returns {Promise<Object>} API response with platform-specific results (207 Multistatus for Infinity, 202 Accepted for Launchpad)
+   * PATCH bulk cases operation
+   * V2 ONLY
+   * @param {string} actionID - Action ID
+   * @param {Object} options - Options with cases array
+   * @returns {Promise<Object>} Bulk operation results
    */
   async patchCasesBulk(actionID, options = {}) {
-    const { cases, runningMode, content, pageInstructions, attachments } = options;
-    
-    // URL encode the action ID to handle spaces and special characters
-    const encodedActionID = encodeURIComponent(actionID);
-    let url = `${this.baseUrl}/cases`;
-
-    // Add query parameters - actionID is required
-    const queryParams = new URLSearchParams();
-    queryParams.append('actionID', encodedActionID);
-    
-    // Add runningMode if provided (Launchpad only)
-    if (runningMode) {
-      queryParams.append('runningMode', runningMode);
+    if (!this.isFeatureAvailable('bulkOperations')) {
+      this.throwUnsupportedFeatureError('bulkOperations', 'patchCasesBulk');
     }
-    
-    url += `?${queryParams.toString()}`;
-
-    // Build request body - cases is required
-    const requestBody = {
-      cases
-    };
-
-    // Add optional parameters if provided
-    if (content) {
-      requestBody.content = content;
-    }
-    if (pageInstructions) {
-      requestBody.pageInstructions = pageInstructions;
-    }
-    if (attachments) {
-      requestBody.attachments = attachments;
-    }
-
-    try {
-      // Get OAuth2 token
-      const token = await this.oauth2Client.getAccessToken();
-      
-      // Prepare headers
-      const headers = {
-        'Authorization': `Bearer ${token}`,
-        'Content-Type': 'application/json',
-        'Accept': 'application/json',
-        'x-origin-channel': 'Web'
-      };
-
-      // Make PATCH request
-      const response = await fetch(url, {
-        method: 'PATCH',
-        headers,
-        body: JSON.stringify(requestBody),
-        timeout: config.pega.requestTimeout || 30000
-      });
-
-      // Handle non-2xx responses with specific error handling for bulk operations
-      if (!response.ok) {
-        return await this.handleBulkCasesErrorResponse(response);
-      }
-
-      // Parse successful response
-      const data = await response.json();
-      
-      return {
-        success: true,
-        data,
-        status: response.status,
-        statusText: response.statusText
-      };
-
-    } catch (error) {
-      // Handle network and other errors
-      return {
-        success: false,
-        error: {
-          type: 'CONNECTION_ERROR',
-          message: 'Failed to connect to Pega API for bulk cases operation',
-          details: error.message,
-          originalError: error
-        }
-      };
-    }
+    return this.client.patchCasesBulk(actionID, options);
   }
 
-  /**
-   * Perform assignment action by assignment ID and action ID
-   * @param {string} assignmentID - Full handle of the assignment (e.g., "ASSIGN-WORKLIST O1UGTM-TESTAPP13-WORK T-35005!APPROVAL_FLOW")
-   * @param {string} actionID - Name of the assignment action to perform - ID of the flow action rule
-   * @param {string} eTag - Required eTag unique value representing the most recent save date time of the case
-   * @param {Object} options - Optional parameters
-   * @param {Object} options.content - Map of scalar and embedded page values to be set to fields in the assignment action's view
-   * @param {Array} options.pageInstructions - List of page-related operations to be performed on embedded pages, page lists, or page groups
-   * @param {Array} options.attachments - List of attachments to be added to or deleted from specific attachment fields
-   * @param {string} options.viewType - Type of view data to return ("none", "form", or "page", default: "none")
-   * @param {string} options.originChannel - Origin channel identifier (e.g., "Web", "Mobile", "WebChat")
-   * @returns {Promise<Object>} API response with case information, next assignment info or confirmation note, and optional UI resources
-   */
-  async performAssignmentAction(assignmentID, actionID, eTag, options = {}) {
-    const { content, pageInstructions, attachments, viewType, originChannel } = options;
-    
-    // URL encode both the assignment ID and action ID to handle spaces and special characters
-    const encodedAssignmentID = encodeURIComponent(assignmentID);
-    const encodedActionID = encodeURIComponent(actionID);
-    let url = `${this.baseUrl}/assignments/${encodedAssignmentID}/actions/${encodedActionID}`;
-
-    // Add query parameters if provided
-    const queryParams = new URLSearchParams();
-    if (viewType) {
-      queryParams.append('viewType', viewType);
-    }
-    
-    if (queryParams.toString()) {
-      url += `?${queryParams.toString()}`;
-    }
-
-    // Build request body
-    const requestBody = {};
-
-    // Add optional parameters if provided
-    if (content) {
-      requestBody.content = content;
-    }
-    if (pageInstructions) {
-      requestBody.pageInstructions = pageInstructions;
-    }
-    if (attachments) {
-      requestBody.attachments = attachments;
-    }
-
-    // Prepare headers
-    const headers = {
-      'if-match': eTag // Required eTag header for optimistic locking
-    };
-
-    // Add origin channel header if provided, otherwise default to Web
-    if (originChannel) {
-      headers['x-origin-channel'] = originChannel;
-    } else {
-      headers['x-origin-channel'] = 'Web';
-    }
-
-    return await this.makeRequest(url, {
-      method: 'PATCH',
-      headers: headers,
-      body: JSON.stringify(requestBody)
-    });
-  }
+  // ========================================
+  // ATTACHMENT METHODS
+  // ========================================
 
   /**
-   * Refresh assignment action form data and execute Data Transforms
-   * @param {string} assignmentID - Full handle of the assignment (e.g., "ASSIGN-WORKLIST MYORG-SERVICES-WORK S-293001!APPROVAL_FLOW")
-   * @param {string} actionID - Name of the assignment action - ID of the flow action rule
+   * Get case attachments
+   * @param {string} caseID - Case ID
    * @param {Object} options - Optional parameters
-   * @param {string} [options.refreshFor] - Property name that triggers refresh after executing Data Transform
-   * @param {boolean} [options.fillFormWithAI=false] - Boolean to enable generative AI form filling
-   * @param {string} [options.operation] - Table row operation type ("showRow" or "submitRow")
-   * @param {string} [options.interestPage] - Target page for table row operations (e.g., ".OrderItems(1)")
-   * @param {string} [options.interestPageActionID] - Action ID for embedded list operations
-   * @param {Object} [options.content] - Property values to merge into case during refresh
-   * @param {Array} [options.pageInstructions] - Page-related operations for embedded pages
-   * @param {string} [options.eTag] - ETag value for optimistic locking (recommended to get from previous assignment action call)
-   * @returns {Promise<Object>} API response with refreshed form data, updated field states, and UI resources
-   */
-  async refreshAssignmentAction(assignmentID, actionID, options = {}) {
-    const { 
-      refreshFor, 
-      fillFormWithAI, 
-      operation, 
-      interestPage, 
-      interestPageActionID, 
-      content, 
-      pageInstructions,
-      eTag 
-    } = options;
-    
-    // URL encode both the assignment ID and action ID to handle spaces and special characters
-    const encodedAssignmentID = encodeURIComponent(assignmentID);
-    const encodedActionID = encodeURIComponent(actionID);
-    let url = `${this.baseUrl}/assignments/${encodedAssignmentID}/actions/${encodedActionID}/refresh`;
-
-    // Add query parameters if provided
-    const queryParams = new URLSearchParams();
-    if (refreshFor) {
-      queryParams.append('refreshFor', refreshFor);
-    }
-    if (fillFormWithAI !== undefined) {
-      queryParams.append('fillFormWithAI', fillFormWithAI.toString());
-    }
-    if (operation) {
-      queryParams.append('operation', operation);
-    }
-    
-    if (queryParams.toString()) {
-      url += `?${queryParams.toString()}`;
-    }
-
-    // Build request body
-    const requestBody = {};
-
-    // Add optional parameters if provided
-    if (content && Object.keys(content).length > 0) {
-      requestBody.content = content;
-    }
-    if (pageInstructions && pageInstructions.length > 0) {
-      requestBody.pageInstructions = pageInstructions;
-    }
-    
-    // Add table row operation parameters for Pega Infinity '25 features
-    if (operation && interestPage) {
-      requestBody.interestPage = interestPage;
-    }
-    if (operation && interestPageActionID) {
-      requestBody.interestPageActionID = interestPageActionID;
-    }
-
-    // Prepare headers - eTag is required for assignment refresh operations
-    const headers = {
-      'x-origin-channel': 'Web'
-    };
-    
-    // Add if-match header with eTag if provided
-    if (eTag) {
-      headers['if-match'] = eTag;
-    }
-
-    return await this.makeRequest(url, {
-      method: 'PATCH',
-      headers: headers,
-      body: Object.keys(requestBody).length > 0 ? JSON.stringify(requestBody) : undefined
-    });
-  }
-
-  /**
-   * Save assignment action form data without executing the action
-   * @param {string} assignmentID - Full handle of the assignment (e.g., "ASSIGN-WORKLIST PBANK-LOAN-WORK V-76003!REVIEW_FLOW")
-   * @param {string} actionID - Name of the assignment action - ID of the flow action rule
-   * @param {string} eTag - Required eTag unique value representing the most recent save date time of the case
-   * @param {Object} options - Optional parameters
-   * @param {Object} options.content - Map of scalar and embedded page properties containing form data to be saved
-   * @param {Array} options.pageInstructions - List of page-related operations for embedded pages, page lists, or page groups
-   * @param {Array} options.attachments - List of attachments to be added to specific attachment fields
-   * @param {string} options.originChannel - Origin channel identifier (e.g., "Web", "Mobile", "WebChat")
-   * @returns {Promise<Object>} API response with save confirmation and case information
-   */
-  async saveAssignmentAction(assignmentID, actionID, eTag, options = {}) {
-    const { content, pageInstructions, attachments, originChannel } = options;
-    
-    // URL encode both the assignment ID and action ID to handle spaces and special characters
-    const encodedAssignmentID = encodeURIComponent(assignmentID);
-    const encodedActionID = encodeURIComponent(actionID);
-    const url = `${this.baseUrl}/assignments/${encodedAssignmentID}/actions/${encodedActionID}/save`;
-
-    // Build request body
-    const requestBody = {};
-
-    // Add optional parameters if provided
-    if (content) {
-      requestBody.content = content;
-    }
-    if (pageInstructions) {
-      requestBody.pageInstructions = pageInstructions;
-    }
-    if (attachments) {
-      requestBody.attachments = attachments;
-    }
-
-    // Prepare headers
-    const headers = {
-      'if-match': eTag // Required eTag header for optimistic locking
-    };
-
-    // Add origin channel header if provided, otherwise default to Web
-    if (originChannel) {
-      headers['x-origin-channel'] = originChannel;
-    } else {
-      headers['x-origin-channel'] = 'Web';
-    }
-
-    return await this.makeRequest(url, {
-      method: 'PATCH',
-      headers: headers,
-      body: Object.keys(requestBody).length > 0 ? JSON.stringify(requestBody) : undefined
-    });
-  }
-
-  /**
-   * Get case attachments by case ID
-   * @param {string} caseID - Full case handle to retrieve attachments from
-   * @param {Object} options - Optional parameters
-   * @param {boolean} options.includeThumbnails - When set to true, thumbnails are added as base64 encoded strings
-   * @returns {Promise<Object>} API response with attachments list and metadata
+   * @returns {Promise<Object>} Attachments list
    */
   async getCaseAttachments(caseID, options = {}) {
-    const { includeThumbnails } = options;
-    
-    // URL encode the case ID to handle spaces and special characters
-    const encodedCaseID = encodeURIComponent(caseID);
-    let url = `${this.baseUrl}/cases/${encodedCaseID}/attachments`;
-
-    // Add query parameters if provided
-    const queryParams = new URLSearchParams();
-    if (includeThumbnails !== undefined) {
-      queryParams.append('includeThumbnails', includeThumbnails.toString());
-    }
-    
-    if (queryParams.toString()) {
-      url += `?${queryParams.toString()}`;
-    }
-
-    return await this.makeRequest(url, {
-      method: 'GET',
-      headers: {
-        'x-origin-channel': 'Web'
-      }
-    });
+    return this.client.getCaseAttachments(caseID, options);
   }
 
   /**
-   * Add attachments to a case (POST /cases/{caseID}/attachments)
-   * @param {string} caseID - Full case handle to attach files/URLs to
-   * @param {Array} attachments - Array of attachment objects (files and/or URLs)
-   * @returns {Promise<Object>} API response with success/error information
+   * Add case attachments
+   * @param {string} caseID - Case ID
+   * @param {Array} attachments - Attachments array
+   * @returns {Promise<Object>} Addition result
    */
   async addCaseAttachments(caseID, attachments) {
-    // URL encode the case ID to handle spaces and special characters
-    const encodedCaseID = encodeURIComponent(caseID);
-    const url = `${this.baseUrl}/cases/${encodedCaseID}/attachments`;
-
-    // Build request body with attachments array
-    const requestBody = {
-      attachments
-    };
-
-    return await this.makeRequest(url, {
-      method: 'POST',
-      headers: {
-        'x-origin-channel': 'Web'
-      },
-      body: JSON.stringify(requestBody)
-    });
+    return this.client.addCaseAttachments(caseID, attachments);
   }
 
   /**
-   * Get attachment categories for a case by case ID
-   * @param {string} caseID - Full case handle to retrieve attachment categories for
+   * Get attachment categories
+   * @param {string} caseID - Case ID
    * @param {Object} options - Optional parameters
-   * @param {string} options.type - Filter for attachment type: "File" or "URL" (case insensitive, default: "File")
-   * @returns {Promise<Object>} API response with attachment categories list and permissions
+   * @returns {Promise<Object>} Categories list
    */
   async getCaseAttachmentCategories(caseID, options = {}) {
-    const { type } = options;
-    
-    // URL encode the case ID to handle spaces and special characters
-    const encodedCaseID = encodeURIComponent(caseID);
-    let url = `${this.baseUrl}/cases/${encodedCaseID}/attachment_categories`;
-
-    // Add query parameters if provided
-    const queryParams = new URLSearchParams();
-    if (type) {
-      queryParams.append('type', type);
-    }
-    
-    if (queryParams.toString()) {
-      url += `?${queryParams.toString()}`;
-    }
-
-    return await this.makeRequest(url, {
-      method: 'GET',
-      headers: {
-        'x-origin-channel': 'Web'
-      }
-    });
+    return this.client.getCaseAttachmentCategories(caseID, options);
   }
 
   /**
-   * Get attachment content by attachment ID
-   * @param {string} attachmentID - Link-Attachment instance pzInsKey (attachment ID)
-   * @returns {Promise<Object>} API response with attachment content and headers
+   * Get attachment content
+   * @param {string} attachmentID - Attachment ID
+   * @returns {Promise<Object>} Attachment content
    */
   async getAttachmentContent(attachmentID) {
-    // URL encode the attachment ID to handle spaces and special characters
-    const encodedAttachmentID = encodeURIComponent(attachmentID);
-    const url = `${this.baseUrl}/attachments/${encodedAttachmentID}`;
-
-    try {
-      // Get OAuth2 token
-      const token = await this.oauth2Client.getAccessToken();
-      
-      // Prepare headers
-      const headers = {
-        'Authorization': `Bearer ${token}`,
-        'Accept': '*/*', // Accept any content type since we get different types (base64, URL, HTML)
-        'x-origin-channel': 'Web'
-      };
-
-      // Make request
-      const response = await fetch(url, {
-        method: 'GET',
-        headers,
-        timeout: config.pega.requestTimeout || 30000
-      });
-
-      // Handle non-2xx responses
-      if (!response.ok) {
-        return await this.handleAttachmentContentErrorResponse(response);
-      }
-
-      // Get response headers for content type detection
-      const responseHeaders = {};
-      response.headers.forEach((value, key) => {
-        responseHeaders[key] = value;
-      });
-
-      // Get content as text (works for base64, URL, and HTML)
-      const content = await response.text();
-      
-      return {
-        success: true,
-        data: content,
-        headers: responseHeaders,
-        status: response.status,
-        statusText: response.statusText
-      };
-
-    } catch (error) {
-      // Handle network and other errors
-      return {
-        success: false,
-        error: {
-          type: 'CONNECTION_ERROR',
-          message: 'Failed to retrieve attachment content from Pega API',
-          details: error.message,
-          originalError: error
-        }
-      };
-    }
+    return this.client.getAttachmentContent(attachmentID);
   }
 
   /**
-   * Delete an attachment by attachment ID
-   * @param {string} attachmentID - Link-Attachment instance pzInsKey (attachment ID)
-   * @returns {Promise<Object>} API response with success/error information
+   * Delete attachment
+   * @param {string} attachmentID - Attachment ID
+   * @returns {Promise<Object>} Deletion result
    */
   async deleteAttachment(attachmentID) {
-    // URL encode the attachment ID to handle spaces and special characters
-    const encodedAttachmentID = encodeURIComponent(attachmentID);
-    const url = `${this.baseUrl}/attachments/${encodedAttachmentID}`;
-
-    try {
-      // Get OAuth2 token
-      const token = await this.oauth2Client.getAccessToken();
-      
-      // Prepare headers
-      const headers = {
-        'Authorization': `Bearer ${token}`,
-        'Accept': 'application/json',
-        'x-origin-channel': 'Web'
-      };
-
-      // Make DELETE request
-      const response = await fetch(url, {
-        method: 'DELETE',
-        headers,
-        timeout: config.pega.requestTimeout || 30000
-      });
-
-      // Handle non-2xx responses
-      if (!response.ok) {
-        return await this.handleAttachmentDeleteErrorResponse(response);
-      }
-
-      // Successful deletion - API returns no content (200 with empty body)
-      return {
-        success: true,
-        data: {}, // Empty response body for successful deletion
-        status: response.status,
-        statusText: response.statusText
-      };
-
-    } catch (error) {
-      // Handle network and other errors
-      return {
-        success: false,
-        error: {
-          type: 'CONNECTION_ERROR',
-          message: 'Failed to delete attachment from Pega API',
-          details: error.message,
-          originalError: error
-        }
-      };
-    }
+    return this.client.deleteAttachment(attachmentID);
   }
 
   /**
-   * Update attachment name and category by attachment ID
-   * @param {string} attachmentID - Link-Attachment instance pzInsKey (attachment ID)
+   * Update attachment
+   * @param {string} attachmentID - Attachment ID
    * @param {Object} updateData - Update data
-   * @param {string} updateData.name - New name of the attachment
-   * @param {string} updateData.category - New attachment category
-   * @returns {Promise<Object>} API response with success/error information
+   * @returns {Promise<Object>} Update result
    */
   async updateAttachment(attachmentID, updateData) {
-    const { name, category } = updateData;
-    
-    // URL encode the attachment ID to handle spaces and special characters
-    const encodedAttachmentID = encodeURIComponent(attachmentID);
-    const url = `${this.baseUrl}/attachments/${encodedAttachmentID}`;
-
-    try {
-      // Get OAuth2 token
-      const token = await this.oauth2Client.getAccessToken();
-      
-      // Prepare headers
-      const headers = {
-        'Authorization': `Bearer ${token}`,
-        'Content-Type': 'application/json',
-        'Accept': 'application/json',
-        'x-origin-channel': 'Web'
-      };
-
-      // Build request body
-      const requestBody = {
-        name,
-        category
-      };
-
-      // Make PATCH request
-      const response = await fetch(url, {
-        method: 'PATCH',
-        headers,
-        body: JSON.stringify(requestBody),
-        timeout: config.pega.requestTimeout || 30000
-      });
-
-      // Handle non-2xx responses
-      if (!response.ok) {
-        return await this.handleAttachmentUpdateErrorResponse(response);
-      }
-
-      // Successful update - API returns success message
-      const responseText = await response.text();
-      
-      return {
-        success: true,
-        data: { message: responseText }, // Wrap the success message
-        status: response.status,
-        statusText: response.statusText
-      };
-
-    } catch (error) {
-      // Handle network and other errors
-      return {
-        success: false,
-        error: {
-          type: 'CONNECTION_ERROR',
-          message: 'Failed to update attachment in Pega API',
-          details: error.message,
-          originalError: error
-        }
-      };
-    }
+    return this.client.updateAttachment(attachmentID, updateData);
   }
 
   /**
-   * Upload a file as temporary attachment to Pega
-   * @param {Buffer} fileBuffer - File content as Buffer
+   * Upload attachment
+   * @param {Buffer} fileBuffer - File buffer
    * @param {Object} options - Upload options
-   * @param {string} options.fileName - Original filename with extension
-   * @param {string} options.mimeType - MIME type of the file
-   * @param {boolean} options.appendUniqueIdToFileName - Whether to append unique ID to filename
-   * @returns {Promise<Object>} API response with temporary attachment ID
+   * @returns {Promise<Object>} Upload result
    */
   async uploadAttachment(fileBuffer, options = {}) {
-    const { fileName, mimeType, appendUniqueIdToFileName = true } = options;
-    
-    try {
-      // Create web standard FormData for use with fetch()
-      const formData = new globalThis.FormData();
-      
-      // Add form fields as specified in Pega API documentation
-      formData.append('appendUniqueIdToFileName', appendUniqueIdToFileName.toString());
-      
-      // Create a Blob from the buffer for web standard FormData
-      const fileBlob = new Blob([fileBuffer], { type: mimeType });
-      formData.append('file', fileBlob, fileName);
-
-      const url = `${this.baseUrl}/attachments/upload`;
-
-      // Get OAuth2 token
-      const token = await this.oauth2Client.getAccessToken();
-      
-      // Prepare headers for multipart form data
-      // Note: Do not set Content-Type header manually - FormData will set it with boundary
-      const headers = {
-        'Authorization': `Bearer ${token}`,
-        'Accept': 'application/json',
-        'x-origin-channel': 'Web'
-        // Do NOT add formData.getHeaders() - web FormData doesn't have this method
-        // and fetch() will set the correct Content-Type with boundary automatically
-      };
-
-      // Make the multipart form data request
-      const response = await fetch(url, {
-        method: 'POST',
-        headers: headers,
-        body: formData,
-        timeout: config.pega.requestTimeout || 30000
-      });
-
-      // Handle non-2xx responses
-      if (!response.ok) {
-        return await this.handleAttachmentErrorResponse(response);
-      }
-
-      // Parse successful response
-      const data = await response.json();
-      
-      return {
-        success: true,
-        data,
-        status: response.status,
-        statusText: response.statusText
-      };
-
-    } catch (error) {
-      // Handle network and other errors
-      return {
-        success: false,
-        error: {
-          type: 'CONNECTION_ERROR',
-          message: 'Failed to upload attachment to Pega API',
-          details: error.message,
-          originalError: error
-        }
-      };
-    }
+    return this.client.uploadAttachment(fileBuffer, options);
   }
 
+  // ========================================
+  // DATA VIEW METHODS
+  // ========================================
+
   /**
-   * Get data view metadata by data view ID
-   * @param {string} dataViewID - ID of the data view to retrieve metadata for
-   * @returns {Promise<Object>} API response with data view metadata including parameters and queryable fields
+   * Get data view metadata
+   * @param {string} dataViewID - Data view ID
+   * @returns {Promise<Object>} Metadata
    */
   async getDataViewMetadata(dataViewID) {
-    // URL encode the data view ID to handle spaces and special characters
-    const encodedDataViewID = encodeURIComponent(dataViewID);
-    const url = `${this.baseUrl}/data_views/${encodedDataViewID}/metadata`;
-
-    return await this.makeRequest(url, {
-      method: 'GET',
-      headers: {
-        'x-origin-channel': 'Web'
-      }
-    });
+    return this.client.getDataViewMetadata(dataViewID);
   }
 
   /**
-   * Get list of available data objects
+   * Get data objects
    * @param {Object} options - Optional parameters
-   * @param {string} options.type - Data object type filter ("data" or "case")
-   * @returns {Promise<Object>} API response with data objects list
+   * @returns {Promise<Object>} Data objects list
    */
   async getDataObjects(options = {}) {
-    const { type } = options;
-    
-    let url = `${this.baseUrl}/data_objects`;
-
-    // Add query parameter if provided
-    const queryParams = new URLSearchParams();
-    if (type) {
-      queryParams.append('type', type);
-    }
-    
-    if (queryParams.toString()) {
-      url += `?${queryParams.toString()}`;
-    }
-
-    return await this.makeRequest(url, {
-      method: 'GET',
-      headers: {
-        'x-origin-channel': 'Web'
-      }
-    });
+    return this.client.getDataObjects(options);
   }
 
   /**
-   * Fully update an existing data record
-   * @param {string} dataViewID - ID of savable Data Page
-   * @param {Object} data - Data object containing properties to update
-   * @returns {Promise<Object>} API response with updated data record
+   * Update data record (full)
+   * @param {string} dataViewID - Data view ID
+   * @param {Object} data - Data object
+   * @returns {Promise<Object>} Update result
    */
   async updateDataRecordFull(dataViewID, data) {
-    // URL encode the data view ID to handle spaces and special characters
-    const encodedDataViewID = encodeURIComponent(dataViewID);
-    const url = `${this.baseUrl}/data/${encodedDataViewID}`;
-
-    // Build request body
-    const requestBody = { data };
-
-    return await this.makeRequest(url, {
-      method: 'PUT',
-      headers: {
-        'x-origin-channel': 'Web'
-      },
-      body: JSON.stringify(requestBody)
-    });
+    return this.client.updateDataRecordFull(dataViewID, data);
   }
 
   /**
-   * Partially update an existing data record
-   * @param {string} dataViewID - ID of savable Data Page
-   * @param {Object} data - Data object containing properties to update
+   * Update data record (partial)
+   * @param {string} dataViewID - Data view ID
+   * @param {Object} data - Data object
    * @param {Object} options - Optional parameters
-   * @param {string} options.eTag - eTag unique value for optimistic locking
-   * @param {Array} options.pageInstructions - Page-related operations for embedded pages
-   * @returns {Promise<Object>} API response with updated data record
+   * @returns {Promise<Object>} Update result
    */
   async updateDataRecordPartial(dataViewID, data, options = {}) {
-    const { eTag, pageInstructions } = options;
-    
-    // URL encode the data view ID to handle spaces and special characters
-    const encodedDataViewID = encodeURIComponent(dataViewID);
-    const url = `${this.baseUrl}/data/${encodedDataViewID}`;
-
-    // Build request body
-    const requestBody = { data };
-    
-    // Add optional pageInstructions if provided
-    if (pageInstructions) {
-      requestBody.pageInstructions = pageInstructions;
-    }
-
-    // Prepare headers
-    const headers = {
-      'x-origin-channel': 'Web'
-    };
-
-    // Add eTag header for optimistic locking if provided
-    if (eTag) {
-      headers['if-match'] = eTag;
-    }
-
-    return await this.makeRequest(url, {
-      method: 'PATCH',
-      headers: headers,
-      body: JSON.stringify(requestBody)
-    });
+    return this.client.updateDataRecordPartial(dataViewID, data, options);
   }
 
   /**
-   * Delete a data record
-   * @param {string} dataViewID - ID of savable Data Page
-   * @param {string} dataViewParameters - Primary key(s) as input to uniquely identify the data record to delete
-   * @returns {Promise<Object>} API response with deletion result
+   * Delete data record
+   * @param {string} dataViewID - Data view ID
+   * @param {string} dataViewParameters - Parameters
+   * @returns {Promise<Object>} Deletion result
    */
   async deleteDataRecord(dataViewID, dataViewParameters) {
-    // URL encode the data view ID to handle spaces and special characters
-    const encodedDataViewID = encodeURIComponent(dataViewID);
-    // URL encode the data view parameters to handle special characters
-    const encodedDataViewParameters = encodeURIComponent(dataViewParameters);
-    const url = `${this.baseUrl}/data/${encodedDataViewID}?dataViewParameters=${encodedDataViewParameters}`;
-
-    return await this.makeRequest(url, {
-      method: 'DELETE',
-      headers: {
-        'x-origin-channel': 'Web'
-      }
-    });
+    return this.client.deleteDataRecord(dataViewID, dataViewParameters);
   }
 
   /**
-   * Get list data view with advanced querying capabilities
-   * @param {string} dataViewID - ID of the data view to retrieve data from
-   * @param {Object} requestBody - Request body containing query parameters, paging, etc.
-   * @param {Object} requestBody.dataViewParameters - Optional parameters for the data view
-   * @param {Object} requestBody.query - Optional query object for filtering, sorting, aggregation
-   * @param {Array} requestBody.query.select - Array of field objects to select
-   * @param {Array} requestBody.query.sortBy - Array of sorting configurations
-   * @param {Object} requestBody.query.filter - Complex filtering conditions
-   * @param {Object} requestBody.query.aggregations - Aggregation definitions
-   * @param {boolean} requestBody.query.distinctResultsOnly - Return only distinct results
-   * @param {Object} requestBody.paging - Pagination configuration
-   * @param {boolean} requestBody.useExtendedTimeout - Use extended 45-second timeout
-   * @returns {Promise<Object>} API response with data view results
+   * Get list data view
+   * @param {string} dataViewID - Data view ID
+   * @param {Object} requestBody - Request body
+   * @returns {Promise<Object>} Data view results
    */
   async getListDataView(dataViewID, requestBody = {}) {
-    // URL encode the data view ID to handle spaces and special characters
-    const encodedDataViewID = encodeURIComponent(dataViewID);
-    const url = `${this.baseUrl}/data_views/${encodedDataViewID}`;
-
-    return await this.makeRequest(url, {
-      method: 'POST',
-      headers: {
-        'x-origin-channel': 'Web'
-      },
-      body: JSON.stringify(requestBody)
-    });
+    return this.client.getListDataView(dataViewID, requestBody);
   }
 
   /**
-   * Get data view count with advanced querying capabilities
-   * @param {string} dataViewID - ID of the data view to count results for
-   * @param {Object} requestBody - Request body containing query parameters, paging, etc.
-   * @param {Object} requestBody.dataViewParameters - Optional parameters for the data view
-   * @param {Object} requestBody.query - Optional query object for filtering, aggregation, and field selection
-   * @param {Array} requestBody.query.select - Array of field, aggregation, or calculation objects
-   * @param {Object} requestBody.query.filter - Complex filtering conditions
-   * @param {Object} requestBody.query.aggregations - Aggregation definitions
-   * @param {Object} requestBody.query.calculations - Calculation definitions
-   * @param {boolean} requestBody.query.distinctResultsOnly - Count only distinct results
-   * @param {Object} requestBody.paging - Pagination configuration that affects count calculation
-   * @returns {Promise<Object>} API response with count results (resultCount, totalCount, hasMoreResults, fetchDateTime)
+   * Get data view count
+   * V2 ONLY (advanced querying)
+   * @param {string} dataViewID - Data view ID
+   * @param {Object} requestBody - Request body
+   * @returns {Promise<Object>} Count results
    */
   async getDataViewCount(dataViewID, requestBody = {}) {
-    // URL encode the data view ID to handle spaces and special characters
-    const encodedDataViewID = encodeURIComponent(dataViewID);
-    const url = `${this.baseUrl}/data_views/${encodedDataViewID}/count`;
-
-    return await this.makeRequest(url, {
-      method: 'POST',
-      headers: {
-        'x-origin-channel': 'Web'
-      },
-      body: JSON.stringify(requestBody)
-    });
+    if (!this.isFeatureAvailable('dataViewQuerying')) {
+      this.throwUnsupportedFeatureError('dataViewQuerying', 'getDataViewCount');
+    }
+    return this.client.getDataViewCount(dataViewID, requestBody);
   }
 
-  /**
-   * Change case to next stage in primary stage sequence
-   * @param {string} caseID - Full case handle
-   * @param {string} eTag - eTag unique value for optimistic locking (required)
-   * @param {Object} options - Optional parameters
-   * @param {string} options.viewType - Type of view data to return ("none", "form", "page")
-   * @param {boolean} options.cleanupProcesses - Whether to cleanup processes of previous stage
-   * @returns {Promise<Object>} API response with stage navigation results
-   */
-  async changeToNextStage(caseID, eTag, options = {}) {
-    const { viewType, cleanupProcesses } = options;
-    
-    // URL encode the case ID to handle spaces and special characters
-    const encodedCaseID = encodeURIComponent(caseID);
-    let url = `${this.baseUrl}/cases/${encodedCaseID}/stages/next`;
-
-    // Add query parameters if provided
-    const queryParams = new URLSearchParams();
-    if (viewType) {
-      queryParams.append('viewType', viewType);
-    }
-    if (cleanupProcesses !== undefined) {
-      queryParams.append('cleanupProcesses', cleanupProcesses.toString());
-    }
-    
-    if (queryParams.toString()) {
-      url += `?${queryParams.toString()}`;
-    }
-
-    // Prepare headers - if-match is required for this operation
-    const headers = {
-      'if-match': eTag, // Required eTag header for optimistic locking
-      'x-origin-channel': 'Web'
-    };
-
-    return await this.makeRequest(url, {
-      method: 'POST',
-      headers: headers
-      // No request body for this endpoint
-    });
-  }
+  // ========================================
+  // DOCUMENT METHODS
+  // ========================================
 
   /**
-   * Change case to specified stage by stage ID
-   * @param {string} caseID - Full case handle
-   * @param {string} stageID - Stage ID to navigate to (e.g., "PRIM1", "ALT1")
-   * @param {string} eTag - eTag unique value for optimistic locking (required)
-   * @param {Object} options - Optional parameters
-   * @param {string} options.viewType - Type of view data to return ("none", "form", "page")
-   * @param {boolean} options.cleanupProcesses - Whether to cleanup processes of previous stage
-   * @returns {Promise<Object>} API response with stage navigation results
-   */
-  async changeToStage(caseID, stageID, eTag, options = {}) {
-    const { viewType, cleanupProcesses } = options;
-    
-    // URL encode both the case ID and stage ID to handle spaces and special characters
-    const encodedCaseID = encodeURIComponent(caseID);
-    const encodedStageID = encodeURIComponent(stageID);
-    let url = `${this.baseUrl}/cases/${encodedCaseID}/stages/${encodedStageID}`;
-
-    // Add query parameters if provided
-    const queryParams = new URLSearchParams();
-    if (viewType) {
-      queryParams.append('viewType', viewType);
-    }
-    if (cleanupProcesses !== undefined) {
-      queryParams.append('cleanupProcesses', cleanupProcesses.toString());
-    }
-    
-    if (queryParams.toString()) {
-      url += `?${queryParams.toString()}`;
-    }
-
-    // Prepare headers - if-match is required for this operation
-    const headers = {
-      'if-match': eTag, // Required eTag header for optimistic locking
-      'x-origin-channel': 'Web'
-    };
-
-    return await this.makeRequest(url, {
-      method: 'PUT',
-      headers: headers
-      // No request body for this endpoint
-    });
-  }
-
-  /**
-   * Get related cases for a specific case
-   * @param {string} caseID - Full case handle to retrieve related cases for
-   * @returns {Promise<Object>} API response with related cases list and metadata
-   */
-  async getRelatedCases(caseID) {
-    // URL encode the case ID to handle spaces and special characters
-    const encodedCaseID = encodeURIComponent(caseID);
-    const url = `${this.baseUrl}/cases/${encodedCaseID}/related_cases`;
-
-    return await this.makeRequest(url, {
-      method: 'GET',
-      headers: {
-        'x-origin-channel': 'Web'
-      }
-    });
-  }
-
-  /**
-   * Create relationships between cases
-   * @param {string} caseID - Primary case ID to relate other cases to
-   * @param {Array} cases - Array of case objects with ID properties to relate
-   * @returns {Promise<Object>} API response with multi-status results (207 status)
-   */
-  async relateCases(caseID, cases) {
-    // URL encode the case ID to handle spaces and special characters
-    const encodedCaseID = encodeURIComponent(caseID);
-    const url = `${this.baseUrl}/cases/${encodedCaseID}/related_cases`;
-
-    // Build request body
-    const requestBody = {
-      cases
-    };
-
-    return await this.makeRequest(url, {
-      method: 'POST',
-      headers: {
-        'x-origin-channel': 'Web'
-      },
-      body: JSON.stringify(requestBody)
-    });
-  }
-
-  /**
-   * Delete a related case relationship
-   * @param {string} caseID - Primary case ID from which to remove the related case
-   * @param {string} relatedCaseID - Related case ID to be removed from the primary case
-   * @returns {Promise<Object>} API response with deletion result
-   */
-  async deleteRelatedCase(caseID, relatedCaseID) {
-    // URL encode both case IDs to handle spaces and special characters
-    const encodedCaseID = encodeURIComponent(caseID);
-    const encodedRelatedCaseID = encodeURIComponent(relatedCaseID);
-    const url = `${this.baseUrl}/cases/${encodedCaseID}/related_cases/${encodedRelatedCaseID}`;
-
-    return await this.makeRequest(url, {
-      method: 'DELETE',
-      headers: {
-        'x-origin-channel': 'Web'
-      }
-    });
-  }
-
-  /**
-   * Get document content by document ID
-   * @param {string} documentID - Document ID to retrieve content for
-   * @returns {Promise<Object>} API response with base64 encoded document content and headers
+   * Get document content
+   * @param {string} documentID - Document ID
+   * @returns {Promise<Object>} Document content
    */
   async getDocumentContent(documentID) {
-    // URL encode the document ID to handle spaces and special characters
-    const encodedDocumentID = encodeURIComponent(documentID);
-    const url = `${this.baseUrl}/documents/${encodedDocumentID}`;
-
-    try {
-      // Get OAuth2 token
-      const token = await this.oauth2Client.getAccessToken();
-      
-      // Prepare headers
-      const headers = {
-        'Authorization': `Bearer ${token}`,
-        'Accept': 'text/plain', // Document API returns base64 content as text/plain
-        'x-origin-channel': 'Web'
-      };
-
-      // Make request
-      const response = await fetch(url, {
-        method: 'GET',
-        headers,
-        timeout: config.pega.requestTimeout || 30000
-      });
-
-      // Handle non-2xx responses
-      if (!response.ok) {
-        return await this.handleDocumentErrorResponse(response);
-      }
-
-      // Get response headers for content metadata
-      const responseHeaders = {};
-      response.headers.forEach((value, key) => {
-        responseHeaders[key] = value;
-      });
-
-      // Get content as text (base64 encoded)
-      const content = await response.text();
-      
-      return {
-        success: true,
-        data: content,
-        headers: responseHeaders,
-        status: response.status,
-        statusText: response.statusText
-      };
-
-    } catch (error) {
-      // Handle network and other errors
-      return {
-        success: false,
-        error: {
-          type: 'CONNECTION_ERROR',
-          message: 'Failed to retrieve document content from Pega API',
-          details: error.message,
-          originalError: error
-        }
-      };
-    }
+    return this.client.getDocumentContent(documentID);
   }
 
   /**
-   * Remove a document from a case
-   * @param {string} caseID - Full case handle from which to remove the document
-   * @param {string} documentID - Document ID to be removed from the case
-   * @returns {Promise<Object>} API response with success/error information
+   * Remove case document
+   * @param {string} caseID - Case ID
+   * @param {string} documentID - Document ID
+   * @returns {Promise<Object>} Removal result
    */
   async removeCaseDocument(caseID, documentID) {
-    // URL encode both the case ID and document ID to handle spaces and special characters
-    const encodedCaseID = encodeURIComponent(caseID);
-    const encodedDocumentID = encodeURIComponent(documentID);
-    const url = `${this.baseUrl}/cases/${encodedCaseID}/documents/${encodedDocumentID}`;
-
-    try {
-      // Get OAuth2 token
-      const token = await this.oauth2Client.getAccessToken();
-      
-      // Prepare headers
-      const headers = {
-        'Authorization': `Bearer ${token}`,
-        'Accept': 'application/json',
-        'x-origin-channel': 'Web'
-      };
-
-      // Make DELETE request
-      const response = await fetch(url, {
-        method: 'DELETE',
-        headers,
-        timeout: config.pega.requestTimeout || 30000
-      });
-
-      // Handle non-2xx responses
-      if (!response.ok) {
-        return await this.handleRemoveCaseDocumentErrorResponse(response);
-      }
-
-      // Get response headers (especially cache-control)
-      const responseHeaders = {};
-      response.headers.forEach((value, key) => {
-        responseHeaders[key] = value;
-      });
-
-      // Successful deletion - API returns 200 with cache-control header
-      return {
-        success: true,
-        data: {}, // Empty response body for successful deletion
-        headers: responseHeaders,
-        status: response.status,
-        statusText: response.statusText
-      };
-
-    } catch (error) {
-      // Handle network and other errors
-      return {
-        success: false,
-        error: {
-          type: 'CONNECTION_ERROR',
-          message: 'Failed to remove document from case via Pega API',
-          details: error.message,
-          originalError: error
-        }
-      };
-    }
+    return this.client.removeCaseDocument(caseID, documentID);
   }
 
+  // ========================================
+  // FOLLOWER METHODS (V2 ONLY)
+  // ========================================
+
   /**
-   * Get case followers by case ID
-   * @param {string} caseID - Full case handle to retrieve followers for
-   * @returns {Promise<Object>} API response with followers list and metadata
+   * Get case followers
+   * V2 ONLY
+   * @param {string} caseID - Case ID
+   * @returns {Promise<Object>} Followers list
    */
   async getCaseFollowers(caseID) {
-    // URL encode the case ID to handle spaces and special characters
-    const encodedCaseID = encodeURIComponent(caseID);
-    const url = `${this.baseUrl}/cases/${encodedCaseID}/followers`;
-
-    return await this.makeRequest(url, {
-      method: 'GET',
-      headers: {
-        'x-origin-channel': 'Web'
-      }
-    });
+    if (!this.isFeatureAvailable('followers')) {
+      this.throwUnsupportedFeatureError('followers', 'getCaseFollowers');
+    }
+    return this.client.getCaseFollowers(caseID);
   }
 
   /**
-   * Add followers to a case
-   * @param {string} caseID - Full case handle to add followers to
-   * @param {Array} users - Array of user objects with ID properties
-   * @returns {Promise<Object>} API response with multi-status information (207)
+   * Add case followers
+   * V2 ONLY
+   * @param {string} caseID - Case ID
+   * @param {Array} users - Users array
+   * @returns {Promise<Object>} Addition result
    */
   async addCaseFollowers(caseID, users) {
-    // URL encode the case ID to handle spaces and special characters
-    const encodedCaseID = encodeURIComponent(caseID);
-    const url = `${this.baseUrl}/cases/${encodedCaseID}/followers`;
-
-    // Build request body with users array as per OpenAPI spec
-    const requestBody = {
-      users
-    };
-
-    return await this.makeRequest(url, {
-      method: 'POST',
-      headers: {
-        'x-origin-channel': 'Web'
-      },
-      body: JSON.stringify(requestBody)
-    });
+    if (!this.isFeatureAvailable('followers')) {
+      this.throwUnsupportedFeatureError('followers', 'addCaseFollowers');
+    }
+    return this.client.addCaseFollowers(caseID, users);
   }
 
   /**
-   * Delete a follower from a case
-   * @param {string} caseID - Full case handle to remove follower from
-   * @param {string} followerID - User ID of the follower to remove
-   * @returns {Promise<Object>} API response with success/error information
+   * Delete case follower
+   * V2 ONLY
+   * @param {string} caseID - Case ID
+   * @param {string} followerID - Follower ID
+   * @returns {Promise<Object>} Deletion result
    */
   async deleteCaseFollower(caseID, followerID) {
-    // URL encode both the case ID and follower ID to handle spaces and special characters
-    const encodedCaseID = encodeURIComponent(caseID);
-    const encodedFollowerID = encodeURIComponent(followerID);
-    const url = `${this.baseUrl}/cases/${encodedCaseID}/followers/${encodedFollowerID}`;
-
-    try {
-      // Get OAuth2 token
-      const token = await this.oauth2Client.getAccessToken();
-      
-      // Prepare headers
-      const headers = {
-        'Authorization': `Bearer ${token}`,
-        'Accept': 'application/json',
-        'x-origin-channel': 'Web'
-      };
-
-      // Make DELETE request
-      const response = await fetch(url, {
-        method: 'DELETE',
-        headers,
-        timeout: config.pega.requestTimeout || 30000
-      });
-
-      // Handle non-2xx responses
-      if (!response.ok) {
-        return await this.handleFollowerDeleteErrorResponse(response);
-      }
-
-      // Get response headers (especially cache-control)
-      const responseHeaders = {};
-      response.headers.forEach((value, key) => {
-        responseHeaders[key] = value;
-      });
-
-      // Successful deletion - API returns 200 with cache-control header
-      return {
-        success: true,
-        data: {}, // Empty response body for successful deletion
-        headers: responseHeaders,
-        status: response.status,
-        statusText: response.statusText
-      };
-
-    } catch (error) {
-      // Handle network and other errors
-      return {
-        success: false,
-        error: {
-          type: 'CONNECTION_ERROR',
-          message: 'Failed to delete follower from case via Pega API',
-          details: error.message,
-          originalError: error
-        }
-      };
+    if (!this.isFeatureAvailable('followers')) {
+      this.throwUnsupportedFeatureError('followers', 'deleteCaseFollower');
     }
+    return this.client.deleteCaseFollower(caseID, followerID);
   }
 
+  // ========================================
+  // PARTICIPANT METHODS (V2 ONLY)
+  // ========================================
+
   /**
-   * Get participant roles for a case by case ID
-   * @param {string} caseID - Full case handle to retrieve participant roles for
-   * @returns {Promise<Object>} API response with participant roles list and metadata
+   * Get participant roles
+   * V2 ONLY
+   * @param {string} caseID - Case ID
+   * @returns {Promise<Object>} Roles list
    */
   async getParticipantRoles(caseID) {
-    // URL encode the case ID to handle spaces and special characters
-    const encodedCaseID = encodeURIComponent(caseID);
-    const url = `${this.baseUrl}/cases/${encodedCaseID}/participant_roles`;
-
-    return await this.makeRequest(url, {
-      method: 'GET',
-      headers: {
-        'x-origin-channel': 'Web'
-      }
-    });
+    if (!this.isFeatureAvailable('participants')) {
+      this.throwUnsupportedFeatureError('participants', 'getParticipantRoles');
+    }
+    return this.client.getParticipantRoles(caseID);
   }
 
   /**
-   * Get participant role details by case ID and participant role ID
-   * @param {string} caseID - Full case handle to retrieve participant role details from
-   * @param {string} participantRoleID - Participant role ID to get details for
+   * Get participant role details
+   * V2 ONLY
+   * @param {string} caseID - Case ID
+   * @param {string} participantRoleID - Participant role ID
    * @param {Object} options - Optional parameters
-   * @param {string} options.viewType - Type of view data to return ("form" or "none", default: "form")
-   * @returns {Promise<Object>} API response with participant role details and metadata
+   * @returns {Promise<Object>} Role details
    */
   async getParticipantRoleDetails(caseID, participantRoleID, options = {}) {
-    const { viewType } = options;
-    
-    // URL encode both the case ID and participant role ID to handle spaces and special characters
-    const encodedCaseID = encodeURIComponent(caseID);
-    const encodedParticipantRoleID = encodeURIComponent(participantRoleID);
-    let url = `${this.baseUrl}/cases/${encodedCaseID}/participant_roles/${encodedParticipantRoleID}`;
-
-    // Add query parameters if provided
-    const queryParams = new URLSearchParams();
-    if (viewType) {
-      queryParams.append('viewType', viewType);
+    if (!this.isFeatureAvailable('participants')) {
+      this.throwUnsupportedFeatureError('participants', 'getParticipantRoleDetails');
     }
-    
-    if (queryParams.toString()) {
-      url += `?${queryParams.toString()}`;
-    }
-
-    return await this.makeRequest(url, {
-      method: 'GET',
-      headers: {
-        'x-origin-channel': 'Web'
-      }
-    });
+    return this.client.getParticipantRoleDetails(caseID, participantRoleID, options);
   }
 
   /**
-   * Get case participants by case ID
-   * @param {string} caseID - Full case handle to retrieve participants from
-   * @returns {Promise<Object>} API response with participants list and metadata
+   * Get case participants
+   * V2 ONLY
+   * @param {string} caseID - Case ID
+   * @returns {Promise<Object>} Participants list
    */
   async getCaseParticipants(caseID) {
-    // URL encode the case ID to handle spaces and special characters
-    const encodedCaseID = encodeURIComponent(caseID);
-    const url = `${this.baseUrl}/cases/${encodedCaseID}/participants`;
-
-    return await this.makeRequest(url, {
-      method: 'GET',
-      headers: {
-        'x-origin-channel': 'Web'
-      }
-    });
+    if (!this.isFeatureAvailable('participants')) {
+      this.throwUnsupportedFeatureError('participants', 'getCaseParticipants');
+    }
+    return this.client.getCaseParticipants(caseID);
   }
 
   /**
-   * Create participant in case
-   * @param {string} caseID - Full case handle to add participant to
+   * Create case participant
+   * V2 ONLY
+   * @param {string} caseID - Case ID
    * @param {Object} options - Creation options
-   * @param {string} options.eTag - Required eTag for optimistic locking
-   * @param {Object} options.content - Participant data object
-   * @param {string} options.participantRoleID - Role ID to assign
-   * @param {string} options.viewType - View type ("form" or "none")
-   * @param {Array} options.pageInstructions - Optional page instructions
-   * @returns {Promise<Object>} API response with created participant details
+   * @returns {Promise<Object>} Creation result
    */
   async createCaseParticipant(caseID, options = {}) {
-    const { eTag, content, participantRoleID, viewType, pageInstructions } = options;
-    
-    // URL encode the case ID to handle spaces and special characters
-    const encodedCaseID = encodeURIComponent(caseID);
-    let url = `${this.baseUrl}/cases/${encodedCaseID}/participants`;
-
-    // Add query parameters if provided
-    const queryParams = new URLSearchParams();
-    if (viewType) {
-      queryParams.append('viewType', viewType);
+    if (!this.isFeatureAvailable('participants')) {
+      this.throwUnsupportedFeatureError('participants', 'createCaseParticipant');
     }
-    
-    if (queryParams.toString()) {
-      url += `?${queryParams.toString()}`;
-    }
-
-    // Build request body
-    const requestBody = {
-      content,
-      participantRoleID
-    };
-
-    // Add optional parameters if provided
-    if (pageInstructions) {
-      requestBody.pageInstructions = pageInstructions;
-    }
-
-    // Prepare headers
-    const headers = {
-      'if-match': eTag, // Required header for optimistic locking
-      'x-origin-channel': 'Web'
-    };
-
-    return await this.makeRequest(url, {
-      method: 'POST',
-      headers: headers,
-      body: JSON.stringify(requestBody)
-    });
+    return this.client.createCaseParticipant(caseID, options);
   }
 
   /**
-   * Get participant details by case ID and participant ID
-   * @param {string} caseID - Full case handle to retrieve participant from
-   * @param {string} participantID - Participant ID to get details for
+   * Get participant
+   * V2 ONLY
+   * @param {string} caseID - Case ID
+   * @param {string} participantID - Participant ID
    * @param {Object} options - Optional parameters
-   * @param {string} options.viewType - Type of view data to return ("form" or "none", default: "form")
-   * @returns {Promise<Object>} API response with participant details and metadata
+   * @returns {Promise<Object>} Participant details
    */
   async getParticipant(caseID, participantID, options = {}) {
-    const { viewType } = options;
-    
-    // URL encode both the case ID and participant ID to handle spaces and special characters
-    const encodedCaseID = encodeURIComponent(caseID);
-    const encodedParticipantID = encodeURIComponent(participantID);
-    let url = `${this.baseUrl}/cases/${encodedCaseID}/participants/${encodedParticipantID}`;
-
-    // Add query parameters if provided
-    const queryParams = new URLSearchParams();
-    if (viewType) {
-      queryParams.append('viewType', viewType);
+    if (!this.isFeatureAvailable('participants')) {
+      this.throwUnsupportedFeatureError('participants', 'getParticipant');
     }
-    
-    if (queryParams.toString()) {
-      url += `?${queryParams.toString()}`;
-    }
-
-    return await this.makeRequest(url, {
-      method: 'GET',
-      headers: {
-        'x-origin-channel': 'Web'
-      }
-    });
+    return this.client.getParticipant(caseID, participantID, options);
   }
 
   /**
-   * Delete a participant from a case
-   * @param {string} caseID - Full case handle to remove participant from
-   * @param {string} participantID - Participant ID to remove
-   * @param {string} eTag - Required eTag unique value for optimistic locking
-   * @returns {Promise<Object>} API response with success/error information
+   * Delete participant
+   * V2 ONLY
+   * @param {string} caseID - Case ID
+   * @param {string} participantID - Participant ID
+   * @param {string} eTag - ETag for optimistic locking
+   * @returns {Promise<Object>} Deletion result
    */
   async deleteParticipant(caseID, participantID, eTag) {
-    // URL encode both the case ID and participant ID to handle spaces and special characters
-    const encodedCaseID = encodeURIComponent(caseID);
-    const encodedParticipantID = encodeURIComponent(participantID);
-    const url = `${this.baseUrl}/cases/${encodedCaseID}/participants/${encodedParticipantID}`;
-
-    try {
-      // Get OAuth2 token
-      const token = await this.oauth2Client.getAccessToken();
-      
-      // Prepare headers
-      const headers = {
-        'Authorization': `Bearer ${token}`,
-        'Accept': 'application/json',
-        'if-match': eTag, // Required eTag header for optimistic locking
-        'x-origin-channel': 'Web'
-      };
-
-      // Make DELETE request
-      const response = await fetch(url, {
-        method: 'DELETE',
-        headers,
-        timeout: config.pega.requestTimeout || 30000
-      });
-
-      // Handle non-2xx responses
-      if (!response.ok) {
-        return await this.handleParticipantDeleteErrorResponse(response);
-      }
-
-      // Get response headers (especially etag)
-      const responseHeaders = {};
-      response.headers.forEach((value, key) => {
-        responseHeaders[key] = value;
-      });
-
-      // Successful deletion - API returns 200 with etag header
-      return {
-        success: true,
-        data: {}, // Empty response body for successful deletion
-        headers: responseHeaders,
-        eTag: response.headers.get('etag'), // Capture new eTag
-        status: response.status,
-        statusText: response.statusText
-      };
-
-    } catch (error) {
-      // Handle network and other errors
-      return {
-        success: false,
-        error: {
-          type: 'CONNECTION_ERROR',
-          message: 'Failed to delete participant from case via Pega API',
-          details: error.message,
-          originalError: error
-        }
-      };
+    if (!this.isFeatureAvailable('participants')) {
+      this.throwUnsupportedFeatureError('participants', 'deleteParticipant');
     }
+    return this.client.deleteParticipant(caseID, participantID, eTag);
   }
 
   /**
-   * Update participant details by case ID and participant ID
-   * @param {string} caseID - Full case handle containing the participant
-   * @param {string} participantID - Participant ID to update
-   * @param {string} eTag - Required eTag unique value for optimistic locking
+   * Update participant
+   * V2 ONLY
+   * @param {string} caseID - Case ID
+   * @param {string} participantID - Participant ID
+   * @param {string} eTag - ETag for optimistic locking
    * @param {Object} options - Optional parameters
-   * @param {Object} options.content - Participant data object with properties to update
-   * @param {Array} options.pageInstructions - Page-related operations for embedded pages
-   * @param {string} options.viewType - Type of view data to return ("form" or "none", default: "form")
-   * @returns {Promise<Object>} API response with updated participant details
+   * @returns {Promise<Object>} Update result
    */
   async updateParticipant(caseID, participantID, eTag, options = {}) {
-    const { content, pageInstructions, viewType } = options;
-    
-    // URL encode both the case ID and participant ID to handle spaces and special characters
-    const encodedCaseID = encodeURIComponent(caseID);
-    const encodedParticipantID = encodeURIComponent(participantID);
-    let url = `${this.baseUrl}/cases/${encodedCaseID}/participants/${encodedParticipantID}`;
-
-    // Add query parameters if provided
-    const queryParams = new URLSearchParams();
-    if (viewType) {
-      queryParams.append('viewType', viewType);
+    if (!this.isFeatureAvailable('participants')) {
+      this.throwUnsupportedFeatureError('participants', 'updateParticipant');
     }
-    
-    if (queryParams.toString()) {
-      url += `?${queryParams.toString()}`;
-    }
-
-    // Build request body
-    const requestBody = {};
-
-    // Add optional parameters if provided
-    if (content) {
-      requestBody.content = content;
-    }
-    if (pageInstructions) {
-      requestBody.pageInstructions = pageInstructions;
-    }
-
-    // Prepare headers
-    const headers = {
-      'if-match': eTag, // Required eTag header for optimistic locking
-      'x-origin-channel': 'Web'
-    };
-
-    return await this.makeRequest(url, {
-      method: 'PATCH',
-      headers: headers,
-      body: Object.keys(requestBody).length > 0 ? JSON.stringify(requestBody) : undefined
-    });
+    return this.client.updateParticipant(caseID, participantID, eTag, options);
   }
 
+  // ========================================
+  // TAG METHODS (V2 ONLY)
+  // ========================================
 
   /**
-   * Get case tags by case ID
-   * @param {string} caseID - Full case handle to retrieve tags from
-   * @returns {Promise<Object>} API response with tags list
+   * Get case tags
+   * V2 ONLY
+   * @param {string} caseID - Case ID
+   * @returns {Promise<Object>} Tags list
    */
   async getCaseTags(caseID) {
-    // URL encode the case ID to handle spaces and special characters
-    const encodedCaseID = encodeURIComponent(caseID);
-    const url = `${this.baseUrl}/cases/${encodedCaseID}/tags`;
-
-    return await this.makeRequest(url, {
-      method: 'GET',
-      headers: {
-        'x-origin-channel': 'Web'
-      }
-    });
+    if (!this.isFeatureAvailable('tags')) {
+      this.throwUnsupportedFeatureError('tags', 'getCaseTags');
+    }
+    return this.client.getCaseTags(caseID);
   }
 
   /**
-   * Add multiple tags to a case
-   * @param {string} caseID - Full case handle to add tags to
-   * @param {Array} tags - Array of tag objects with Name properties
-   * @returns {Promise<Object>} API response with multi-status results (207)
+   * Add case tags
+   * V2 ONLY
+   * @param {string} caseID - Case ID
+   * @param {Array} tags - Tags array
+   * @returns {Promise<Object>} Addition result
    */
   async addCaseTags(caseID, tags) {
-    // URL encode the case ID to handle spaces and special characters
-    const encodedCaseID = encodeURIComponent(caseID);
-    const url = `${this.baseUrl}/cases/${encodedCaseID}/tags`;
-
-    // Build request body with tags array as per OpenAPI spec
-    const requestBody = {
-      tags
-    };
-
-    return await this.makeRequest(url, {
-      method: 'POST',
-      headers: {
-        'x-origin-channel': 'Web'
-      },
-      body: JSON.stringify(requestBody)
-    });
+    if (!this.isFeatureAvailable('tags')) {
+      this.throwUnsupportedFeatureError('tags', 'addCaseTags');
+    }
+    return this.client.addCaseTags(caseID, tags);
   }
 
   /**
-   * Delete a specific tag from a case
-   * @param {string} caseID - Full case handle to delete tag from
-   * @param {string} tagID - Tag ID to be deleted from the case
-   * @returns {Promise<Object>} API response with success/error information
+   * Delete case tag
+   * V2 ONLY
+   * @param {string} caseID - Case ID
+   * @param {string} tagID - Tag ID
+   * @returns {Promise<Object>} Deletion result
    */
   async deleteCaseTag(caseID, tagID) {
-    // URL encode both the case ID and tag ID to handle spaces and special characters
-    const encodedCaseID = encodeURIComponent(caseID);
-    const encodedTagID = encodeURIComponent(tagID);
-    const url = `${this.baseUrl}/cases/${encodedCaseID}/tags/${encodedTagID}`;
-
-    try {
-      // Get OAuth2 token
-      const token = await this.oauth2Client.getAccessToken();
-      
-      // Prepare headers
-      const headers = {
-        'Authorization': `Bearer ${token}`,
-        'Accept': 'application/json',
-        'x-origin-channel': 'Web'
-      };
-
-      // Make DELETE request
-      const response = await fetch(url, {
-        method: 'DELETE',
-        headers,
-        timeout: config.pega.requestTimeout || 30000
-      });
-
-      // Handle non-2xx responses
-      if (!response.ok) {
-        return await this.handleTagDeleteErrorResponse(response);
-      }
-
-      // Get response headers (especially cache-control)
-      const responseHeaders = {};
-      response.headers.forEach((value, key) => {
-        responseHeaders[key] = value;
-      });
-
-      // Successful deletion - API returns 200 with string response
-      const responseText = await response.text();
-      
-      return {
-        success: true,
-        data: { message: responseText }, // Wrap the response text
-        headers: responseHeaders,
-        status: response.status,
-        statusText: response.statusText
-      };
-
-    } catch (error) {
-      // Handle network and other errors
-      return {
-        success: false,
-        error: {
-          type: 'CONNECTION_ERROR',
-          message: 'Failed to delete tag from case via Pega API',
-          details: error.message,
-          originalError: error
-        }
-      };
+    if (!this.isFeatureAvailable('tags')) {
+      this.throwUnsupportedFeatureError('tags', 'deleteCaseTag');
     }
+    return this.client.deleteCaseTag(caseID, tagID);
+  }
+
+  // ========================================
+  // RELATED CASES METHODS (V2 ONLY)
+  // ========================================
+
+  /**
+   * Get related cases
+   * V2 ONLY
+   * @param {string} caseID - Case ID
+   * @returns {Promise<Object>} Related cases list
+   */
+  async getRelatedCases(caseID) {
+    if (!this.isFeatureAvailable('relatedCases')) {
+      this.throwUnsupportedFeatureError('relatedCases', 'getRelatedCases');
+    }
+    return this.client.getRelatedCases(caseID);
   }
 
   /**
-   * Navigate assignment to previous step in screen flow or multi-step form
-   * @param {string} assignmentID - Full handle of assignment (e.g., "ASSIGN-WORKLIST PBANK-LOAN-WORK V-76003!REVIEW_FLOW")
-   * @param {string} eTag - Required eTag for optimistic locking from previous assignment API call
-   * @param {Object} options - Optional parameters
-   * @param {Object} options.content - Property values to set during navigation
-   * @param {Array} options.pageInstructions - Page operations for embedded pages, page lists, or page groups
-   * @param {Array} options.attachments - Attachments to add/delete during navigation
-   * @param {string} options.viewType - UI resources type ("none", "form", "page", default: "none")
-   * @returns {Promise<Object>} API response with previous step details and navigation context including breadcrumb information
+   * Relate cases
+   * V2 ONLY
+   * @param {string} caseID - Primary case ID
+   * @param {Array} cases - Cases array to relate
+   * @returns {Promise<Object>} Relation result
    */
-  async navigateAssignmentPrevious(assignmentID, eTag, options = {}) {
-    const { content, pageInstructions, attachments, viewType } = options;
-    
-    // URL encode assignment ID to handle spaces and special characters
-    const encodedAssignmentID = encodeURIComponent(assignmentID);
-    let url = `${this.baseUrl}/assignments/${encodedAssignmentID}/navigation_steps/previous`;
-
-    // Add query parameters if provided
-    const queryParams = new URLSearchParams();
-    if (viewType) {
-      queryParams.append('viewType', viewType);
+  async relateCases(caseID, cases) {
+    if (!this.isFeatureAvailable('relatedCases')) {
+      this.throwUnsupportedFeatureError('relatedCases', 'relateCases');
     }
-    
-    if (queryParams.toString()) {
-      url += `?${queryParams.toString()}`;
-    }
-
-    // Build request body
-    const requestBody = {};
-    if (content) requestBody.content = content;
-    if (pageInstructions) requestBody.pageInstructions = pageInstructions;  
-    if (attachments) requestBody.attachments = attachments;
-
-    // Prepare headers - if-match is required for this operation
-    const headers = {
-      'if-match': eTag, // Required header for optimistic locking
-      'x-origin-channel': 'Web' // Default origin channel
-    };
-
-    return await this.makeRequest(url, {
-      method: 'PATCH',
-      headers: headers,
-      body: JSON.stringify(requestBody)
-    });
+    return this.client.relateCases(caseID, cases);
   }
 
   /**
-   * Jump to a specific step within an assignment's navigation flow
-   * @param {string} assignmentID - Full handle of assignment (e.g., "ASSIGN-WORKLIST MYORG-SERVICES-WORK S-293001!APPROVAL_FLOW")
-   * @param {string} stepID - Navigation step path to jump to (e.g., "SubProcessSF1_ASSIGNMENT66", "ProcessStep_123")
-   * @param {string} eTag - Required eTag for optimistic locking from previous assignment API call
-   * @param {Object} options - Optional parameters
-   * @param {Object} options.content - Property values to set during navigation to the specified step
-   * @param {Array} options.pageInstructions - Page operations for embedded pages, page lists, or page groups
-   * @param {Array} options.attachments - Attachments to add/delete during step navigation
-   * @param {string} options.viewType - UI resources type ("none", "form", "page", default: "form")
-   * @returns {Promise<Object>} API response with step details and navigation context including breadcrumb information
+   * Delete related case
+   * V2 ONLY
+   * @param {string} caseID - Primary case ID
+   * @param {string} relatedCaseID - Related case ID
+   * @returns {Promise<Object>} Deletion result
    */
-  async jumpToAssignmentStep(assignmentID, stepID, eTag, options = {}) {
-    const { content, pageInstructions, attachments, viewType } = options;
-    
-    // URL encode both assignment ID and step ID to handle spaces and special characters
-    const encodedAssignmentID = encodeURIComponent(assignmentID);
-    const encodedStepID = encodeURIComponent(stepID);
-    let url = `${this.baseUrl}/assignments/${encodedAssignmentID}/navigation_steps/${encodedStepID}`;
-
-    // Add query parameters if provided
-    const queryParams = new URLSearchParams();
-    if (viewType) {
-      queryParams.append('viewType', viewType);
+  async deleteRelatedCase(caseID, relatedCaseID) {
+    if (!this.isFeatureAvailable('relatedCases')) {
+      this.throwUnsupportedFeatureError('relatedCases', 'deleteRelatedCase');
     }
-    
-    if (queryParams.toString()) {
-      url += `?${queryParams.toString()}`;
-    }
-
-    // Build request body
-    const requestBody = {};
-    if (content) requestBody.content = content;
-    if (pageInstructions) requestBody.pageInstructions = pageInstructions;
-    if (attachments) requestBody.attachments = attachments;
-
-    // Prepare headers - if-match is required for this operation
-    const headers = {
-      'if-match': eTag, // Required header for optimistic locking
-      'x-origin-channel': 'Web' // Default origin channel
-    };
-
-    return await this.makeRequest(url, {
-      method: 'PATCH',
-      headers: headers,
-      body: Object.keys(requestBody).length > 0 ? JSON.stringify(requestBody) : undefined
-    });
-  }
-
-  /**
-   * Recalculate calculated fields & whens for the current assignment action form
-   * @param {string} assignmentID - Full handle of assignment (e.g., "ASSIGN-WORKLIST MYORG-SERVICES-WORK S-293001!APPROVAL_FLOW")
-   * @param {string} actionID - Name of the assignment action - ID of the flow action rule
-   * @param {string} eTag - Required eTag unique value representing the most recent save date time of the case
-   * @param {Object} calculations - Required object containing fields and when conditions to recalculate
-   * @param {Array} calculations.fields - Array of field objects with name and context properties to recalculate
-   * @param {Array} calculations.whens - Array of when condition objects with name and context properties to evaluate
-   * @param {Object} options - Optional parameters
-   * @param {Object} options.content - Property values to merge into case during recalculation process
-   * @param {Array} options.pageInstructions - Page operations for embedded pages, page lists, or page groups before recalculation
-   * @returns {Promise<Object>} API response with recalculated field values, when condition results, and updated UI resources
-   */
-  async recalculateAssignmentFields(assignmentID, actionID, eTag, calculations, options = {}) {
-    const { content, pageInstructions } = options;
-    
-    // URL encode both assignment ID and action ID to handle spaces and special characters
-    const encodedAssignmentID = encodeURIComponent(assignmentID);
-    const encodedActionID = encodeURIComponent(actionID);
-    const url = `${this.baseUrl}/assignments/${encodedAssignmentID}/actions/${encodedActionID}/recalculate`;
-
-    // Build request body - calculations is required
-    const requestBody = {
-      calculations
-    };
-
-    // Add optional parameters if provided
-    if (content) {
-      requestBody.content = content;
-    }
-    if (pageInstructions) {
-      requestBody.pageInstructions = pageInstructions;
-    }
-
-    // Prepare headers - if-match is required for this operation
-    const headers = {
-      'if-match': eTag, // Required eTag header for optimistic locking
-      'x-origin-channel': 'Web' // Default origin channel
-    };
-
-    return await this.makeRequest(url, {
-      method: 'PATCH',
-      headers: headers,
-      body: JSON.stringify(requestBody)
-    });
-  }
-
-  /**
-   * Recalculate calculated fields & whens for case action form
-   * @param {string} caseID - Full case handle
-   * @param {string} actionID - Case action ID  
-   * @param {string} eTag - Required eTag for optimistic locking
-   * @param {Object} calculations - Required calculations object with fields/whens arrays
-   * @param {Object} options - Optional parameters (content, pageInstructions, originChannel)
-   * @returns {Promise<Object>} API response with recalculated values and UI updates
-   */
-  async recalculateCaseActionFields(caseID, actionID, eTag, calculations, options = {}) {
-    const { content, pageInstructions, originChannel } = options;
-    
-    // URL encode both case ID and action ID to handle spaces and special characters
-    const encodedCaseID = encodeURIComponent(caseID);
-    const encodedActionID = encodeURIComponent(actionID);
-    const url = `${this.baseUrl}/cases/${encodedCaseID}/actions/${encodedActionID}/recalculate`;
-
-    // Build request body - calculations is required
-    const requestBody = {
-      calculations
-    };
-
-    // Add optional parameters if provided
-    if (content) {
-      requestBody.content = content;
-    }
-    if (pageInstructions) {
-      requestBody.pageInstructions = pageInstructions;
-    }
-
-    // Prepare headers - if-match is required for this operation
-    const headers = {
-      'if-match': eTag // Required eTag header for optimistic locking
-    };
-
-    // Add origin channel header if provided, otherwise default to Web
-    if (originChannel) {
-      headers['x-origin-channel'] = originChannel;
-    } else {
-      headers['x-origin-channel'] = 'Web';
-    }
-
-    return await this.makeRequest(url, {
-      method: 'PATCH',
-      headers: headers,
-      body: JSON.stringify(requestBody)
-    });
-  }
-
-  /**
-   * Add stage or case-wide optional process and return details of the next assignment in the process
-   * @param {string} caseID - Full case handle to add optional process to
-   * @param {string} processID - Process ID - Name of the process which is the ID of a flow rule
-   * @param {Object} options - Optional parameters
-   * @param {string} options.viewType - Type of view data to return ("none", "form", "page")
-   * @returns {Promise<Object>} API response with case info, next assignment info, and optional UI resources
-   */
-  async addOptionalProcess(caseID, processID, options = {}) {
-    const { viewType } = options;
-    
-    // URL encode both the case ID and process ID to handle spaces and special characters
-    const encodedCaseID = encodeURIComponent(caseID);
-    const encodedProcessID = encodeURIComponent(processID);
-    let url = `${this.baseUrl}/cases/${encodedCaseID}/processes/${encodedProcessID}`;
-
-    // Add query parameters if provided
-    const queryParams = new URLSearchParams();
-    if (viewType) {
-      queryParams.append('viewType', viewType);
-    }
-    
-    if (queryParams.toString()) {
-      url += `?${queryParams.toString()}`;
-    }
-
-    return await this.makeRequest(url, {
-      method: 'POST',
-      headers: {
-        'x-origin-channel': 'Web'
-      }
-      // No request body - this endpoint takes no payload
-    });
-  }
-
-  /**
-   * Get calculated fields for a given case view
-   * @param {string} caseID - Full case handle (case ID) to retrieve calculated fields from
-   * @param {string} viewID - Name of the view from which calculated fields are retrieved - ID of the view rule
-   * @param {Object} calculations - Object containing the fields data to retrieve their respective calculated values
-   * @param {Array} calculations.fields - Array of field objects specifying which calculated fields to retrieve
-   * @param {Array} [calculations.whens] - Optional array of when condition objects for conditional field evaluation
-   * @returns {Promise<Object>} API response with calculated field results and case data
-   */
-  async getCaseViewCalculatedFields(caseID, viewID, calculations) {
-    // URL encode both the case ID and view ID to handle spaces and special characters
-    const encodedCaseID = encodeURIComponent(caseID);
-    const encodedViewID = encodeURIComponent(viewID);
-    const url = `${this.baseUrl}/cases/${encodedCaseID}/views/${encodedViewID}/calculated_fields`;
-
-    // Build request body with calculations object
-    const requestBody = {
-      calculations
-    };
-
-    return await this.makeRequest(url, {
-      method: 'POST',
-      headers: {
-        'x-origin-channel': 'Web'
-      },
-      body: JSON.stringify(requestBody)
-    });
-  }
-
-  /**
-   * Refresh case action form data with updated values after property changes, execute Data Transforms, and handle table row operations in modals
-   * @param {string} caseID - Full case handle (case ID) to perform refresh on
-   * @param {string} actionID - Name of the case action - ID of the flow action rule
-   * @param {string} eTag - Required eTag unique value for optimistic locking
-   * @param {Object} options - Optional parameters
-   * @param {string} [options.refreshFor] - Property name that triggers refresh after executing Data Transform
-   * @param {boolean} [options.fillFormWithAI=false] - Boolean to enable generative AI form filling
-   * @param {string} [options.operation] - Table row operation type ("showRow" or "submitRow")
-   * @param {Object} [options.content] - Property values to merge into case during refresh
-   * @param {Array} [options.pageInstructions] - Page-related operations for embedded pages
-   * @param {boolean} [options.contextData=false] - Boolean to fetch contextData or full view response
-   * @param {string} [options.interestPage] - Target page for table row operations (e.g., ".OrderItems(1)")
-   * @param {string} [options.interestPageActionID] - Action ID for embedded list operations
-   * @param {string} [options.originChannel] - Origin channel identifier (e.g., "Web", "Mobile", "WebChat")
-   * @returns {Promise<Object>} API response with refreshed form data, updated field states, and UI resources
-   */
-  async refreshCaseAction(caseID, actionID, eTag, options = {}) {
-    const { 
-      refreshFor, 
-      fillFormWithAI, 
-      operation, 
-      content, 
-      pageInstructions,
-      contextData,
-      interestPage, 
-      interestPageActionID,
-      originChannel 
-    } = options;
-    
-    // URL encode both the case ID and action ID to handle spaces and special characters
-    const encodedCaseID = encodeURIComponent(caseID);
-    const encodedActionID = encodeURIComponent(actionID);
-    let url = `${this.baseUrl}/cases/${encodedCaseID}/actions/${encodedActionID}/refresh`;
-
-    // Add query parameters if provided
-    const queryParams = new URLSearchParams();
-    if (refreshFor) {
-      queryParams.append('refreshFor', refreshFor);
-    }
-    if (fillFormWithAI !== undefined) {
-      queryParams.append('fillFormWithAI', fillFormWithAI.toString());
-    }
-    if (operation) {
-      queryParams.append('operation', operation);
-    }
-    
-    if (queryParams.toString()) {
-      url += `?${queryParams.toString()}`;
-    }
-
-    // Build request body
-    const requestBody = {};
-
-    // Add optional parameters if provided
-    if (content && Object.keys(content).length > 0) {
-      requestBody.content = content;
-    }
-    if (pageInstructions && pageInstructions.length > 0) {
-      requestBody.pageInstructions = pageInstructions;
-    }
-    if (contextData !== undefined) {
-      requestBody.contextData = contextData;
-    }
-    
-    // Add table row operation parameters for Pega Infinity '25 features
-    if (operation && interestPage) {
-      requestBody.interestPage = interestPage;
-    }
-    if (operation && interestPageActionID) {
-      requestBody.interestPageActionID = interestPageActionID;
-    }
-
-    // Prepare headers - if-match is required for this endpoint
-    const headers = {
-      'if-match': eTag // Required eTag header for optimistic locking
-    };
-
-    // Add origin channel header if provided, otherwise default to Web
-    if (originChannel) {
-      headers['x-origin-channel'] = originChannel;
-    } else {
-      headers['x-origin-channel'] = 'Web';
-    }
-
-    return await this.makeRequest(url, {
-      method: 'PATCH',
-      headers: headers,
-      body: Object.keys(requestBody).length > 0 ? JSON.stringify(requestBody) : undefined
-    });
-  }
-
-  /**
-   * Release pessimistic lock on a case and clean up cached/pending updates
-   * @param {string} caseID - Full case handle (case ID) to release lock from
-   * @param {Object} options - Optional parameters
-   * @param {string} options.viewType - Type of view data to return ("none" or "page", default: "none")
-   * @returns {Promise<Object>} API response with case details after lock release
-   */
-  async releaseCaseLock(caseID, options = {}) {
-    const { viewType } = options;
-    
-    // URL encode the case ID to handle spaces and special characters
-    const encodedCaseID = encodeURIComponent(caseID);
-    let url = `${this.baseUrl}/cases/${encodedCaseID}/updates`;
-
-    // Add query parameters if provided
-    const queryParams = new URLSearchParams();
-    if (viewType) {
-      queryParams.append('viewType', viewType);
-    }
-    
-    if (queryParams.toString()) {
-      url += `?${queryParams.toString()}`;
-    }
-
-    return await this.makeRequest(url, {
-      method: 'DELETE',
-      headers: {
-        'x-origin-channel': 'Web'
-      }
-    });
-  }
-
-  /**
-   * Test OAuth2 connectivity and verify authentication configuration
-   * @returns {Promise<Object>} Structured response with ping test results
-   */
-  async ping() {
-    const startTime = Date.now();
-
-    try {
-      // Test authentication by getting an access token
-      const token = await this.oauth2Client.getAccessToken();
-
-      const duration = Date.now() - startTime;
-
-      // Get token info without exposing the actual token
-      const tokenInfo = {
-        type: 'Bearer',
-        length: token ? token.length : 0,
-        prefix: token ? token.substring(0, 10) + '...' : 'None',
-        acquired: !!token,
-        cached: !!this.oauth2Client.accessToken,
-        authMode: this.oauth2Client.authMode
-      };
-
-      // Use session-aware configuration
-      const { pega } = this.config;
-
-      return {
-        success: true,
-        data: {
-          timestamp: new Date().toISOString(),
-          configuration: {
-            baseUrl: pega.baseUrl,
-            apiVersion: pega.apiVersion,
-            tokenUrl: pega.tokenUrl,
-            apiBaseUrl: pega.apiBaseUrl,
-            authMode: this.oauth2Client.authMode,
-            configSource: this.config._sessionMeta ? 'session' : 'environment'
-          },
-          tests: [{
-            test: `${this.oauth2Client.authMode.toUpperCase()} Authentication`,
-            success: true,
-            duration: `${duration}ms`,
-            endpoint: this.oauth2Client.authMode === 'oauth' ? pega.tokenUrl : 'Direct Token',
-            message: this.oauth2Client.authMode === 'oauth' ?
-              'Successfully obtained access token' :
-              'Successfully validated direct access token',
-            tokenInfo: tokenInfo
-          }]
-        }
-      };
-    } catch (error) {
-      const duration = Date.now() - startTime;
-
-      // Use session-aware configuration for error reporting
-      const { pega } = this.config;
-
-      return {
-        success: false,
-        error: {
-          type: 'CONNECTION_ERROR',
-          message: `${this.oauth2Client.authMode.toUpperCase()} authentication failed`,
-          details: error.message,
-          timestamp: new Date().toISOString(),
-          configuration: {
-            baseUrl: pega.baseUrl,
-            apiVersion: pega.apiVersion,
-            tokenUrl: pega.tokenUrl,
-            apiBaseUrl: pega.apiBaseUrl,
-            authMode: this.oauth2Client.authMode,
-            configSource: this.config._sessionMeta ? 'session' : 'environment'
-          },
-          tests: [{
-            test: `${this.oauth2Client.authMode.toUpperCase()} Authentication`,
-            success: false,
-            duration: `${duration}ms`,
-            endpoint: this.oauth2Client.authMode === 'oauth' ? pega.tokenUrl : 'Direct Token',
-            error: error.message,
-            tokenInfo: {
-              type: 'Bearer',
-              length: 0,
-              prefix: 'None',
-              acquired: false,
-              cached: false,
-              authMode: this.oauth2Client.authMode
-            },
-            troubleshooting: this.oauth2Client.authMode === 'oauth' ? [
-              'Verify baseUrl is correct and accessible',
-              'Check clientId and clientSecret are valid',
-              'Ensure OAuth2 client is configured in Pega Infinity',
-              'Verify network connectivity to Pega instance'
-            ] : [
-              'Verify the provided access token is valid',
-              'Check if the token has expired',
-              'Ensure the token has appropriate permissions',
-              'Verify network connectivity to Pega instance'
-            ]
-          }]
-        }
-      };
-    }
-  }
-
-  /**
-   * Make HTTP request to Pega API with authentication
-   * @param {string} url - Full API URL
-   * @param {Object} options - HTTP request options
-   * @returns {Promise<Object>} Structured response with success/error information
-   */
-  async makeRequest(url, options = {}) {
-    try {
-      // Get OAuth2 token
-      const token = await this.oauth2Client.getAccessToken();
-      
-      // Prepare headers
-      const headers = {
-        'Authorization': `Bearer ${token}`,
-        'Content-Type': 'application/json',
-        'Accept': 'application/json',
-        ...options.headers
-      };
-
-      // Make request
-      const response = await fetch(url, {
-        ...options,
-        headers,
-        timeout: this.config.pega.requestTimeout || 30000
-      });
-
-      // Handle non-2xx responses
-      if (!response.ok) {
-        return await this.handleErrorResponse(response);
-      }
-
-      // Parse successful response - handle both JSON and empty/text responses
-      let data;
-      const contentType = response.headers.get('content-type');
-      const contentLength = response.headers.get('content-length');
-      
-      // Check if response has content and is JSON
-      if (contentLength === '0' || !contentType || !contentType.includes('application/json')) {
-        // Handle empty response or non-JSON response (common for DELETE operations)
-        const textResponse = await response.text();
-        data = textResponse ? { message: textResponse } : { message: 'Operation completed successfully' };
-      } else {
-        // Handle JSON response
-        try {
-          data = await response.json();
-        } catch (jsonError) {
-          // Fallback for invalid JSON - treat as text
-          const textResponse = await response.text();
-          data = { message: textResponse || 'Operation completed successfully' };
-        }
-      }
-      
-      const eTag = response.headers.get('etag');
-      
-      return {
-        success: true,
-        data,
-        eTag,
-        status: response.status,
-        statusText: response.statusText
-      };
-
-    } catch (error) {
-      // Handle network and other errors
-      return {
-        success: false,
-        error: {
-          type: 'CONNECTION_ERROR',
-          message: 'Failed to connect to Pega API',
-          details: error.message,
-          originalError: error
-        }
-      };
-    }
-  }
-
-  /**
-   * Handle error responses from Pega API
-   */
-  async handleErrorResponse(response) {
-    let errorData;
-    try {
-      errorData = await response.json();
-    } catch (e) {
-      errorData = { message: await response.text() };
-    }
-
-    const errorResponse = {
-      success: false,
-      error: {
-        status: response.status,
-        statusText: response.statusText
-      }
-    };
-
-    switch (response.status) {
-      case 400:
-        errorResponse.error.type = 'BAD_REQUEST';
-        errorResponse.error.message = 'Invalid request parameters';
-        errorResponse.error.details = errorData.localizedValue || 'One or more inputs are invalid';
-        if (errorData.errorDetails) {
-          errorResponse.error.errorDetails = errorData.errorDetails;
-        }
-        break;
-
-      case 401:
-        errorResponse.error.type = 'UNAUTHORIZED';
-        errorResponse.error.message = 'Authentication failed';
-        errorResponse.error.details = errorData.errors?.[0]?.message || 'Invalid or expired token';
-        // Clear token cache on 401 to force refresh on next request
-        this.oauth2Client.clearTokenCache();
-        break;
-
-      case 403:
-        errorResponse.error.type = 'FORBIDDEN';
-        errorResponse.error.message = 'Access denied';
-        errorResponse.error.details = errorData.localizedValue || 'User is not allowed to access or update the resource';
-        if (errorData.errorDetails) {
-          errorResponse.error.errorDetails = errorData.errorDetails;
-        }
-        break;
-
-      case 404:
-        errorResponse.error.type = 'NOT_FOUND';
-        errorResponse.error.message = 'Case not found';
-        errorResponse.error.details = errorData.localizedValue || 'The case cannot be found';
-        if (errorData.errorDetails) {
-          errorResponse.error.errorDetails = errorData.errorDetails;
-        }
-        break;
-
-      case 409:
-        errorResponse.error.type = 'CONFLICT';
-        errorResponse.error.message = 'Conflict error';
-        errorResponse.error.details = errorData.localizedValue || 'The assignment state has changed since your last request';
-        if (errorData.errorDetails) {
-          errorResponse.error.errorDetails = errorData.errorDetails;
-        }
-        break;
-
-      case 412:
-        errorResponse.error.type = 'PRECONDITION_FAILED';
-        errorResponse.error.message = 'eTag mismatch';
-        errorResponse.error.details = errorData.localizedValue || 'The provided eTag value does not match the current case state';
-        if (errorData.errorDetails) {
-          errorResponse.error.errorDetails = errorData.errorDetails;
-        }
-        break;
-
-      case 422:
-        errorResponse.error.type = 'VALIDATION_FAIL';
-        errorResponse.error.message = 'Validation error';
-        errorResponse.error.details = errorData.localizedValue || 'The submitted data failed validation rules';
-        if (errorData.errorDetails) {
-          errorResponse.error.errorDetails = errorData.errorDetails;
-        }
-        break;
-
-      case 423:
-        errorResponse.error.type = 'LOCKED';
-        errorResponse.error.message = 'Assignment locked';
-        errorResponse.error.details = errorData.localizedValue || 'The assignment is currently locked by another user';
-        if (errorData.errorDetails) {
-          errorResponse.error.errorDetails = errorData.errorDetails;
-        }
-        break;
-
-      case 424:
-        errorResponse.error.type = 'FAILED_DEPENDENCY';
-        errorResponse.error.message = 'Dependency failure';
-        errorResponse.error.details = errorData.localizedValue || 'A required dependency or pre-condition failed';
-        if (errorData.errorDetails) {
-          errorResponse.error.errorDetails = errorData.errorDetails;
-        }
-        break;
-
-      case 500:
-        errorResponse.error.type = 'INTERNAL_SERVER_ERROR';
-        errorResponse.error.message = 'Internal server error';
-        errorResponse.error.details = errorData.localizedValue || 'An error occurred on the server';
-        if (errorData.errorDetails) {
-          errorResponse.error.errorDetails = errorData.errorDetails;
-        }
-        break;
-
-      default:
-        errorResponse.error.type = 'HTTP_ERROR';
-        errorResponse.error.message = `HTTP ${response.status} error`;
-        errorResponse.error.details = errorData.message || response.statusText;
-        break;
-    }
-
-    return errorResponse;
-  }
-
-  /**
-   * Handle error responses from attachment content retrieval API
-   * @param {Response} response - HTTP response object  
-   * @returns {Promise<Object>} Structured error response for attachment content
-   */
-  async handleAttachmentContentErrorResponse(response) {
-    let errorData;
-    try {
-      errorData = await response.json();
-    } catch (e) {
-      errorData = { message: await response.text() };
-    }
-
-    const errorResponse = {
-      success: false,
-      error: {
-        status: response.status,
-        statusText: response.statusText
-      }
-    };
-
-    switch (response.status) {
-      case 401:
-        errorResponse.error.type = 'UNAUTHORIZED';
-        errorResponse.error.message = 'Authentication failed';
-        errorResponse.error.details = errorData.errors?.[0]?.message || 'Invalid or expired token';
-        // Clear token cache on 401 to force refresh on next request
-        this.oauth2Client.clearTokenCache();
-        break;
-
-      case 403:
-        errorResponse.error.type = 'FORBIDDEN';
-        errorResponse.error.message = 'Access denied to attachment';
-        errorResponse.error.details = errorData.localizedValue || 'User is not allowed to access this attachment';
-        if (errorData.errorDetails) {
-          errorResponse.error.errorDetails = errorData.errorDetails;
-        }
-        break;
-
-      case 404:
-        errorResponse.error.type = 'NOT_FOUND';
-        errorResponse.error.message = 'Attachment not found';
-        errorResponse.error.details = errorData.localizedValue || 'The attachment cannot be found or is not available';
-        if (errorData.errorDetails) {
-          errorResponse.error.errorDetails = errorData.errorDetails;
-        }
-        break;
-
-      case 500:
-        errorResponse.error.type = 'INTERNAL_SERVER_ERROR';
-        errorResponse.error.message = 'Internal server error retrieving attachment';
-        errorResponse.error.details = errorData.localizedValue || 'An error occurred on the server while retrieving attachment content';
-        if (errorData.errorDetails) {
-          errorResponse.error.errorDetails = errorData.errorDetails;
-        }
-        break;
-
-      default:
-        errorResponse.error.type = 'HTTP_ERROR';
-        errorResponse.error.message = `HTTP ${response.status} error retrieving attachment content`;
-        errorResponse.error.details = errorData.message || errorData.localizedValue || response.statusText;
-        break;
-    }
-
-    return errorResponse;
-  }
-
-  /**
-   * Handle error responses from attachment delete API
-   * @param {Response} response - HTTP response object
-   * @returns {Promise<Object>} Structured error response for attachment deletion
-   */
-  async handleAttachmentDeleteErrorResponse(response) {
-    let errorData;
-    try {
-      errorData = await response.json();
-    } catch (e) {
-      errorData = { message: await response.text() };
-    }
-
-    const errorResponse = {
-      success: false,
-      error: {
-        status: response.status,
-        statusText: response.statusText
-      }
-    };
-
-    switch (response.status) {
-      case 401:
-        errorResponse.error.type = 'UNAUTHORIZED';
-        errorResponse.error.message = 'Authentication failed';
-        errorResponse.error.details = errorData.errors?.[0]?.message || 'Invalid or expired token';
-        // Clear token cache on 401 to force refresh on next request
-        this.oauth2Client.clearTokenCache();
-        break;
-
-      case 403:
-        errorResponse.error.type = 'FORBIDDEN';
-        errorResponse.error.message = 'Insufficient delete permissions';
-        errorResponse.error.details = errorData.localizedValue || 'User is not allowed to delete this attachment';
-        if (errorData.errorDetails) {
-          errorResponse.error.errorDetails = errorData.errorDetails;
-        }
-        break;
-
-      case 404:
-        errorResponse.error.type = 'NOT_FOUND';
-        errorResponse.error.message = 'Attachment not found';
-        errorResponse.error.details = errorData.localizedValue || 'The attachment cannot be found or has already been deleted';
-        if (errorData.errorDetails) {
-          errorResponse.error.errorDetails = errorData.errorDetails;
-        }
-        break;
-
-      case 500:
-        errorResponse.error.type = 'INTERNAL_SERVER_ERROR';
-        errorResponse.error.message = 'Internal server error during attachment deletion';
-        errorResponse.error.details = errorData.localizedValue || 'An error occurred on the server while deleting the attachment';
-        if (errorData.errorDetails) {
-          errorResponse.error.errorDetails = errorData.errorDetails;
-        }
-        break;
-
-      default:
-        errorResponse.error.type = 'HTTP_ERROR';
-        errorResponse.error.message = `HTTP ${response.status} error deleting attachment`;
-        errorResponse.error.details = errorData.message || errorData.localizedValue || response.statusText;
-        break;
-    }
-
-    return errorResponse;
-  }
-
-  /**
-   * Handle error responses from attachment upload API
-   * @param {Response} response - HTTP response object
-   * @returns {Promise<Object>} Structured error response
-   */
-  async handleAttachmentErrorResponse(response) {
-    let errorData;
-    try {
-      errorData = await response.json();
-    } catch (e) {
-      errorData = { message: await response.text() };
-    }
-
-    const errorResponse = {
-      success: false,
-      error: {
-        status: response.status,
-        statusText: response.statusText
-      }
-    };
-
-    switch (response.status) {
-      case 400:
-        // Check for specific attachment error types based on error message
-        if (errorData.errorDetails && errorData.errorDetails.length > 0) {
-          const errorDetail = errorData.errorDetails[0];
-          
-          if (errorDetail.message === 'Error_Virus_Scan_Fail') {
-            errorResponse.error.type = 'VIRUS_SCAN_FAIL';
-            errorResponse.error.message = 'File failed virus scan';
-            errorResponse.error.details = errorDetail.localizedValue || 'Malicious file encountered';
-          } else if (errorDetail.message === 'Error_Too_Large_To_Upload') {
-            errorResponse.error.type = 'FILE_TOO_LARGE';
-            errorResponse.error.message = 'File size exceeds limit';
-            errorResponse.error.details = errorDetail.localizedValue || 'File size should not exceed the configured limit';
-          } else {
-            errorResponse.error.type = 'BAD_REQUEST';
-            errorResponse.error.message = 'Invalid file upload request';
-            errorResponse.error.details = errorDetail.localizedValue || errorData.localizedValue || 'One or more inputs are invalid';
-          }
-        } else {
-          errorResponse.error.type = 'BAD_REQUEST';
-          errorResponse.error.message = 'Invalid file upload request';
-          errorResponse.error.details = errorData.localizedValue || 'One or more inputs are invalid';
-        }
-        
-        if (errorData.errorDetails) {
-          errorResponse.error.errorDetails = errorData.errorDetails;
-        }
-        break;
-
-      case 401:
-        errorResponse.error.type = 'UNAUTHORIZED';
-        errorResponse.error.message = 'Authentication failed';
-        errorResponse.error.details = errorData.errors?.[0]?.message || 'Invalid or expired token';
-        // Clear token cache on 401 to force refresh on next request
-        this.oauth2Client.clearTokenCache();
-        break;
-
-      case 500:
-        // Check for specific storage/database error types
-        if (errorData.errorDetails && errorData.errorDetails.length > 0) {
-          const errorDetail = errorData.errorDetails[0];
-          
-          if (errorDetail.localizedValue && errorDetail.localizedValue.includes('storage configuration')) {
-            errorResponse.error.type = 'STORAGE_ERROR';
-            errorResponse.error.message = 'External storage system error';
-            errorResponse.error.details = errorDetail.localizedValue || "Couldn't upload file. Check storage configuration.";
-          } else if (errorDetail.localizedValue && errorDetail.localizedValue.includes('DB configuration')) {
-            errorResponse.error.type = 'DATABASE_ERROR';
-            errorResponse.error.message = 'Database connection error';
-            errorResponse.error.details = errorDetail.localizedValue || "Couldn't upload file. Check DB configuration.";
-          } else {
-            errorResponse.error.type = 'INTERNAL_SERVER_ERROR';
-            errorResponse.error.message = 'Internal server error during file upload';
-            errorResponse.error.details = errorDetail.localizedValue || 'An error occurred while processing the file upload';
-          }
-        } else {
-          errorResponse.error.type = 'INTERNAL_SERVER_ERROR';
-          errorResponse.error.message = 'Internal server error during file upload';
-          errorResponse.error.details = errorData.localizedValue || 'An error occurred on the server during file upload';
-        }
-        
-        if (errorData.errorDetails) {
-          errorResponse.error.errorDetails = errorData.errorDetails;
-        }
-        break;
-
-      default:
-        // For other status codes, fall back to generic error handling
-        errorResponse.error.type = 'HTTP_ERROR';
-        errorResponse.error.message = `HTTP ${response.status} error during file upload`;
-        errorResponse.error.details = errorData.message || errorData.localizedValue || response.statusText;
-        break;
-    }
-
-    return errorResponse;
-  }
-
-  /**
-   * Handle error responses from attachment update API
-   * @param {Response} response - HTTP response object
-   * @returns {Promise<Object>} Structured error response for attachment update
-   */
-  async handleAttachmentUpdateErrorResponse(response) {
-    let errorData;
-    try {
-      errorData = await response.json();
-    } catch (e) {
-      errorData = { message: await response.text() };
-    }
-
-    const errorResponse = {
-      success: false,
-      error: {
-        status: response.status,
-        statusText: response.statusText
-      }
-    };
-
-    switch (response.status) {
-      case 400:
-        errorResponse.error.type = 'BAD_REQUEST';
-        errorResponse.error.message = 'Invalid attachment update request';
-        errorResponse.error.details = errorData.localizedValue || 'One or more inputs are invalid';
-        if (errorData.errorDetails) {
-          errorResponse.error.errorDetails = errorData.errorDetails;
-        }
-        break;
-
-      case 401:
-        errorResponse.error.type = 'UNAUTHORIZED';
-        errorResponse.error.message = 'Authentication failed';
-        errorResponse.error.details = errorData.errors?.[0]?.message || 'Invalid or expired token';
-        // Clear token cache on 401 to force refresh on next request
-        this.oauth2Client.clearTokenCache();
-        break;
-
-      case 403:
-        errorResponse.error.type = 'FORBIDDEN';
-        errorResponse.error.message = 'Insufficient edit permissions';
-        errorResponse.error.details = errorData.localizedValue || 'User is not allowed to edit this attachment or attachment category';
-        if (errorData.errorDetails) {
-          errorResponse.error.errorDetails = errorData.errorDetails;
-        }
-        break;
-
-      case 404:
-        errorResponse.error.type = 'NOT_FOUND';
-        errorResponse.error.message = 'Attachment not found';
-        errorResponse.error.details = errorData.localizedValue || 'The attachment cannot be found or the case is not accessible';
-        if (errorData.errorDetails) {
-          errorResponse.error.errorDetails = errorData.errorDetails;
-        }
-        break;
-
-      case 500:
-        errorResponse.error.type = 'INTERNAL_SERVER_ERROR';
-        errorResponse.error.message = 'Internal server error during attachment update';
-        errorResponse.error.details = errorData.localizedValue || 'An error occurred on the server while updating the attachment';
-        if (errorData.errorDetails) {
-          errorResponse.error.errorDetails = errorData.errorDetails;
-        }
-        break;
-
-      default:
-        errorResponse.error.type = 'HTTP_ERROR';
-        errorResponse.error.message = `HTTP ${response.status} error updating attachment`;
-        errorResponse.error.details = errorData.message || errorData.localizedValue || response.statusText;
-        break;
-    }
-
-    return errorResponse;
-  }
-
-  /**
-   * Handle error responses from document content retrieval API
-   * @param {Response} response - HTTP response object
-   * @returns {Promise<Object>} Structured error response for document content
-   */
-  async handleDocumentErrorResponse(response) {
-    let errorData;
-    try {
-      errorData = await response.json();
-    } catch (e) {
-      errorData = { message: await response.text() };
-    }
-
-    const errorResponse = {
-      success: false,
-      error: {
-        status: response.status,
-        statusText: response.statusText
-      }
-    };
-
-    switch (response.status) {
-      case 400:
-        errorResponse.error.type = 'BAD_REQUEST';
-        errorResponse.error.message = 'Invalid document request';
-        errorResponse.error.details = errorData.localizedValue || 'Invalid document ID or request parameters';
-        if (errorData.errorDetails) {
-          errorResponse.error.errorDetails = errorData.errorDetails;
-        }
-        break;
-
-      case 401:
-        errorResponse.error.type = 'UNAUTHORIZED';
-        errorResponse.error.message = 'Authentication failed';
-        errorResponse.error.details = errorData.errors?.[0]?.message || 'Invalid or expired token';
-        // Clear token cache on 401 to force refresh on next request
-        this.oauth2Client.clearTokenCache();
-        break;
-
-      case 403:
-        errorResponse.error.type = 'FORBIDDEN';
-        errorResponse.error.message = 'Access denied to document';
-        errorResponse.error.details = errorData.localizedValue || 'User is not allowed to access this document';
-        if (errorData.errorDetails) {
-          errorResponse.error.errorDetails = errorData.errorDetails;
-        }
-        break;
-
-      case 404:
-        errorResponse.error.type = 'NOT_FOUND';
-        errorResponse.error.message = 'Document not found';
-        errorResponse.error.details = errorData.localizedValue || 'The document cannot be found or is not available';
-        if (errorData.errorDetails) {
-          errorResponse.error.errorDetails = errorData.errorDetails;
-        }
-        break;
-
-      case 424:
-        errorResponse.error.type = 'FAILED_DEPENDENCY';
-        errorResponse.error.message = 'Document dependency failure';
-        errorResponse.error.details = errorData.localizedValue || 'A required dependency or pre-condition failed for document retrieval';
-        if (errorData.errorDetails) {
-          errorResponse.error.errorDetails = errorData.errorDetails;
-        }
-        break;
-
-      case 500:
-        errorResponse.error.type = 'INTERNAL_SERVER_ERROR';
-        errorResponse.error.message = 'Internal server error retrieving document';
-        errorResponse.error.details = errorData.localizedValue || 'An error occurred on the server while retrieving document content';
-        if (errorData.errorDetails) {
-          errorResponse.error.errorDetails = errorData.errorDetails;
-        }
-        break;
-
-      default:
-        errorResponse.error.type = 'HTTP_ERROR';
-        errorResponse.error.message = `HTTP ${response.status} error retrieving document content`;
-        errorResponse.error.details = errorData.message || errorData.localizedValue || response.statusText;
-        break;
-    }
-
-    return errorResponse;
-  }
-
-  /**
-   * Handle error responses specific to bulk cases PATCH operations
-   * @param {Response} response - HTTP response object
-   * @returns {Promise<Object>} Structured error response for bulk cases operations
-   */
-  async handleBulkCasesErrorResponse(response) {
-    let errorData;
-    try {
-      errorData = await response.json();
-    } catch (e) {
-      errorData = { message: await response.text() };
-    }
-
-    const errorResponse = {
-      success: false,
-      error: {
-        status: response.status,
-        statusText: response.statusText
-      }
-    };
-
-    switch (response.status) {
-      case 400:
-        errorResponse.error.type = 'BAD_REQUEST';
-        errorResponse.error.message = 'Cases missing from the request body or empty';
-        errorResponse.error.details = errorData.localizedValue || 'The request body does not contain any cases to process - there is no cases property, the cases property is an empty list, or one or more elements of the cases list does not contain the ID property.';
-        if (errorData.errorDetails) {
-          errorResponse.error.errorDetails = errorData.errorDetails;
-        }
-        break;
-
-      case 401:
-        errorResponse.error.type = 'UNAUTHORIZED';
-        errorResponse.error.message = 'Authentication failed';
-        errorResponse.error.details = errorData.errors?.[0]?.message || 'Invalid token or expired';
-        // Clear token cache on 401 to force refresh on next request
-        this.oauth2Client.clearTokenCache();
-        break;
-
-      case 500:
-        errorResponse.error.type = 'INTERNAL_SERVER_ERROR';
-        errorResponse.error.message = 'Implementation resulted in an exception';
-        errorResponse.error.details = errorData.localizedValue || 'An unhandled server exception occurs, for example, when unexpectedly failed to publish an event to asynchronously process in Launchpad.';
-        if (errorData.errorDetails) {
-          errorResponse.error.errorDetails = errorData.errorDetails;
-        }
-        break;
-
-      case 501:
-        errorResponse.error.type = 'NOT_IMPLEMENTED';
-        errorResponse.error.message = 'No implementation for the sync runningMode currently present';
-        errorResponse.error.details = errorData.localizedValue || 'The requestor does not specify the runningMode query parameter as async, or if they don\'t specify the runningMode query parameter at all. Currently, only the async runningMode is implemented. This response only applies to Pega Launchpad.';
-        if (errorData.errorDetails) {
-          errorResponse.error.errorDetails = errorData.errorDetails;
-        }
-        break;
-
-      default:
-        // Fall back to generic error handling for other status codes
-        errorResponse.error.type = 'HTTP_ERROR';
-        errorResponse.error.message = `HTTP ${response.status} error during bulk cases operation`;
-        errorResponse.error.details = errorData.message || errorData.localizedValue || response.statusText;
-        break;
-    }
-
-    return errorResponse;
-  }
-
-  /**
-   * Handle error responses from remove case document API
-   * @param {Response} response - HTTP response object
-   * @returns {Promise<Object>} Structured error response for document removal from case
-   */
-  async handleRemoveCaseDocumentErrorResponse(response) {
-    let errorData;
-    try {
-      errorData = await response.json();
-    } catch (e) {
-      errorData = { message: await response.text() };
-    }
-
-    const errorResponse = {
-      success: false,
-      error: {
-        status: response.status,
-        statusText: response.statusText
-      }
-    };
-
-    switch (response.status) {
-      case 400:
-        errorResponse.error.type = 'BAD_REQUEST';
-        errorResponse.error.message = 'Invalid document removal request';
-        errorResponse.error.details = errorData.localizedValue || 'Invalid case ID or document ID parameters';
-        if (errorData.errorDetails) {
-          errorResponse.error.errorDetails = errorData.errorDetails;
-        }
-        break;
-
-      case 401:
-        errorResponse.error.type = 'UNAUTHORIZED';
-        errorResponse.error.message = 'Authentication failed';
-        errorResponse.error.details = errorData.errors?.[0]?.message || 'Invalid or expired token';
-        // Clear token cache on 401 to force refresh on next request
-        this.oauth2Client.clearTokenCache();
-        break;
-
-      case 403:
-        errorResponse.error.type = 'FORBIDDEN';
-        errorResponse.error.message = 'Insufficient permissions to remove document';
-        errorResponse.error.details = errorData.localizedValue || 'User is not allowed to remove documents from this case';
-        if (errorData.errorDetails) {
-          errorResponse.error.errorDetails = errorData.errorDetails;
-        }
-        break;
-
-      case 404:
-        errorResponse.error.type = 'NOT_FOUND';
-        errorResponse.error.message = 'Case or document not found';
-        errorResponse.error.details = errorData.localizedValue || 'The case or document cannot be found, or the document is not linked to the specified case';
-        if (errorData.errorDetails) {
-          errorResponse.error.errorDetails = errorData.errorDetails;
-        }
-        break;
-
-      case 500:
-        errorResponse.error.type = 'INTERNAL_SERVER_ERROR';
-        errorResponse.error.message = 'Internal server error during document removal';
-        errorResponse.error.details = errorData.localizedValue || 'An error occurred on the server while removing the document from the case';
-        if (errorData.errorDetails) {
-          errorResponse.error.errorDetails = errorData.errorDetails;
-        }
-        break;
-
-      default:
-        errorResponse.error.type = 'HTTP_ERROR';
-        errorResponse.error.message = `HTTP ${response.status} error removing document from case`;
-        errorResponse.error.details = errorData.message || errorData.localizedValue || response.statusText;
-        break;
-    }
-
-    return errorResponse;
-  }
-
-  /**
-   * Handle error responses from follower delete API
-   * @param {Response} response - HTTP response object
-   * @returns {Promise<Object>} Structured error response for follower deletion
-   */
-  async handleFollowerDeleteErrorResponse(response) {
-    let errorData;
-    try {
-      errorData = await response.json();
-    } catch (e) {
-      errorData = { message: await response.text() };
-    }
-
-    const errorResponse = {
-      success: false,
-      error: {
-        status: response.status,
-        statusText: response.statusText
-      }
-    };
-
-    switch (response.status) {
-      case 401:
-        errorResponse.error.type = 'UNAUTHORIZED';
-        errorResponse.error.message = 'Authentication failed';
-        errorResponse.error.details = errorData.errors?.[0]?.message || 'Invalid or expired token';
-        // Clear token cache on 401 to force refresh on next request
-        this.oauth2Client.clearTokenCache();
-        break;
-
-      case 403:
-        errorResponse.error.type = 'FORBIDDEN';
-        errorResponse.error.message = 'No access to remove follower';
-        errorResponse.error.details = errorData.localizedValue || 'User is not allowed to remove followers from this case';
-        if (errorData.errorDetails) {
-          errorResponse.error.errorDetails = errorData.errorDetails;
-        }
-        break;
-
-      case 404:
-        errorResponse.error.type = 'NOT_FOUND';
-        errorResponse.error.message = 'Case or follower not found';
-        errorResponse.error.details = errorData.localizedValue || 'The case or follower cannot be found, or the user is not following this case';
-        if (errorData.errorDetails) {
-          errorResponse.error.errorDetails = errorData.errorDetails;
-        }
-        break;
-
-      case 409:
-        errorResponse.error.type = 'CONFLICT';
-        errorResponse.error.message = 'Conflict removing follower';
-        errorResponse.error.details = errorData.localizedValue || 'A conflict occurred while removing the follower from the case';
-        if (errorData.errorDetails) {
-          errorResponse.error.errorDetails = errorData.errorDetails;
-        }
-        break;
-
-      case 500:
-        errorResponse.error.type = 'INTERNAL_SERVER_ERROR';
-        errorResponse.error.message = 'Internal server error during follower removal';
-        errorResponse.error.details = errorData.localizedValue || 'An error occurred on the server while removing the follower from the case';
-        if (errorData.errorDetails) {
-          errorResponse.error.errorDetails = errorData.errorDetails;
-        }
-        break;
-
-      default:
-        errorResponse.error.type = 'HTTP_ERROR';
-        errorResponse.error.message = `HTTP ${response.status} error removing follower from case`;
-        errorResponse.error.details = errorData.message || errorData.localizedValue || response.statusText;
-        break;
-    }
-
-    return errorResponse;
-  }
-
-  /**
-   * Handle error responses from participant delete API
-   * @param {Response} response - HTTP response object
-   * @returns {Promise<Object>} Structured error response for participant deletion
-   */
-  async handleParticipantDeleteErrorResponse(response) {
-    let errorData;
-    try {
-      errorData = await response.json();
-    } catch (e) {
-      errorData = { message: await response.text() };
-    }
-
-    const errorResponse = {
-      success: false,
-      error: {
-        status: response.status,
-        statusText: response.statusText
-      }
-    };
-
-    switch (response.status) {
-      case 400:
-        errorResponse.error.type = 'BAD_REQUEST';
-        errorResponse.error.message = 'Invalid participant deletion request';
-        errorResponse.error.details = errorData.localizedValue || 'Invalid case ID or participant ID parameters';
-        if (errorData.errorDetails) {
-          errorResponse.error.errorDetails = errorData.errorDetails;
-        }
-        break;
-
-      case 401:
-        errorResponse.error.type = 'UNAUTHORIZED';
-        errorResponse.error.message = 'Authentication failed';
-        errorResponse.error.details = errorData.errors?.[0]?.message || 'Invalid or expired token';
-        // Clear token cache on 401 to force refresh on next request
-        this.oauth2Client.clearTokenCache();
-        break;
-
-      case 403:
-        errorResponse.error.type = 'FORBIDDEN';
-        errorResponse.error.message = 'No access to remove participant';
-        errorResponse.error.details = errorData.localizedValue || 'User is not allowed to remove participants from this case';
-        if (errorData.errorDetails) {
-          errorResponse.error.errorDetails = errorData.errorDetails;
-        }
-        break;
-
-      case 404:
-        errorResponse.error.type = 'NOT_FOUND';
-        errorResponse.error.message = 'Case or participant not found';
-        errorResponse.error.details = errorData.localizedValue || 'The case or participant cannot be found, or the participant is not associated with this case';
-        if (errorData.errorDetails) {
-          errorResponse.error.errorDetails = errorData.errorDetails;
-        }
-        break;
-
-      case 409:
-        errorResponse.error.type = 'CONFLICT';
-        errorResponse.error.message = 'Conflict removing participant';
-        errorResponse.error.details = errorData.localizedValue || 'A conflict occurred while removing the participant from the case';
-        if (errorData.errorDetails) {
-          errorResponse.error.errorDetails = errorData.errorDetails;
-        }
-        break;
-
-      case 412:
-        errorResponse.error.type = 'PRECONDITION_FAILED';
-        errorResponse.error.message = 'eTag mismatch for participant deletion';
-        errorResponse.error.details = errorData.localizedValue || 'The provided eTag value does not match the current participant state';
-        if (errorData.errorDetails) {
-          errorResponse.error.errorDetails = errorData.errorDetails;
-        }
-        break;
-
-      case 423:
-        errorResponse.error.type = 'LOCKED';
-        errorResponse.error.message = 'Participant locked';
-        errorResponse.error.details = errorData.localizedValue || 'The participant is currently locked and cannot be deleted';
-        if (errorData.errorDetails) {
-          errorResponse.error.errorDetails = errorData.errorDetails;
-        }
-        break;
-
-      case 500:
-        errorResponse.error.type = 'INTERNAL_SERVER_ERROR';
-        errorResponse.error.message = 'Internal server error during participant removal';
-        errorResponse.error.details = errorData.localizedValue || 'An error occurred on the server while removing the participant from the case';
-        if (errorData.errorDetails) {
-          errorResponse.error.errorDetails = errorData.errorDetails;
-        }
-        break;
-
-      default:
-        errorResponse.error.type = 'HTTP_ERROR';
-        errorResponse.error.message = `HTTP ${response.status} error removing participant from case`;
-        errorResponse.error.details = errorData.message || errorData.localizedValue || response.statusText;
-        break;
-    }
-
-    return errorResponse;
-  }
-
-  /**
-   * Handle error responses from tag delete API
-   * @param {Response} response - HTTP response object
-   * @returns {Promise<Object>} Structured error response for tag deletion
-   */
-  async handleTagDeleteErrorResponse(response) {
-    let errorData;
-    try {
-      errorData = await response.json();
-    } catch (e) {
-      errorData = { message: await response.text() };
-    }
-
-    const errorResponse = {
-      success: false,
-      error: {
-        status: response.status,
-        statusText: response.statusText
-      }
-    };
-
-    switch (response.status) {
-      case 400:
-        errorResponse.error.type = 'BAD_REQUEST';
-        errorResponse.error.message = 'Invalid tag deletion request';
-        errorResponse.error.details = errorData.localizedValue || 'Invalid case ID or tag ID parameters';
-        if (errorData.errorDetails) {
-          errorResponse.error.errorDetails = errorData.errorDetails;
-        }
-        break;
-
-      case 401:
-        errorResponse.error.type = 'UNAUTHORIZED';
-        errorResponse.error.message = 'Authentication failed';
-        errorResponse.error.details = errorData.errors?.[0]?.message || 'Invalid or expired token';
-        // Clear token cache on 401 to force refresh on next request
-        this.oauth2Client.clearTokenCache();
-        break;
-
-      case 403:
-        errorResponse.error.type = 'FORBIDDEN';
-        errorResponse.error.message = 'No access to remove tag';
-        errorResponse.error.details = errorData.localizedValue || 'User is not allowed to remove tags from this case';
-        if (errorData.errorDetails) {
-          errorResponse.error.errorDetails = errorData.errorDetails;
-        }
-        break;
-
-      case 404:
-        errorResponse.error.type = 'NOT_FOUND';
-        errorResponse.error.message = 'Case or tag not found';
-        errorResponse.error.details = errorData.localizedValue || 'The case or tag cannot be found, or the tag is not associated with this case';
-        if (errorData.errorDetails) {
-          errorResponse.error.errorDetails = errorData.errorDetails;
-        }
-        break;
-
-      case 500:
-        errorResponse.error.type = 'INTERNAL_SERVER_ERROR';
-        errorResponse.error.message = 'Internal server error during tag removal';
-        errorResponse.error.details = errorData.localizedValue || 'An error occurred on the server while removing the tag from the case';
-        if (errorData.errorDetails) {
-          errorResponse.error.errorDetails = errorData.errorDetails;
-        }
-        break;
-
-      default:
-        errorResponse.error.type = 'HTTP_ERROR';
-        errorResponse.error.message = `HTTP ${response.status} error removing tag from case`;
-        errorResponse.error.details = errorData.message || errorData.localizedValue || response.statusText;
-        break;
-    }
-
-    return errorResponse;
+    return this.client.deleteRelatedCase(caseID, relatedCaseID);
   }
 }
