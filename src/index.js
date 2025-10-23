@@ -1,10 +1,14 @@
 #!/usr/bin/env node
 
-import 'dotenv/config';
+import dotenv from 'dotenv';
 import { Server } from '@modelcontextprotocol/sdk/server/index.js';
 import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js';
 import { CallToolRequestSchema, ListToolsRequestSchema } from '@modelcontextprotocol/sdk/types.js';
 import { toolRegistry } from './registry/tool-registry.js';
+
+// Load .env file only if it exists, and don't override existing environment variables
+// This ensures MCP configuration environment variables take precedence
+dotenv.config({ override: false });
 
 class PegaDXMCPServer {
   constructor() {
