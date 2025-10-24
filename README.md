@@ -1,3 +1,5 @@
+[![MseeP.ai Security Assessment Badge](https://mseep.net/pr/marco-looy-pega-dx-mcp-badge.png)](https://mseep.ai/app/marco-looy-pega-dx-mcp)
+
 ![Pega DX MCP Server](https://raw.githubusercontent.com/marco-looy/pega-dx-mcp/main/media/pega-dx-mcp-1280x640.png)
 
 # Pega DX MCP Server
