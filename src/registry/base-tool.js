@@ -1,5 +1,6 @@
 import { PegaClient } from '../api/pega-client.js';
 import { getSessionConfig, createSessionFromCredentials } from '../config/session-config.js';
+import { config } from '../config.js';
 
 /**
  * Abstract base class for all Pega DX MCP tools
@@ -18,9 +19,24 @@ export class BaseTool {
    */
   get pegaClient() {
     if (!this._pegaClient) {
-      // If we have session config, ensure we don't fall back to environment config
-      // by passing the session config directly. If no session config, pass null to use environment.
-      this._pegaClient = new PegaClient(this._sessionConfig);
+      // If using session config, no environment validation needed
+      if (this._sessionConfig) {
+        this._pegaClient = new PegaClient(this._sessionConfig);
+        return this._pegaClient;
+      }
+
+      // Using environment config - validate it exists
+      const envConfig = config;
+      if (!envConfig.pega.baseUrl || !envConfig.pega.clientId || !envConfig.pega.clientSecret) {
+        throw new Error(
+          'Missing required Pega configuration. You must either:\n' +
+          '1. Set environment variables: PEGA_BASE_URL, PEGA_CLIENT_ID, PEGA_CLIENT_SECRET\n' +
+          '2. Provide sessionCredentials parameter with baseUrl, clientId, and clientSecret\n\n' +
+          'See documentation for configuration options.'
+        );
+      }
+
+      this._pegaClient = new PegaClient(null);  // Use environment config
     }
     return this._pegaClient;
   }
@@ -50,6 +66,34 @@ export class BaseTool {
 
       console.log(`🔧 Session credentials type: ${typeof sessionCredentials}`, sessionCredentials);
 
+      // DETECT SESSION REUSE: Only sessionId provided, no baseUrl
+      const isSessionReuse = sessionCredentials.sessionId && !sessionCredentials.baseUrl;
+
+      if (isSessionReuse) {
+        // SESSION REUSE: Retrieve existing session config
+        const sessionId = sessionCredentials.sessionId;
+        console.log(`🔄 Reusing existing session: ${sessionId}`);
+
+        const config = getSessionConfig(sessionId);
+
+        if (!config || !config.isSessionConfig) {
+          throw new Error(`Session ${sessionId} not found or expired. Please create a new session with full credentials.`);
+        }
+
+        this._sessionConfig = config;
+        this.resetClient();
+
+        console.log(`✅ Tool initialized with existing session ${sessionId}`);
+
+        return {
+          sessionId,
+          authMode: config.getAuthMode(),
+          configSource: 'session',
+          isReuse: true
+        };
+      }
+
+      // SESSION CREATION/UPDATE: Full credentials provided
       const existingSessionId = sessionCredentials.sessionId;
 
       // Create or update session
@@ -61,12 +105,13 @@ export class BaseTool {
       // Reset client to ensure it uses the new session config
       this.resetClient();
 
-      console.log(`🔧 Tool initialized with session ${sessionInfo.sessionId}`);
+      console.log(`🔧 Tool initialized with session ${sessionInfo.sessionId} (${existingSessionId ? 'updated' : 'created'})`);
 
       return {
         sessionId: sessionInfo.sessionId,
         authMode: sessionInfo.config.getAuthMode(),
-        configSource: 'session'
+        configSource: 'session',
+        isReuse: false
       };
 
     } catch (error) {
@@ -163,15 +208,39 @@ export class BaseTool {
    */
   formatSuccessResponse(operation, data, options = {}) {
     let response = `## ${operation}\n\n`;
-    
+
     // Add timestamp
     response += `*Operation completed at: ${new Date().toISOString()}*\n\n`;
-    
+
+    // Add session information if available (prominent for session reuse)
+    if (options.sessionInfo) {
+      response += `### 🔐 Session Information\n`;
+      response += `- **Session ID**: \`${options.sessionInfo.sessionId}\`\n`;
+      response += `- **Authentication Mode**: ${options.sessionInfo.authMode.toUpperCase()}\n`;
+      response += `- **Configuration Source**: ${options.sessionInfo.configSource}\n`;
+
+      if (options.sessionInfo.isReuse) {
+        response += `- **Status**: Session reused (credentials retrieved from cache)\n`;
+      } else {
+        response += `- **Status**: New session created\n`;
+        response += `\n💡 **Tip**: Save this Session ID! You can reuse it for subsequent calls:\n`;
+        response += `\`\`\`json\n`;
+        response += `{\n`;
+        response += `  "sessionCredentials": {\n`;
+        response += `    "sessionId": "${options.sessionInfo.sessionId}"\n`;
+        response += `  }\n`;
+        response += `}\n`;
+        response += `\`\`\`\n`;
+        response += `Session expires after 2 hours of inactivity.\n`;
+      }
+      response += `\n`;
+    }
+
     // Add data if available
     if (data && typeof data === 'object') {
       response += this.formatDataSection(data);
     }
-    
+
     return response;
   }
 

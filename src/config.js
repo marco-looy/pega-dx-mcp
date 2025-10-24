@@ -29,17 +29,19 @@ function loadConfig() {
 
   _config = {
     pega: {
-      baseUrl: baseUrl,
-      clientId: process.env.PEGA_CLIENT_ID,
-      clientSecret: process.env.PEGA_CLIENT_SECRET,
+      baseUrl: baseUrl || null,
+      clientId: process.env.PEGA_CLIENT_ID || null,
+      clientSecret: process.env.PEGA_CLIENT_SECRET || null,
       scope: process.env.PEGA_SCOPE || '',
       requestTimeout: 30000,
       _apiVersion: apiVersion,  // Store the normalized version
       // Derived URLs from base URL
       get tokenUrl() {
+        if (!this.baseUrl) return null;
         return `${this.baseUrl}/prweb/PRRestService/oauth2/v1/token`;
       },
       get apiBaseUrl() {
+        if (!this.baseUrl) return null;
         // Version-aware API base URL
         if (this._apiVersion === 'v1') {
           return `${this.baseUrl}/prweb/api/v1`;
@@ -52,19 +54,9 @@ function loadConfig() {
     }
   };
 
-  // Validate required configuration only when config is loaded
-  const requiredConfig = [
-    'pega.baseUrl',
-    'pega.clientId',
-    'pega.clientSecret'
-  ];
-
-  for (const path of requiredConfig) {
-    const value = path.split('.').reduce((obj, key) => obj?.[key], _config);
-    if (!value) {
-      throw new Error(`Missing required configuration: ${path}`);
-    }
-  }
+  // No validation here - validation moved to per-tool-call basis
+  // This allows server to start without environment variables
+  // Tools will validate when needed (either env config or sessionCredentials must be provided)
 
   return _config;
 }

@@ -5,6 +5,43 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.1.13] - 2025-10-24
+
+### Added
+- **Startup Authentication**: Server now automatically attempts authentication at startup
+  - Provides fail-fast feedback if credentials are invalid
+  - Caches OAuth token early for faster first API call
+  - Displays authentication status in startup logs with detailed information
+  - Supports session-only mode when no environment credentials configured
+- **Configuration Diagnostics Tool**: New `diagnose_pega_config` tool for troubleshooting
+  - Displays configuration status without exposing secrets
+  - Validates environment variables and loaded configuration
+  - Shows authentication status and token information
+  - Provides actionable next steps for configuration issues
+- **Automatic Base URL Cleanup**: Smart handling of `/prweb` in base URL
+  - Automatically detects and removes `/prweb` from `PEGA_BASE_URL`
+  - Displays warning with cleaned URL for user awareness
+  - Prevents common configuration mistakes
+
+### Changed
+- **Documentation Updates**: Corrected README.md to reflect actual codebase state
+  - Updated tool count from 60+ to 67 tools across 11 categories
+  - Corrected Service Tools count from 1 to 3 tools
+  - Corrected Case Tools count from 16 to 20 tools
+  - Added missing tools: `diagnose_pega_config`, `get_cases`, `update_case`
+  - Added documentation for startup authentication behavior
+  - Added notes about automatic `/prweb` cleanup
+  - Added `PEGA_API_VERSION` to environment variables documentation
+
+### Improved
+- **Configuration Management**: Enhanced config validation with user-friendly warnings
+  - API version validation (v1 or v2, defaults to v2)
+  - Base URL format validation and automatic correction
+- **Startup Experience**: Better visibility into server initialization
+  - Detailed authentication status display
+  - API version information in startup logs
+  - Token expiry information display
+
 ## [0.1.12] - 2025-10-23
 
 ### Fixed

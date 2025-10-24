@@ -25,7 +25,7 @@ The Pega DX MCP Server is an experimental project exploring the intersection of 
 - **🤖 Natural Language Interface** - Demonstrates conversational case creation: "Create a travel claim for John"
 - **🔌 Plug-and-Play Integration** - Experimental compatibility with GenAI Agents, IDEs, and MCP-enabled tools
 - **🧪 Innovation Prototype** - Exploring enterprise-grade patterns with comprehensive error handling approaches
-- **📡 API Integration Exploration** - Investigating access to cases, assignments, attachments, and data operations
+- **📡 API Integration Exploration** - Investigating access to cases, assignments, attachments, and data operations with 67 comprehensive tools
 - **⚡ Performance Research** - Experimenting with intelligent caching and optimization strategies
 - **🛡️ Security Framework** - Implementing OAuth 2.1 with PKCE and role-based access control patterns
 
@@ -116,7 +116,7 @@ The Pega DX MCP Server bridges GenAI applications with Pega Infinity using the M
 
 ## 🛠️ Available Tools
 
-The Pega DX MCP Server provides **60+ comprehensive tools** organized into **10+ functional categories**. Each category can be enabled or disabled via environment variables for granular control.
+The Pega DX MCP Server provides **67 comprehensive tools** organized into **11 functional categories**. Each category can be enabled or disabled via environment variables for granular control.
 
 ### 🔧 Tool Configuration
 
@@ -176,7 +176,7 @@ Control which tool categories are loaded using environment variables in your MCP
 - `update_attachment` - Update attachment metadata
 - `upload_attachment` - Upload files as temporary attachments
 
-#### Case Tools (16)
+#### Case Tools (20)
 
 - `add_optional_process` - Add stage or case-wide optional processes
 - `bulk_cases_patch` - Perform actions on multiple cases
@@ -191,11 +191,13 @@ Control which tool categories are loaded using environment variables in your MCP
 - `get_case_stages` - List case stages and processes
 - `get_case_view` - Get specific case view details
 - `get_case_view_calculated_fields` - Calculate case view fields
+- `get_cases` - Get all cases created by authenticated user (V1 EXCLUSIVE)
 - `perform_bulk_action` - Execute bulk case operations
 - `perform_case_action` - Execute case-wide actions
 - `recalculate_case_action_fields` - Recalculate case action fields
 - `refresh_case_action` - Refresh case action form data
 - `release_case_lock` - Release pessimistic case locks
+- `update_case` - Update case by modifying properties directly (V1 EXCLUSIVE)
 
 #### Case Type Tools (3)
 
@@ -240,10 +242,11 @@ Control which tool categories are loaded using environment variables in your MCP
 - `get_related_cases` - List related cases
 - `relate_cases` - Create case relationships
 
-#### Service Tools (1)
+#### Service Tools (3)
 
-- `ping_pega_service` - Ping service
-- `authenticate_pega` - OAuth2 connectivity
+- `authenticate_pega` - Authenticate with Pega Infinity using OAuth2
+- `diagnose_pega_config` - Diagnose configuration and troubleshoot connection issues
+- `ping_pega_service` - Test connectivity and system availability
 
 #### Tag Tools (3)
 
@@ -288,11 +291,17 @@ AI: ✅ Opening claim documentation review for INS-CLAIM-789
 ```bash
 # Pega Infinity Connection
 PEGA_BASE_URL=https://your-pega-instance.com
+PEGA_API_VERSION=v2  # Optional: v1 or v2 (defaults to v2)
 
 # OAuth 2.1 Authentication
 PEGA_CLIENT_ID=your-oauth-client-id
 PEGA_CLIENT_SECRET=your-oauth-client-secret
 ```
+
+**Important Notes:**
+- **Base URL Format**: Do not include `/prweb` in `PEGA_BASE_URL` - it will be automatically appended. If present, it will be auto-cleaned with a warning.
+- **Startup Authentication**: The server automatically attempts authentication at startup using environment credentials to provide fail-fast feedback and cache OAuth tokens for faster first API calls.
+- **Session-Only Mode**: If environment credentials are not configured, the server starts in session-only mode where you must provide `sessionCredentials` with each tool call.
 
 ### OAuth Setup
 

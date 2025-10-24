@@ -5,6 +5,7 @@ import { Server } from '@modelcontextprotocol/sdk/server/index.js';
 import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js';
 import { CallToolRequestSchema, ListToolsRequestSchema } from '@modelcontextprotocol/sdk/types.js';
 import { toolRegistry } from './registry/tool-registry.js';
+import { attemptStartupAuthentication, formatAuthStatus } from './auth/startup-auth.js';
 
 // Load .env file only if it exists, and don't override existing environment variables
 // This ensures MCP configuration environment variables take precedence
@@ -75,16 +76,21 @@ class PegaDXMCPServer {
       // Initialize the tool registry first
       console.error('🚀 Starting Pega DX MCP server...');
       await toolRegistry.initialize();
-      
+
       // Show registry summary
       const stats = toolRegistry.getStats();
       console.error(`📊 Registry initialized with ${stats.totalTools} tools in ${stats.categories} categories`);
-      
+
+      // Attempt authentication with environment credentials
+      console.error('🔐 Attempting authentication with environment credentials...');
+      const authResult = await attemptStartupAuthentication();
+      console.error(formatAuthStatus(authResult));
+
       // Start the MCP server
       const transport = new StdioServerTransport();
       await this.server.connect(transport);
       console.error('✅ Pega DX MCP server running on stdio');
-      
+
     } catch (error) {
       console.error('❌ Failed to start server:', error);
       process.exit(1);

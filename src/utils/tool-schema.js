@@ -10,7 +10,7 @@
 export function getSessionCredentialsSchema() {
   return {
     type: 'object',
-    description: 'Optional session-specific credentials. If not provided, uses environment variables.',
+    description: 'Optional session-specific credentials. If not provided, uses environment variables. Supports two authentication modes: (1) OAuth mode - provide baseUrl, clientId, and clientSecret, or (2) Token mode - provide baseUrl and accessToken.',
     properties: {
       sessionId: {
         type: 'string',
@@ -41,17 +41,7 @@ export function getSessionCredentialsSchema() {
         type: 'number',
         description: 'Token expiry in seconds from now (optional for token mode)'
       }
-    },
-    oneOf: [
-      {
-        description: 'OAuth mode - provide client credentials',
-        required: ['baseUrl', 'clientId', 'clientSecret']
-      },
-      {
-        description: 'Token mode - provide access token directly',
-        required: ['baseUrl', 'accessToken']
-      }
-    ]
+    }
   };
 }
 
