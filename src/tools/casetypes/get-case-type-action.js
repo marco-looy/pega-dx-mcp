@@ -25,7 +25,7 @@ export class GetCaseTypeActionTool extends BaseTool {
           },
           actionID: {
             type: 'string',
-            description: 'Flow action name of a case/stage action that the client requests'
+            description: 'Action ID for case type action (Example: "pyUpdateCaseDetails", "pyApproval"). CRITICAL: Action IDs are CASE-SENSITIVE and have no spaces even if display names do ("Edit details" → "pyUpdateCaseDetails"). Use get_case_types to discover available case types and their supported actions.'
           },
           sessionCredentials: getSessionCredentialsSchema()
         },

@@ -50,7 +50,7 @@ update_case({
   content: {
     "ChangeRequestTitle": "Updated via MCP - Testing Auto-Fetch",
     "ChangeRequestDescription": "This demonstrates real content update with automatic eTag fetching",
-    "RequestedBy": "Claude Code Testing"
+    "RequestedBy": "Test"
   }
 })
 ```

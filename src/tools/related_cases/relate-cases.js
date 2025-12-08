@@ -21,7 +21,7 @@ export class RelateCasesTool extends BaseTool {
         properties: {
           caseID: {
             type: 'string',
-            description: 'Primary case ID to relate other cases to. Example: "ON6E5R-DIYRecipe-Work-RecipeCollection R-1008". Must be a complete case identifier including spaces and special characters.'
+            description: 'Primary case ID to relate other cases to. Example: "ON6E5R-DIYRecipe-Work-RecipeCollection R-1008". a complete case identifier including spaces and special characters.'
           },
           cases: {
             type: 'array',

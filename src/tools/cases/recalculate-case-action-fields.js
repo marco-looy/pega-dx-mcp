@@ -21,15 +21,15 @@ export class RecalculateCaseActionFieldsTool extends BaseTool {
         properties: {
           caseID: {
             type: 'string',
-            description: 'Full case handle (case ID) to perform field recalculation on. Format: {OrgID}-{AppName}-{CaseType} {CaseNumber}. Example: "ON6E5R-DIYRecipe-Work-RecipeCollection R-1008". Must be a complete case identifier including spaces and special characters.'
+            description: 'Case ID. Example: "MYORG-APP-WORK C-1001". Complete identifier including spaces."ON6E5R-DIYRecipe-Work-RecipeCollection R-1008". a complete case identifier including spaces and special characters.'
           },
           actionID: {
             type: 'string',
-            description: 'Name of the case action - ID of the flow action rule. This corresponds to the Flow Action rule configured in the Pega application where field calculations are defined. Example: "pyUpdateCaseDetails", "CompleteReview", "Approve".'
+            description: 'Action ID for case/stage action (Example: "pyUpdateCaseDetails", "pyApproval"). CRITICAL: Action IDs are CASE-SENSITIVE and have no spaces even if display names do ("Edit details" → "pyUpdateCaseDetails"). Use get_case to find correct ID from availableActions array - use "ID" field not "name" field.'
           },
           eTag: {
             type: 'string',
-            description: 'Optional eTag unique value representing the most recent save date time (pxSaveDateTime) of the case. If not provided, the tool will automatically fetch the latest eTag from the case action. For manual eTag management, provide the eTag from a previous case operation. Used for optimistic locking to prevent concurrent modification conflicts.'
+            description: 'eTag for optimistic locking. If not provided, automatically fetches latest eTag. Represents case pxSaveDateTime.'
           },
           calculations: {
             type: 'object',
@@ -43,7 +43,7 @@ export class RecalculateCaseActionFieldsTool extends BaseTool {
                   properties: {
                     name: {
                       type: 'string',
-                      description: 'Name of the field to recalculate. Must be a valid property reference within the case action view.'
+                      description: 'Name of the field to recalculate. a valid property reference within the case action view.'
                     },
                     context: {
                       type: 'string',
@@ -62,7 +62,7 @@ export class RecalculateCaseActionFieldsTool extends BaseTool {
                   properties: {
                     name: {
                       type: 'string',
-                      description: 'Name of the when condition to recalculate. Must be a valid when rule reference accessible within the case action context.'
+                      description: 'Name of the when condition to recalculate. a valid when rule reference accessible within the case action context.'
                     },
                     context: {
                       type: 'string',
@@ -88,11 +88,11 @@ export class RecalculateCaseActionFieldsTool extends BaseTool {
                 instruction: {
                   type: 'string',
                   enum: ['UPDATE', 'REPLACE', 'DELETE', 'APPEND', 'INSERT', 'MOVE'],
-                  description: 'The type of page instruction: UPDATE (add fields to page), REPLACE (replace entire page), DELETE (remove page), APPEND (add item to page list), INSERT (insert item in page list), MOVE (reorder page list items)'
+                  description: 'Page instruction type. UPDATE (add fields to page), REPLACE (replace entire page), DELETE (remove page), APPEND (add item to page list), INSERT (insert item in page list), MOVE (reorder page list items)'
                 },
                 target: {
                   type: 'string',
-                  description: 'The target embedded page name'
+                  description: 'Target embedded page name'
                 },
                 content: {
                   type: 'object',
@@ -143,7 +143,7 @@ export class RecalculateCaseActionFieldsTool extends BaseTool {
     // Validate calculations object structure
     if (!calculations || typeof calculations !== 'object' || Array.isArray(calculations)) {
       return {
-        error: 'Invalid calculations parameter. Must be an object containing fields and/or whens arrays.'
+        error: 'Invalid calculations parameter. an object containing fields and/or whens arrays.'
       };
     }
 
@@ -158,7 +158,7 @@ export class RecalculateCaseActionFieldsTool extends BaseTool {
     if (calculations.fields !== undefined) {
       if (!Array.isArray(calculations.fields) || calculations.fields.length === 0) {
         return {
-          error: 'Invalid calculations.fields parameter. Must be a non-empty array of field objects.'
+          error: 'Invalid calculations.fields parameter. a non-empty array of field objects.'
         };
       }
 
@@ -186,7 +186,7 @@ export class RecalculateCaseActionFieldsTool extends BaseTool {
     if (calculations.whens !== undefined) {
       if (!Array.isArray(calculations.whens) || calculations.whens.length === 0) {
         return {
-          error: 'Invalid calculations.whens parameter. Must be a non-empty array of when objects.'
+          error: 'Invalid calculations.whens parameter. a non-empty array of when objects.'
         };
       }
 
@@ -250,28 +250,28 @@ export class RecalculateCaseActionFieldsTool extends BaseTool {
     // Validate eTag format (should be a timestamp-like string)
     if (typeof finalETag !== 'string' || finalETag.trim().length === 0) {
       return {
-        error: 'Invalid eTag parameter. Must be a non-empty string representing case save date time.'
+        error: 'Invalid eTag parameter. a non-empty string representing case save date time.'
       };
     }
 
     // Validate content parameter
     if (content !== undefined && (typeof content !== 'object' || Array.isArray(content))) {
       return {
-        error: 'Invalid content parameter. Must be an object containing property name-value pairs.'
+        error: 'Invalid content parameter. an object containing property name-value pairs.'
       };
     }
 
     // Validate pageInstructions parameter
     if (pageInstructions !== undefined && !Array.isArray(pageInstructions)) {
       return {
-        error: 'Invalid pageInstructions parameter. Must be an array of page instruction objects.'
+        error: 'Invalid pageInstructions parameter. an array of page instruction objects.'
       };
     }
 
     // Validate originChannel parameter
     if (originChannel !== undefined && (typeof originChannel !== 'string' || originChannel.trim() === '')) {
       return {
-        error: 'Invalid originChannel parameter. Must be a non-empty string.'
+        error: 'Invalid originChannel parameter. a non-empty string.'
       };
     }
 

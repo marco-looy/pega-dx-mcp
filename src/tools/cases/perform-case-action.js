@@ -21,15 +21,15 @@ export class PerformCaseActionTool extends BaseTool {
         properties: {
           caseID: {
             type: 'string',
-            description: 'Full case handle (case ID) to perform the action on. Format: {OrgID}-{AppName}-{CaseType} {CaseNumber}. Example: "ON6E5R-DIYRecipe-Work-RecipeCollection R-1008". Must be a complete case identifier including spaces and special characters.'
+            description: 'Case ID. Example: "MYORG-APP-WORK C-1001". Complete identifier including spaces."ON6E5R-DIYRecipe-Work-RecipeCollection R-1008". a complete case identifier including spaces and special characters.'
           },
           actionID: {
             type: 'string',
-            description: 'Name of the case or stage wide optional action to be performed - ID of the flow action rule. This corresponds to a specific flow action configured in the Pega application. IMPORTANT: Action IDs typically do not contain spaces even if the display name does. For example, "Edit details" has ID "pyUpdateCaseDetails". Use get_case to retrieve the correct action ID from the availableActions array. Common IDs: "pyUpdateCaseDetails", "pyChangeStage", "pyApproval", "pyReject".'
+            description: 'Action ID for case/stage action (Example: "pyUpdateCaseDetails", "pyApproval"). CRITICAL: Action IDs are CASE-SENSITIVE and have no spaces even if display names do ("Edit details" → "pyUpdateCaseDetails"). Use get_case to find correct ID from availableActions array - use "ID" field not "name" field.'
           },
           eTag: {
             type: 'string',
-            description: 'Optional eTag unique value representing the most recent save date time (pxSaveDateTime) of the case. If not provided, the tool will automatically fetch the latest eTag from the case action. For manual eTag management, provide the eTag from a previous get_case_action request. Used for optimistic locking to prevent concurrent modification conflicts.'
+            description: 'eTag for optimistic locking. If not provided, automatically fetches latest eTag. Represents case pxSaveDateTime.'
           },
           content: {
             type: 'object',
@@ -43,11 +43,11 @@ export class PerformCaseActionTool extends BaseTool {
                 instruction: {
                   type: 'string',
                   enum: ['UPDATE', 'REPLACE', 'DELETE', 'APPEND', 'INSERT', 'MOVE'],
-                  description: 'The type of page instruction: UPDATE (add fields to page), REPLACE (replace entire page), DELETE (remove page), APPEND (add item to page list), INSERT (insert item in page list), MOVE (reorder page list items)'
+                  description: 'Page instruction type. UPDATE (add fields to page), REPLACE (replace entire page), DELETE (remove page), APPEND (add item to page list), INSERT (insert item in page list), MOVE (reorder page list items)'
                 },
                 target: {
                   type: 'string',
-                  description: 'The target embedded page name'
+                  description: 'Target embedded page name'
                 },
                 content: {
                   type: 'object',
@@ -126,7 +126,7 @@ export class PerformCaseActionTool extends BaseTool {
     // Validate boolean parameters
     if (skipRoboticAutomation !== undefined && typeof skipRoboticAutomation !== 'boolean') {
       return {
-        error: 'Invalid skipRoboticAutomation parameter. Must be a boolean value.'
+        error: 'Invalid skipRoboticAutomation parameter. a boolean value.'
       };
     }
 
@@ -167,7 +167,7 @@ export class PerformCaseActionTool extends BaseTool {
     // Validate eTag format (should be a timestamp-like string)
     if (typeof finalETag !== 'string' || finalETag.trim().length === 0) {
       return {
-        error: 'Invalid eTag parameter. Must be a non-empty string representing case save date time.'
+        error: 'Invalid eTag parameter. a non-empty string representing case save date time.'
       };
     }
 

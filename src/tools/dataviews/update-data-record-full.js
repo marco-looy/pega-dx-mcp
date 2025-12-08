@@ -21,7 +21,7 @@ export class UpdateDataRecordFullTool extends BaseTool {
         properties: {
           dataViewID: {
             type: 'string',
-            description: 'ID of savable Data Page to update. Must be a valid, existing data view identifier.'
+            description: 'ID of savable Data Page to update. a valid, existing data view identifier.'
           },
           data: {
             type: 'object',

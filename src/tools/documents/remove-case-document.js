@@ -21,11 +21,11 @@ export class RemoveCaseDocumentTool extends BaseTool {
         properties: {
           caseID: {
             type: 'string',
-            description: 'Full case handle (case ID) from which to remove the document. Must be a complete case identifier including spaces and special characters. Example: "ON6E5R-DIYRecipe-Work-RecipeCollection R-1008". The case must exist and be accessible to the current user.'
+            description: 'Case ID. Example: "MYORG-APP-WORK C-1001". Complete identifier including spaces.'
           },
           documentID: {
             type: 'string',
-            description: 'Document ID to be removed from the case. This is the unique identifier that identifies the specific document in the Pega system. The document must exist, be linked to the specified case, and be accessible to the current user.'
+            description: 'Document ID. Unique identifier in Pega system.'
           },
           sessionCredentials: getSessionCredentialsSchema()
         },
@@ -82,7 +82,7 @@ export class RemoveCaseDocumentTool extends BaseTool {
     if (!caseID || typeof caseID !== 'string' || caseID.trim() === '') {
       return {
         valid: false,
-        error: 'Invalid caseID parameter. Case ID must be a non-empty string containing the full case handle (e.g., "ON6E5R-DIYRecipe-Work-RecipeCollection R-1008").'
+        error: 'Invalid caseID parameter. Case ID must be a non-empty string containing the Case ID. Example: "MYORG-APP-WORK C-1001". Complete identifier including spaces.'
       };
     }
 
@@ -253,7 +253,7 @@ export class RemoveCaseDocumentTool extends BaseTool {
     // Display troubleshooting context
     response += '\n### Troubleshooting Context\n';
     response += `- **Operation**: DELETE /cases/{caseID}/documents/{documentID}\n`;
-    response += `- **Case ID Format**: Must be complete case handle (e.g., "CASE-123 ABC-456")\n`;
+    response += `- **Case ID Format**: Must be complete case handle (Example: "CASE-123 ABC-456")\n`;
     response += `- **Document ID Format**: Must be valid document identifier\n`;
     response += `- **Required Permissions**: Document removal and case access permissions\n`;
     response += `- **Prerequisites**: Document must be linked to the specified case\n`;

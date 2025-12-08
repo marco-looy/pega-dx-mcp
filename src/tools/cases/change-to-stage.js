@@ -21,20 +21,20 @@ export class ChangeToStageTool extends BaseTool {
         properties: {
           caseID: {
             type: 'string',
-            description: 'Full case handle (e.g., "MYORG-SERVICES-WORK S-293001"). Must be a complete case identifier including spaces and special characters.'
+            description: 'Case ID. Example: "MYORG-APP-WORK C-1001". Complete identifier including spaces.'
           },
           stageID: {
             type: 'string',
-            description: 'Stage ID to navigate to (e.g., "PRIM1", "ALT1"). Must be a valid stage identifier for the case type.'
+            description: 'Stage ID to navigate to (Example: "PRIM1", "ALT1"). a valid stage identifier for the case type.'
           },
           eTag: {
             type: 'string',
-            description: 'Optional eTag unique value representing the most recent save date time (pxSaveDateTime) of the case. If not provided, the tool will automatically fetch the latest eTag from the case action. For manual eTag management, provide the eTag from a previous case operation. Used for optimistic locking to prevent concurrent modification conflicts.'
+            description: 'eTag for optimistic locking. If not provided, automatically fetches latest eTag. Represents case pxSaveDateTime.'
           },
           viewType: {
             type: 'string',
             enum: ['none', 'form', 'page'],
-            description: 'Type of view data to return. "none" returns no UI resources (default), "form" returns form UI metadata in read-only review mode, "page" returns full page UI metadata in read-only review mode.',
+            description: 'UI resources to return. "none" returns no UI resources (default), "form" returns form UI metadata in read-only review mode, "page" returns full page UI metadata in read-only review mode.',
             default: 'none'
           },
           cleanupProcesses: {
@@ -122,7 +122,7 @@ export class ChangeToStageTool extends BaseTool {
     // Validate eTag format (should be a timestamp-like string)
     if (typeof finalETag !== 'string' || finalETag.trim().length === 0) {
       return {
-        error: 'Invalid eTag parameter. Must be a non-empty string representing case save date time.'
+        error: 'Invalid eTag parameter. a non-empty string representing case save date time.'
       };
     }
 

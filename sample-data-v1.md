@@ -67,7 +67,7 @@ This file contains sample data discovered during testing that can be reused for 
       "content": {
         "ChangeRequestTitle": "Updated via MCP - Testing Auto-Fetch",
         "ChangeRequestDescription": "This demonstrates real content update with automatic eTag fetching",
-        "RequestedBy": "Claude Code Testing",
+        "RequestedBy": "Test",
         "pxUpdateCounter": "12"
       }
     }
@@ -105,7 +105,7 @@ This file contains sample data discovered during testing that can be reused for 
   "content": {
     "ChangeRequestTitle": "Updated via MCP - Testing Auto-Fetch",
     "ChangeRequestDescription": "This demonstrates real content update with automatic eTag fetching",
-    "RequestedBy": "Claude Code Testing"
+    "RequestedBy": "Test"
   },
   "pageInstructions": [],
   "attachments": []

@@ -21,12 +21,12 @@ export class ReleaseCaseLockTool extends BaseTool {
         properties: {
           caseID: {
             type: 'string',
-            description: 'Full case handle (case ID) to release lock from. Example: "OSIEO3-DOCSAPP-WORK T-561003". Must be a complete case identifier including spaces and special characters.'
+            description: 'Case ID. Example: "MYORG-APP-WORK C-1001". Complete identifier including spaces."OSIEO3-DOCSAPP-WORK T-561003". a complete case identifier including spaces and special characters.'
           },
           viewType: {
             type: 'string',
             enum: ['none', 'page'],
-            description: 'Type of view data to return. "none" returns no view metadata or fields (default), "page" returns the full page UI metadata.',
+            description: 'UI resources to return. "none" returns no view metadata or fields (default), "page" returns the full page UI metadata.',
             default: 'none'
           },
           sessionCredentials: getSessionCredentialsSchema()

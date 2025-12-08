@@ -21,7 +21,7 @@ export class AddCaseFollowersTool extends BaseTool {
         properties: {
           caseID: {
             type: 'string',
-            description: 'Full case handle (case ID) to add followers to. Example: "OSIEO3-DOCSAPP-WORK T-561003". Must be a complete case identifier including spaces and special characters.'
+            description: 'Case ID. Example: "MYORG-APP-WORK C-1001". Complete identifier including spaces."OSIEO3-DOCSAPP-WORK T-561003". a complete case identifier including spaces and special characters.'
           },
           users: {
             type: 'array',

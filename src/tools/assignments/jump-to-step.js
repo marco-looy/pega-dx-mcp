@@ -23,7 +23,7 @@ export class JumpToStepTool extends BaseTool {
         properties: {
           assignmentID: {
             type: 'string',
-            description: 'Full handle of the assignment to navigate within. Format: ASSIGN-WORKLIST {caseID}!{processID}. Example: "ASSIGN-WORKLIST MYORG-SERVICES-WORK S-293001!APPROVAL_FLOW". This is the complete assignment identifier that uniquely identifies the specific assignment instance containing the navigation steps.'
+            description: 'Assignment ID. Format: ASSIGN-WORKLIST {caseID}!{processID}. Example: "ASSIGN-WORKLIST MYORG-APP-WORK C-1001!PROCESS""ASSIGN-WORKLIST MYORG-SERVICES-WORK S-293001!APPROVAL_FLOW". This is the complete assignment identifier that uniquely identifies the specific assignment instance containing the navigation steps.'
           },
           stepID: {
             type: 'string',
@@ -31,7 +31,7 @@ export class JumpToStepTool extends BaseTool {
           },
           eTag: {
             type: 'string',
-            description: 'Optional eTag unique value representing the most recent save date time (pxSaveDateTime) of the case. If not provided, the tool will automatically fetch the latest eTag from the assignment. For manual eTag management, provide the eTag from a previous assignment operation. Used for optimistic locking to prevent concurrent modification conflicts.'
+            description: 'eTag for optimistic locking. If not provided, automatically fetches latest eTag. Represents case pxSaveDateTime.'
           },
           content: {
             type: 'object',
@@ -45,11 +45,11 @@ export class JumpToStepTool extends BaseTool {
                 instruction: {
                   type: 'string',
                   enum: ['UPDATE', 'REPLACE', 'DELETE', 'APPEND', 'INSERT', 'MOVE'],
-                  description: 'The type of page instruction: UPDATE (add fields to page), REPLACE (replace entire page), DELETE (remove page), APPEND (add item to page list), INSERT (insert item in page list), MOVE (reorder page list items)'
+                  description: 'Page instruction type. UPDATE (add fields to page), REPLACE (replace entire page), DELETE (remove page), APPEND (add item to page list), INSERT (insert item in page list), MOVE (reorder page list items)'
                 },
                 target: {
                   type: 'string',
-                  description: 'The target embedded page name'
+                  description: 'Target embedded page name'
                 },
                 content: {
                   type: 'object',
@@ -179,7 +179,7 @@ export class JumpToStepTool extends BaseTool {
     // Validate eTag format (should be a timestamp-like string)
     if (typeof finalETag !== 'string' || finalETag.trim().length === 0) {
       return {
-        error: 'Invalid eTag parameter. Must be a non-empty string representing case save date time.'
+        error: 'Invalid eTag parameter. a non-empty string representing case save date time.'
       };
     }
 

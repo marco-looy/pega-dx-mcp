@@ -1,5 +1,13 @@
 import { BaseTool } from '../../registry/base-tool.js';
 import { getSessionCredentialsSchema } from '../../utils/tool-schema.js';
+import {
+  extractValidationErrors,
+  formatValidationErrors,
+  extractFieldMetadata,
+  formatFieldMetadata,
+  extractFieldsForCurrentView,
+  formatCurrentStepFields
+} from '../../utils/field-extractor.js';
 
 export class PerformAssignmentActionTool extends BaseTool {
   /**
@@ -17,25 +25,25 @@ export class PerformAssignmentActionTool extends BaseTool {
   static getDefinition() {
     return {
       name: 'perform_assignment_action',
-      description: 'Perform an action on a Pega assignment, updating case data and progressing the workflow. Takes the assignment ID and action ID as path parameters, along with optional content, page instructions, and attachments. If no eTag is provided, automatically fetches the latest eTag from the assignment for seamless operation. The API handles pre-processing logic, merges request data into the case, performs the action, and validates the results. If the action is a local action, the API stays at the current assignment. If it\'s a connector action, the API moves to the next assignment or provides a confirmation note if the workflow is complete. Returns detailed case information, optional UI resources based on viewType parameter, and either next assignment information or a confirmation message.',
+      description: 'Perform an assignment action to submit completed work and progress workflow. This is the FINAL step after all required fields are filled. Auto-fetches eTag if not provided. Returns updated case with either nextAssignmentInfo (more work) or confirmationNote (workflow complete). Local actions stay at current assignment; connector actions progress to next assignment.',
       inputSchema: {
         type: 'object',
         properties: {
           assignmentID: {
             type: 'string',
-            description: 'Full handle of the assignment to perform the action on. Format: ASSIGN-WORKLIST {caseID}!{processID}. Example: "ASSIGN-WORKLIST O1UGTM-TESTAPP13-WORK T-35005!APPROVAL_FLOW". This is the complete assignment identifier that uniquely identifies the specific assignment instance.'
+            description: 'Assignment ID. Format: ASSIGN-WORKLIST {caseID}!{processID}. Example: "ASSIGN-WORKLIST MYORG-APP-WORK C-1001!PROCESS""ASSIGN-WORKLIST O1UGTM-TESTAPP13-WORK T-35005!APPROVAL_FLOW". This is the complete assignment identifier that uniquely identifies the specific assignment instance.'
           },
           actionID: {
             type: 'string',
-            description: 'Name of the assignment action to perform - ID of the flow action rule to be executed on the assignment. This corresponds to a specific flow action configured in the Pega application. IMPORTANT: Action IDs typically do not contain spaces even if the display name does. For example, if the action displays as "Complete Review", the ID is likely "CompleteReview". Use get_assignment or get_case to retrieve the correct action ID from the actions array. Example IDs: "pyApproval", "pyReject", "Submit".'
+            description: 'Action ID from assignment (Example: "pyApproval", "Submit"). CRITICAL: Action IDs are CASE-SENSITIVE and have no spaces even if display names do ("Complete Review" → "CompleteReview"). Use get_assignment to find correct ID from actions array - use "ID" field not "name" field.'
           },
           eTag: {
             type: 'string',
-            description: 'Optional eTag unique value representing the most recent save date time (pxSaveDateTime) of the case. If not provided, the tool will automatically fetch the latest eTag from the assignment. For manual eTag management, provide the eTag from a previous assignment operation. Used for optimistic locking to prevent concurrent modification conflicts.'
+            description: 'eTag for optimistic locking. If not provided, automatically fetches latest eTag. Represents case pxSaveDateTime.'
           },
           content: {
             type: 'object',
-            description: 'Optional map of scalar and embedded page values to be set to the fields included in the assignment action\'s view. Only fields that are part of the submitted assignment action\'s view can be modified. Field names should match the property names defined in the Pega application. Example: {"EmployeeName": "Celine", "EmployeeAge": 55, "EmployeeStatus": "Active"}. Values will overwrite any settings made from pre-processing Data Transforms.'
+            description: 'Field values to submit. ALL required fields must have valid values (see get_assignment to identify required fields with "required": true). Only fields in the assignment action view can be modified.'
           },
           pageInstructions: {
             type: 'array',
@@ -45,11 +53,11 @@ export class PerformAssignmentActionTool extends BaseTool {
                 instruction: {
                   type: 'string',
                   enum: ['UPDATE', 'REPLACE', 'DELETE', 'APPEND', 'INSERT', 'MOVE'],
-                  description: 'The type of page instruction: UPDATE (add fields to page), REPLACE (replace entire page), DELETE (remove page), APPEND (add item to page list), INSERT (insert item in page list), MOVE (reorder page list items)'
+                  description: 'Page instruction type. UPDATE (add fields to page), REPLACE (replace entire page), DELETE (remove page), APPEND (add item to page list), INSERT (insert item in page list), MOVE (reorder page list items)'
                 },
                 target: {
                   type: 'string',
-                  description: 'The target embedded page name'
+                  description: 'Target embedded page name'
                 },
                 content: {
                   type: 'object',
@@ -169,7 +177,7 @@ export class PerformAssignmentActionTool extends BaseTool {
     // Validate eTag format (should be a timestamp-like string)
     if (typeof finalETag !== 'string' || finalETag.trim().length === 0) {
       return {
-        error: 'Invalid eTag parameter. Must be a non-empty string representing case save date time.'
+        error: 'Invalid eTag parameter. a non-empty string representing case save date time.'
       };
     }
 
@@ -193,9 +201,46 @@ export class PerformAssignmentActionTool extends BaseTool {
 
       // Check if API call was successful
       if (result.success) {
-        // Format and return successful response
-        return this.formatSuccessResponse(result.data, { ...params, sessionInfo });
+        // Auto-fetch next assignment fields if there's a next assignment
+        let nextAssignmentFields = null;
+        let nextAssignmentNavigation = null;
+
+        if (result.data?.nextAssignmentInfo?.ID) {
+          try {
+            console.log(`Auto-fetching next assignment fields for ${result.data.nextAssignmentInfo.ID}...`);
+            const nextAssignmentResponse = await this.pegaClient.getAssignment(
+              result.data.nextAssignmentInfo.ID,
+              { viewType: 'form' }
+            );
+
+            if (nextAssignmentResponse?.success && nextAssignmentResponse?.data?.uiResources) {
+              const uiResources = nextAssignmentResponse.data.uiResources;
+              nextAssignmentFields = extractFieldsForCurrentView(uiResources);
+              nextAssignmentNavigation = uiResources.navigation;
+              console.log(`Found ${nextAssignmentFields.length} fields for next step`);
+            }
+          } catch (fetchError) {
+            console.log(`Could not auto-fetch next assignment: ${fetchError.message}`);
+            // Continue without next assignment fields - not a critical error
+          }
+        }
+
+        // Format and return successful response with next assignment fields
+        return this.formatSuccessResponse(result.data, {
+          ...params,
+          sessionInfo,
+          nextAssignmentFields,
+          nextAssignmentNavigation
+        });
       } else {
+        // Check if this is an invalid action ID error (can be NOT_FOUND or CONFLICT)
+        const isInvalidActionError = this.isInvalidActionIdError(result.error);
+
+        if (isInvalidActionError) {
+          // Auto-discover available actions and show user the correct IDs
+          return await this.discoverActionsAndGuide(assignmentID, actionID, result.error);
+        }
+
         // Format and return error response from API
         return this.formatErrorResponse(result.error);
       }
@@ -237,6 +282,13 @@ export class PerformAssignmentActionTool extends BaseTool {
     markdown += `**Assignment ID:** ${params.assignmentID}\n`;
     markdown += `**Action ID:** ${params.actionID}\n`;
     markdown += `**Timestamp:** ${new Date().toISOString()}\n\n`;
+
+    // Add eTag information if available
+    if (data.etag) {
+      markdown += `## eTag Information\n\n`;
+      markdown += `**New eTag:** ${data.etag}\n`;
+      markdown += `*The case has been updated and a new eTag has been issued. Use this eTag for subsequent operations on this case.*\n\n`;
+    }
 
     // Session Information (if applicable)
     if (sessionInfo) {
@@ -308,13 +360,48 @@ export class PerformAssignmentActionTool extends BaseTool {
       }
     }
 
-    // Next Assignment Information
+    // Next Assignment Information with auto-fetched fields
     if (data.nextAssignmentInfo) {
       markdown += `## Next Assignment Available\n\n`;
       markdown += `**Assignment ID:** ${data.nextAssignmentInfo.ID}\n`;
-      markdown += `**Context:** ${data.nextAssignmentInfo.context}\n`;
-      markdown += `**Class Name:** ${data.nextAssignmentInfo.className}\n\n`;
-      markdown += `The workflow has progressed to the next assignment. Use the \`get_assignment\` tool with the assignment ID above to get details about the next assignment to work on.\n\n`;
+
+      // Show navigation progress if available
+      const { nextAssignmentFields, nextAssignmentNavigation } = params;
+
+      if (nextAssignmentNavigation?.steps) {
+        markdown += `\n### Screen Flow Progress\n\n`;
+        markdown += `| Step | Status |\n`;
+        markdown += `|------|--------|\n`;
+
+        nextAssignmentNavigation.steps.forEach(step => {
+          const status = step.visited_status === 'success' ? '✅' :
+                         step.visited_status === 'current' ? '🔄 **CURRENT**' : '⭕';
+          markdown += `| ${step.name} | ${status} |\n`;
+        });
+        markdown += `\n`;
+      }
+
+      // Show next step fields if auto-fetched
+      if (nextAssignmentFields && nextAssignmentFields.length > 0) {
+        markdown += formatCurrentStepFields(nextAssignmentFields);
+      } else if (nextAssignmentFields && nextAssignmentFields.length === 0) {
+        markdown += `\n### Next Step Fields\n\nNo editable fields for this step (may be an attachment or confirmation step).\n\n`;
+      }
+    }
+
+    // Navigation Steps (for screen flows)
+    if (data.uiResources?.navigation?.steps) {
+      markdown += `## Screen Flow Progress\n\n`;
+      markdown += `**Multi-step screen flow detected. Current progress:**\n\n`;
+      markdown += `| Step | Action ID | Status |\n`;
+      markdown += `|------|-----------|--------|\n`;
+
+      data.uiResources.navigation.steps.forEach(step => {
+        const status = step.visited_status === 'success' ? '✅' :
+                       step.visited_status === 'current' ? '🔄 CURRENT' : '⭕';
+        markdown += `| ${step.name} | \`${step.actionID}\` | ${status} |\n`;
+      });
+      markdown += `\n**Next step:** Use the Action ID marked as CURRENT for the next \`perform_assignment_action\` call.\n\n`;
     }
 
     // Confirmation Note
@@ -328,13 +415,13 @@ export class PerformAssignmentActionTool extends BaseTool {
     if (data.uiResources && params.viewType !== 'none') {
       markdown += `## UI Resources\n\n`;
       markdown += `**View Type:** ${params.viewType}\n`;
-      
+
       if (data.uiResources.resources) {
         if (data.uiResources.resources.views) {
           const viewCount = Object.keys(data.uiResources.resources.views).length;
           markdown += `**Available Views:** ${viewCount}\n`;
         }
-        
+
         if (data.uiResources.resources.fields) {
           const fieldCount = Object.keys(data.uiResources.resources.fields).length;
           markdown += `**Available Fields:** ${fieldCount}\n`;
@@ -354,6 +441,12 @@ export class PerformAssignmentActionTool extends BaseTool {
           markdown += `- Secondary Actions: ${data.uiResources.actionButtons.secondary.length}\n`;
         }
       }
+
+      // Extract and display field metadata including dropdown options
+      const fieldMetadata = extractFieldMetadata(data.uiResources);
+      if (fieldMetadata.length > 0) {
+        markdown += formatFieldMetadata(fieldMetadata);
+      }
       markdown += `\n`;
     }
 
@@ -369,17 +462,188 @@ export class PerformAssignmentActionTool extends BaseTool {
     // Usage Information
     markdown += `## Next Steps\n\n`;
     if (data.nextAssignmentInfo) {
-      markdown += `- Use \`get_assignment\` with assignment ID "${data.nextAssignmentInfo.ID}" to get details about the next assignment\n`;
-      markdown += `- Use \`get_assignment_action\` to get available actions for the next assignment\n`;
+      const { nextAssignmentFields, nextAssignmentNavigation } = params;
+      const currentStep = nextAssignmentNavigation?.steps?.find(s => s.visited_status === 'current');
+
+      if (nextAssignmentFields && nextAssignmentFields.length > 0) {
+        markdown += `### Ready to Continue\n\n`;
+        markdown += `Fill in the fields shown above and call:\n\n`;
+        markdown += `\`\`\`javascript\n`;
+        markdown += `perform_assignment_action({\n`;
+        markdown += `  assignmentID: "${data.nextAssignmentInfo.ID}",\n`;
+        markdown += `  actionID: "${currentStep?.actionID || 'ACTION_ID'}",\n`;
+        markdown += `  content: { /* field values from above */ }\n`;
+        markdown += `})\n`;
+        markdown += `\`\`\`\n\n`;
+      } else {
+        markdown += `### Next Assignment Ready\n\n`;
+        markdown += `Use **perform_assignment_action** with assignment ID "${data.nextAssignmentInfo.ID}" to continue.\n\n`;
+      }
     } else {
-      markdown += `- The workflow has completed successfully\n`;
-      markdown += `- Use \`get_case\` with case ID "${data.data?.caseInfo?.ID || 'N/A'}" to get current case status\n`;
+      markdown += `### Workflow Complete\n\n`;
+      markdown += `The assignment action has been executed successfully and the workflow has completed.\n\n`;
+      markdown += `- **get_case** with case ID "${data.data?.caseInfo?.ID || 'N/A'}" to get current case status\n`;
+      markdown += `- **get_case_history** to see the complete case audit trail\n`;
     }
-    markdown += `- Use \`get_case_stages\` to see the updated stage progression\n\n`;
+    markdown += `\n**Case Stage Tracking**: Use \`get_case_stages\` to see the updated stage progression.\n\n`;
 
     markdown += `*Assignment action executed at ${new Date().toISOString()}*`;
 
     return markdown;
+  }
+
+  /**
+   * Check if error indicates invalid action ID
+   * Handles both NOT_FOUND and CONFLICT errors with invalid action messages
+   */
+  isInvalidActionIdError(error) {
+    if (!error) return false;
+
+    // Check for NOT_FOUND error type
+    if (error.type === 'NOT_FOUND') {
+      return true;
+    }
+
+    // Check for CONFLICT error with "not a valid action" message
+    if (error.type === 'CONFLICT') {
+      const message = error.message?.toLowerCase() || '';
+      const details = typeof error.details === 'string' ? error.details.toLowerCase() : '';
+
+      // Check main message and details
+      if (message.includes('not a valid action') ||
+          details.includes('not a valid action') ||
+          (message.includes('action') && message.includes('invalid'))) {
+        return true;
+      }
+
+      // Check errorDetails array for specific action validation errors
+      if (error.errorDetails && Array.isArray(error.errorDetails)) {
+        for (const errorDetail of error.errorDetails) {
+          const detailMessage = (errorDetail.message || '').toLowerCase();
+          const detailLocalized = (errorDetail.localizedValue || '').toLowerCase();
+
+          if (detailMessage.includes('not a valid action') ||
+              detailLocalized.includes('not a valid action') ||
+              detailMessage.includes('is not a valid action to use') ||
+              detailLocalized.includes('is not a valid action to use')) {
+            return true;
+          }
+        }
+      }
+    }
+
+    return false;
+  }
+
+  /**
+   * Discover available actions when action ID is not found
+   * Similar to field discovery in create_case
+   */
+  async discoverActionsAndGuide(assignmentID, attemptedActionID, originalError) {
+    try {
+      // Fetch assignment to get available actions
+      const assignmentResponse = await this.pegaClient.getAssignment(assignmentID, 'none');
+
+      if (!assignmentResponse.success) {
+        // If we can't fetch assignment, return original error
+        return this.formatErrorResponse(originalError);
+      }
+
+      const assignmentData = assignmentResponse.data;
+      const actions = assignmentData?.data?.caseInfo?.assignments?.[0]?.actions || [];
+
+      if (actions.length === 0) {
+        // No actions found, return original error
+        return this.formatErrorResponse(originalError);
+      }
+
+      // Build guidance response with available actions
+      let response = `# Assignment Action Not Found\n\n`;
+      response += `**Attempted Action ID**: \`${attemptedActionID}\`\n`;
+      response += `**Assignment ID**: ${assignmentID}\n\n`;
+
+      response += `## ⚠️ Action ID Issue\n\n`;
+      response += `The action ID "${attemptedActionID}" was not found for this assignment.\n\n`;
+      response += `**Common Causes:**\n`;
+      response += `- Action IDs are **CASE-SENSITIVE** (Example: "submit" ≠ "Submit")\n`;
+      response += `- Display names differ from actual IDs (Example: "Complete Review" → "CompleteReview")\n`;
+      response += `- Spaces in display names are removed from IDs\n\n`;
+
+      response += `## ✅ Available Actions (${actions.length})\n\n`;
+      response += `Use one of these exact action IDs:\n\n`;
+
+      response += `| Action ID | Display Name | Type |\n`;
+      response += `|-----------|--------------|------|\n`;
+
+      actions.forEach(action => {
+        const actionID = action.ID || 'Unknown';
+        const actionName = action.name || actionID;
+        const actionType = action.type || 'FlowAction';
+        response += `| \`${actionID}\` | ${actionName} | ${actionType} |\n`;
+      });
+
+      response += `\n`;
+
+      // Show actionButtons if available
+      const actionButtons = assignmentData?.uiResources?.actionButtons;
+      if (actionButtons) {
+        const mainButtons = actionButtons.main || [];
+        const secondaryButtons = actionButtons.secondary || [];
+
+        if (mainButtons.length > 0 || secondaryButtons.length > 0) {
+          response += `## 🎯 Recommended Actions\n\n`;
+
+          if (mainButtons.length > 0) {
+            response += `**Primary Actions:**\n`;
+            mainButtons.forEach(button => {
+              response += `- \`${button.actionID}\` - ${button.name}\n`;
+            });
+            response += `\n`;
+          }
+
+          if (secondaryButtons.length > 0) {
+            response += `**Secondary Actions:**\n`;
+            secondaryButtons.forEach(button => {
+              response += `- \`${button.actionID}\` - ${button.name}\n`;
+            });
+            response += `\n`;
+          }
+        }
+      }
+
+      response += `## 💡 Next Steps\n\n`;
+      response += `1. Choose the correct action ID from the table above\n`;
+      response += `2. Copy the exact ID (including correct capitalization)\n`;
+      response += `3. Retry \`perform_assignment_action\` with the correct action ID\n\n`;
+
+      response += `**Example:**\n`;
+      if (actions.length > 0) {
+        const exampleAction = actions[0];
+        response += `\`\`\`javascript\n`;
+        response += `perform_assignment_action({\n`;
+        response += `  assignmentID: "${assignmentID}",\n`;
+        response += `  actionID: "${exampleAction.ID}",  // Use exact ID from table\n`;
+        response += `  content: { /* your field values */ }\n`;
+        response += `})\n`;
+        response += `\`\`\`\n\n`;
+      }
+
+      response += `*Action discovery completed at ${new Date().toISOString()}*`;
+
+      return {
+        content: [{
+          type: 'text',
+          text: response
+        }]
+      };
+
+    } catch (discoveryError) {
+      // If discovery fails, return original error with additional context
+      return this.formatErrorResponse({
+        ...originalError,
+        message: `${originalError.message}\n\nFailed to auto-discover available actions: ${discoveryError.message}`
+      });
+    }
   }
 
   /**
@@ -409,16 +673,22 @@ export class PerformAssignmentActionTool extends BaseTool {
       case 'NOT_FOUND':
         markdown += `## Assignment or Action Not Found\n\n`;
         markdown += `The specified assignment or action could not be found.\n\n`;
+        markdown += `**⚠️ COMMON ISSUE: Action IDs are CASE-SENSITIVE**\n\n`;
+        markdown += `Action IDs often differ from display names:\n`;
+        markdown += `- Display name: "Submit" → Actual ID might be: "submit", "CreateForm", "pySubmit"\n`;
+        markdown += `- Display name: "Complete Review" → Actual ID: "CompleteReview" (no spaces)\n\n`;
         markdown += `**Possible Causes:**\n`;
+        markdown += `- **Action ID is incorrect or has wrong case** (most common)\n`;
         markdown += `- Assignment ID is incorrect or malformed\n`;
-        markdown += `- Action ID does not exist for this assignment\n`;
         markdown += `- Assignment has already been completed or cancelled\n`;
         markdown += `- You don't have access to this assignment\n\n`;
         markdown += `**Next Steps:**\n`;
-        markdown += `- Verify the assignment ID format (should be ASSIGN-WORKLIST {caseID}!{processID})\n`;
-        markdown += `- Use \`get_next_assignment\` to find available assignments\n`;
-        markdown += `- Use \`get_assignment\` to verify the assignment exists\n`;
-        markdown += `- Use \`get_assignment_action\` to get available actions for this assignment\n`;
+        markdown += `1. **Use \`get_assignment\` to see all available actions with their exact IDs**\n`;
+        markdown += `   - Look at the "actions" array in the response\n`;
+        markdown += `   - Use the "ID" field (not the "name" field)\n`;
+        markdown += `   - Copy the exact ID including correct capitalization\n`;
+        markdown += `2. Verify the assignment ID format (should be ASSIGN-WORKLIST {caseID}!{processID})\n`;
+        markdown += `3. Use \`get_next_assignment\` to find available assignments\n`;
         break;
 
       case 'UNAUTHORIZED':
@@ -446,12 +716,40 @@ export class PerformAssignmentActionTool extends BaseTool {
       case 'BAD_REQUEST':
         markdown += `## Invalid Request\n\n`;
         markdown += `The request contains invalid data or parameters.\n\n`;
+
+        // Extract and display specific field validation errors
+        if (error.details) {
+          try {
+            // Try to parse error details if it's a string
+            const errorData = typeof error.details === 'string'
+              ? JSON.parse(error.details)
+              : error.details;
+
+            // Extract validation errors using utility
+            const validationErrors = extractValidationErrors(errorData);
+
+            if (validationErrors.length > 0) {
+              markdown += `### Specific Field Errors\n\n`;
+              markdown += formatValidationErrors(validationErrors);
+              markdown += `\n`;
+            }
+          } catch (parseError) {
+            // If parsing fails, show raw message
+            if (error.message) {
+              markdown += `**Error Message:** ${error.message}\n\n`;
+            }
+          }
+        } else if (error.message) {
+          markdown += `**Error Message:** ${error.message}\n\n`;
+        }
+
         markdown += `**Possible Causes:**\n`;
         markdown += `- Invalid assignment ID or action ID format\n`;
         markdown += `- Content fields not included in the assignment action's view\n`;
         markdown += `- Invalid field values or types\n`;
         markdown += `- Malformed pageInstructions or attachments\n\n`;
         markdown += `**Next Steps:**\n`;
+        markdown += `- Review the field errors listed above\n`;
         markdown += `- Verify all required parameters are provided\n`;
         markdown += `- Check that content fields are part of the assignment action's view\n`;
         markdown += `- Use \`get_assignment_action\` to see the available fields and view structure\n`;
@@ -486,13 +784,40 @@ export class PerformAssignmentActionTool extends BaseTool {
       case 'VALIDATION_FAIL':
         markdown += `## Validation Error\n\n`;
         markdown += `The submitted data failed validation rules.\n\n`;
-        markdown += `**Possible Causes:**\n`;
+
+        // Extract and display specific field validation errors
+        if (error.details) {
+          try {
+            // Try to parse error details if it's a string
+            const errorData = typeof error.details === 'string'
+              ? JSON.parse(error.details)
+              : error.details;
+
+            // Extract validation errors using utility
+            const validationErrors = extractValidationErrors(errorData);
+
+            if (validationErrors.length > 0) {
+              markdown += `### Specific Field Errors\n\n`;
+              markdown += formatValidationErrors(validationErrors);
+              markdown += `\n`;
+            }
+          } catch (parseError) {
+            // If parsing fails, show raw details
+            if (error.details) {
+              markdown += `**Error Details:** ${typeof error.details === 'string' ? error.details : JSON.stringify(error.details)}\n\n`;
+            }
+          }
+        } else if (error.message) {
+          markdown += `**Error Message:** ${error.message}\n\n`;
+        }
+
+        markdown += `**Common Causes:**\n`;
         markdown += `- Required fields are missing values\n`;
-        markdown += `- Field values don't meet validation criteria\n`;
+        markdown += `- Field values don't meet validation criteria (format, length, range)\n`;
         markdown += `- Business rule violations\n`;
         markdown += `- Data type mismatches\n\n`;
         markdown += `**Next Steps:**\n`;
-        markdown += `- Review the validation error details\n`;
+        markdown += `- Review the field errors listed above\n`;
         markdown += `- Correct the invalid field values\n`;
         markdown += `- Use \`get_assignment_action\` to see field requirements and validation rules\n`;
         markdown += `- Ensure all required fields have valid values\n`;

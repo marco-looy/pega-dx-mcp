@@ -21,7 +21,7 @@ export class UpdateCaseTool extends BaseTool {
         properties: {
           caseID: {
             type: 'string',
-            description: 'Full case handle (case ID) to update. Example: "OZNR3E-MYTEST-WORK C-3". Must be a complete case identifier including spaces and special characters.'
+            description: 'Case ID. Example: "MYORG-APP-WORK C-1001". Complete identifier including spaces.'
           },
           content: {
             type: 'object',
@@ -29,11 +29,11 @@ export class UpdateCaseTool extends BaseTool {
           },
           actionID: {
             type: 'string',
-            description: 'Optional action ID to perform (defaults to pyUpdateCaseDetails). Specifies the case-wide or stage-wide local action. Example: "pyUpdateCaseDetails", "ApproveCase".'
+            description: 'Action ID to perform. Default: pyUpdateCaseDetails. Example: "ApproveCase"'
           },
           eTag: {
             type: 'string',
-            description: 'Optional eTag for optimistic locking (if-match header). If not provided, automatically fetches the latest eTag from the case. Provide this for manual eTag management or to prevent auto-fetch overhead. Format: "20251016T120000.000 GMT"'
+            description: 'eTag for optimistic locking. If not provided, automatically fetches latest eTag. Format: "20251016T120000.000 GMT"'
           },
           pageInstructions: {
             type: 'array',
@@ -43,11 +43,11 @@ export class UpdateCaseTool extends BaseTool {
                 instruction: {
                   type: 'string',
                   enum: ['UPDATE', 'REPLACE', 'DELETE', 'APPEND', 'INSERT', 'MOVE'],
-                  description: 'The type of page instruction: UPDATE (add fields to page), REPLACE (replace entire page), DELETE (remove page), APPEND (add item to page list), INSERT (insert item in page list), MOVE (reorder page list items)'
+                  description: 'Page instruction type. UPDATE (add fields to page), REPLACE (replace entire page), DELETE (remove page), APPEND (add item to page list), INSERT (insert item in page list), MOVE (reorder page list items)'
                 },
                 target: {
                   type: 'string',
-                  description: 'The target embedded page name'
+                  description: 'Target embedded page name'
                 },
                 content: {
                   type: 'object',

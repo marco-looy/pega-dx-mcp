@@ -15,7 +15,7 @@ export class GetCaseTypesTool extends BaseTool {
   static getDefinition() {
     return {
       name: 'get_case_types',
-      description: 'Get list of case types that the user can create in the application',
+      description: 'Get list of case types that the user can create in the application. Use returned classID as caseTypeID in create_case. create_case automatically discovers required fields if needed.',
       inputSchema: {
         type: 'object',
         properties: {
@@ -129,7 +129,24 @@ export class GetCaseTypesTool extends BaseTool {
       data.caseTypes.forEach((caseType, index) => {
         response += `${index + 1}. **${caseType.name}**: \`${caseType.ID}\`\n`;
       });
-      
+
+      // Usage example section
+      response += '\n### Using Case Types\n\n';
+      response += 'To create a case of one of these types:\n';
+      response += '1. Note the **classID** (Example: "UPlus-SAPlus-Work-Lead-Biz")\n';
+      response += '2. Use `create_case` with that classID as the caseTypeID parameter\n';
+      response += '3. create_case will automatically discover required fields if needed\n\n';
+
+      if (data.caseTypes && data.caseTypes.length > 0) {
+        const firstType = data.caseTypes[0];
+        response += `**Example**: To create a "${firstType.name}" case:\n`;
+        response += '```json\n';
+        response += '{\n';
+        response += '  "caseTypeID": "' + firstType.ID + '",\n';
+        response += '  "content": {}\n';
+        response += '}\n```\n';
+      }
+
     } else {
       response += '### No Case Types Available\n';
       response += 'No case types are currently available for creation in this application.\n';

@@ -1,5 +1,15 @@
 import { BaseTool } from '../../registry/base-tool.js';
 import { getSessionCredentialsSchema } from '../../utils/tool-schema.js';
+import {
+  extractFieldsFromViews,
+  extractValidationErrors,
+  groupFieldsByRequired,
+  formatValidationErrors,
+  extractFieldMetadata,
+  formatFieldMetadata,
+  extractFieldsForCurrentView,
+  formatCurrentStepFields
+} from '../../utils/field-extractor.js';
 
 export class GetAssignmentTool extends BaseTool {
   /**
@@ -15,19 +25,19 @@ export class GetAssignmentTool extends BaseTool {
   static getDefinition() {
     return {
       name: 'get_assignment',
-      description: 'Get detailed information about a specific assignment by assignment ID, including instructions and available actions. If the case type uses pessimistic locking and the client uses Constellation, this request locks the case.',
+      description: 'Get assignment details including form fields, required fields, available actions, and eTag. Used BETWEEN case creation and action performance. Returns form structure, action IDs, and eTag needed for subsequent operations. Required fields marked with "required": true in view config (uiResources.resources.views). Pessimistic locking may apply.',
       inputSchema: {
         type: 'object',
         properties: {
           assignmentID: {
             type: 'string',
-            description: 'Full handle of an assignment. Example: ASSIGN-WORKLIST PBANK-LOAN-WORK V-76003!REVIEW_FLOW'
+            description: 'Assignment ID from create_case (nextAssignmentInfo.ID) or perform_assignment_action. Format: ASSIGN-WORKLIST {caseID}!{processID}. Example: ASSIGN-WORKLIST PBANK-LOAN-WORK V-76003!REVIEW_FLOW'
           },
           viewType: {
             type: 'string',
             enum: ['form', 'page'],
-            description: 'Type of view data to return. "form" returns only assignment UI metadata in uiResources object, "page" returns full page (read-only review mode) UI metadata in uiResources object',
-            default: 'page'
+            description: 'UI resources to return. "form" (recommended): field metadata and view structure. "page": full page UI metadata. Both include required field markers in view config.',
+            default: 'form'
           },
           pageName: {
             type: 'string',
@@ -44,7 +54,7 @@ export class GetAssignmentTool extends BaseTool {
    * Execute the get assignment operation
    */
   async execute(params) {
-    const { assignmentID, viewType = 'page', pageName } = params;
+    const { assignmentID, viewType = 'form', pageName } = params;
     let sessionInfo = null;
 
     try {
@@ -146,17 +156,72 @@ export class GetAssignmentTool extends BaseTool {
       }
 
       // Display available actions if present
-      if (data.actions && data.actions.length > 0) {
-        response += '\n### Available Actions\n';
-        data.actions.forEach((action, index) => {
-          response += `${index + 1}. **${action.name}** - ${action.type || 'Action'}\n`;
-          if (action.ID) {
-            response += `   - Action ID: ${action.ID}\n`;
-          }
-          if (action.tooltip) {
-            response += `   - Description: ${action.tooltip}\n`;
-          }
+      // Actions can be in data.actions or data.data.caseInfo.assignments[0].actions
+      let actions = data.actions;
+
+      if (!actions || actions.length === 0) {
+        // Try alternate location
+        const assignments = data.data?.caseInfo?.assignments;
+        if (assignments && assignments.length > 0 && assignments[0].actions) {
+          actions = assignments[0].actions;
+        }
+      }
+
+      if (actions && actions.length > 0) {
+        response += '\n### ⚠️ Available Actions - CASE SENSITIVE!\n\n';
+        response += '**Action IDs are case-sensitive. Copy the exact ID from the table below:**\n\n';
+        response += '| Action ID | Display Name | Type |\n';
+        response += '|-----------|--------------|------|\n';
+
+        actions.forEach((action) => {
+          const actionID = action.ID || 'Unknown';
+          const actionName = action.name || actionID;
+          const actionType = action.type || 'Action';
+          response += `| \`${actionID}\` | ${actionName} | ${actionType} |\n`;
         });
+        response += '\n';
+
+        // Show actionButtons if available (recommended actions from UI)
+        if (data.uiResources?.actionButtons) {
+          const actionButtons = data.uiResources.actionButtons;
+          const mainButtons = actionButtons.main || [];
+          const secondaryButtons = actionButtons.secondary || [];
+
+          if (mainButtons.length > 0 || secondaryButtons.length > 0) {
+            response += '**🎯 Recommended Actions (from UI):**\n\n';
+
+            if (mainButtons.length > 0) {
+              response += 'Primary Actions (submit buttons):\n';
+              mainButtons.forEach(button => {
+                response += `- \`${button.actionID}\` - ${button.name}\n`;
+              });
+              response += '\n';
+            }
+
+            if (secondaryButtons.length > 0) {
+              response += 'Secondary Actions (cancel, save, etc.):\n';
+              secondaryButtons.forEach(button => {
+                response += `- \`${button.actionID}\` - ${button.name}\n`;
+              });
+              response += '\n';
+            }
+          }
+        }
+
+        // Display navigation steps for screen flows (if available)
+        if (data.uiResources?.navigation?.steps) {
+          response += '\n### Screen Flow Navigation\n\n';
+          response += '**This is a multi-step screen flow. Current step progress:**\n\n';
+          response += '| Step | Action ID | Status |\n';
+          response += '|------|-----------|--------|\n';
+
+          data.uiResources.navigation.steps.forEach(step => {
+            const status = step.visited_status === 'success' ? '✅' :
+                           step.visited_status === 'current' ? '🔄 CURRENT' : '⭕';
+            response += `| ${step.name} | \`${step.actionID}\` | ${status} |\n`;
+          });
+          response += '\n**Use the Action ID of the CURRENT step for `perform_assignment_action`**\n\n';
+        }
       }
 
       // Display assignment content if available
@@ -170,14 +235,18 @@ export class GetAssignmentTool extends BaseTool {
 
     // Display UI resources info if viewType is specified
     if (data.uiResources) {
-      response += '\n### UI Resources\n';
-      response += `- UI metadata loaded for ${viewType} view\n`;
-      if (data.uiResources.root) {
-        response += `- Root component: ${data.uiResources.root.type || 'Unknown'}\n`;
+      // PRIORITY: Show current step fields first (fields actually editable in this step)
+      const currentStepFields = extractFieldsForCurrentView(data.uiResources);
+      if (currentStepFields.length > 0) {
+        response += formatCurrentStepFields(currentStepFields);
       }
-      if (data.uiResources.resources && data.uiResources.resources.fields) {
-        const fieldCount = Object.keys(data.uiResources.resources.fields).length;
-        response += `- Form fields available: ${fieldCount}\n`;
+
+      // Show all case fields in a collapsed/secondary section
+      const allFieldMetadata = extractFieldMetadata(data.uiResources);
+      if (allFieldMetadata.length > 0 && allFieldMetadata.length !== currentStepFields.length) {
+        response += `\n<details>\n<summary>📋 All Case Fields (${allFieldMetadata.length} total - click to expand)</summary>\n`;
+        response += formatFieldMetadata(allFieldMetadata);
+        response += `</details>\n`;
       }
     }
 
@@ -200,7 +269,42 @@ export class GetAssignmentTool extends BaseTool {
         response += '- **Status**: No locking applied\n';
       }
     }
-    
+
+    // Add workflow guidance
+    // Get actions for example (check both locations)
+    let exampleActions = data.actions;
+    if (!exampleActions || exampleActions.length === 0) {
+      const assignments = data.data?.caseInfo?.assignments;
+      if (assignments && assignments.length > 0 && assignments[0].actions) {
+        exampleActions = assignments[0].actions;
+      }
+    }
+
+    response += '\n### Next Steps\n\n';
+    response += '**To complete this assignment**:\n\n';
+    response += '1. **Identify Required Fields**: Look for "required": true in the UI Resources view config above\n';
+    response += '2. **Prepare Field Values**: Gather values for all required fields\n';
+    response += '3. **Optional - Progressive Filling**: Use `refresh_assignment_action` to fill and validate fields progressively\n';
+    response += '4. **Submit Assignment**: Use `perform_assignment_action` with:\n';
+    response += '   - Assignment ID: The assignment ID from above\n';
+    response += '   - **Action ID: Copy the EXACT action ID from "Available Actions" table** (case-sensitive!)\n\n';
+
+    if (exampleActions && exampleActions.length > 0 && exampleActions[0].ID) {
+      response += `**Example:**\n`;
+      response += `\`\`\`javascript\n`;
+      response += `perform_assignment_action({\n`;
+      response += `  assignmentID: "${assignmentID}",\n`;
+      response += `  actionID: "${exampleActions[0].ID}",  // ⚠️ Copy exactly from table above!\n`;
+      response += `  content: { /* your field values */ }\n`;
+      response += `})\n`;
+      response += `\`\`\`\n\n`;
+    }
+
+    response += '**Helpful Tools**:\n';
+    response += '- `refresh_assignment_action`: Update fields progressively with real-time validation\n';
+    response += '- `perform_assignment_action`: Submit completed assignment\n';
+    response += '- `get_assignment_action`: Get details about a specific action\n\n';
+
     return response;
   }
 }

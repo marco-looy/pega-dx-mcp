@@ -21,7 +21,7 @@ export class GetParticipantTool extends BaseTool {
         properties: {
           caseID: {
             type: 'string',
-            description: 'Full case handle (case ID) to retrieve participant from. Example: "ON6E5R-DIYRecipe-Work-RecipeCollection R-1008". Must be a complete case identifier including spaces and special characters.'
+            description: 'Case ID. Example: "MYORG-APP-WORK C-1001". Complete identifier including spaces."ON6E5R-DIYRecipe-Work-RecipeCollection R-1008". a complete case identifier including spaces and special characters.'
           },
           participantID: {
             type: 'string',
@@ -30,7 +30,7 @@ export class GetParticipantTool extends BaseTool {
           viewType: {
             type: 'string',
             enum: ['form', 'none'],
-            description: 'Type of view data to return. "form" returns form UI metadata in uiResources object for display purposes, "none" returns no UI resources. Default: "form".',
+            description: 'UI resources to return. "form" returns form UI metadata in uiResources object for display purposes, "none" returns no UI resources. Default: "form".',
             default: 'form'
           },
           sessionCredentials: getSessionCredentialsSchema()

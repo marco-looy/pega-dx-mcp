@@ -21,15 +21,15 @@ export class RecalculateAssignmentFieldsTool extends BaseTool {
         properties: {
           assignmentID: {
             type: 'string',
-            description: 'Full handle of an assignment. Example: ASSIGN-WORKLIST MYORG-SERVICES-WORK S-293001!APPROVAL_FLOW. This uniquely identifies the specific assignment instance where field recalculation will be performed.'
+            description: 'Assignment ID. Format: ASSIGN-WORKLIST {caseID}!{processID}. Example: "ASSIGN-WORKLIST MYORG-APP-WORK C-1001!PROCESS"'
           },
           actionID: {
             type: 'string',
-            description: 'Name of the assignment action - ID of the flow action rule. This corresponds to the Flow Action rule configured in the Pega application where field calculations are defined. Example: CompleteVerification, Approve, Reject.'
+            description: 'Action ID from assignment (Example: "pyApproval", "Submit"). CRITICAL: Action IDs are CASE-SENSITIVE and have no spaces even if display names do ("Complete Review" → "CompleteReview"). Use get_assignment to find correct ID from actions array - use "ID" field not "name" field.'
           },
           eTag: {
             type: 'string',
-            description: 'Optional eTag unique value representing the most recent save date time (pxSaveDateTime) of the case. If not provided, the tool will automatically fetch the latest eTag from the assignment. For manual eTag management, provide the eTag from a previous assignment operation. Used for optimistic locking to prevent concurrent modification conflicts.'
+            description: 'eTag for optimistic locking. If not provided, automatically fetches latest eTag. Represents case pxSaveDateTime.'
           },
           calculations: {
             type: 'object',
@@ -43,7 +43,7 @@ export class RecalculateAssignmentFieldsTool extends BaseTool {
                   properties: {
                     name: {
                       type: 'string',
-                      description: 'Name of the field to recalculate. Must be a valid property reference within the assignment action view.'
+                      description: 'Name of the field to recalculate. a valid property reference within the assignment action view.'
                     },
                     context: {
                       type: 'string',
@@ -62,7 +62,7 @@ export class RecalculateAssignmentFieldsTool extends BaseTool {
                   properties: {
                     name: {
                       type: 'string',
-                      description: 'Name of the when condition to recalculate. Must be a valid when rule reference accessible within the assignment action context.'
+                      description: 'Name of the when condition to recalculate. a valid when rule reference accessible within the assignment action context.'
                     },
                     context: {
                       type: 'string',
@@ -88,11 +88,11 @@ export class RecalculateAssignmentFieldsTool extends BaseTool {
                 instruction: {
                   type: 'string',
                   enum: ['UPDATE', 'REPLACE', 'DELETE', 'APPEND', 'INSERT', 'MOVE'],
-                  description: 'The type of page instruction: UPDATE (add fields to page), REPLACE (replace entire page), DELETE (remove page), APPEND (add item to page list), INSERT (insert item in page list), MOVE (reorder page list items)'
+                  description: 'Page instruction type. UPDATE (add fields to page), REPLACE (replace entire page), DELETE (remove page), APPEND (add item to page list), INSERT (insert item in page list), MOVE (reorder page list items)'
                 },
                 target: {
                   type: 'string',
-                  description: 'The target embedded page name'
+                  description: 'Target embedded page name'
                 },
                 content: {
                   type: 'object',
@@ -137,7 +137,7 @@ export class RecalculateAssignmentFieldsTool extends BaseTool {
 
     // Validate calculations object structure
     if (!calculations || typeof calculations !== 'object' || Array.isArray(calculations)) {
-      return `## Error: Invalid Parameters\n\n**Assignment ID**: ${assignmentID}\n**Action ID**: ${actionID}\n**Error**: Invalid calculations parameter. Must be an object containing fields and/or whens arrays.\n\n---\n*Error occurred at: ${new Date().toISOString()}*`;
+      return `## Error: Invalid Parameters\n\n**Assignment ID**: ${assignmentID}\n**Action ID**: ${actionID}\n**Error**: Invalid calculations parameter. an object containing fields and/or whens arrays.\n\n---\n*Error occurred at: ${new Date().toISOString()}*`;
     }
 
     // Validate that calculations contains at least fields or whens
@@ -148,7 +148,7 @@ export class RecalculateAssignmentFieldsTool extends BaseTool {
     // Validate fields array if present
     if (calculations.fields !== undefined) {
       if (!Array.isArray(calculations.fields) || calculations.fields.length === 0) {
-        return `## Error: Invalid Parameters\n\n**Assignment ID**: ${assignmentID}\n**Action ID**: ${actionID}\n**Error**: Invalid calculations.fields parameter. Must be a non-empty array of field objects.\n\n---\n*Error occurred at: ${new Date().toISOString()}*`;
+        return `## Error: Invalid Parameters\n\n**Assignment ID**: ${assignmentID}\n**Action ID**: ${actionID}\n**Error**: Invalid calculations.fields parameter. a non-empty array of field objects.\n\n---\n*Error occurred at: ${new Date().toISOString()}*`;
       }
 
       for (let i = 0; i < calculations.fields.length; i++) {
@@ -168,7 +168,7 @@ export class RecalculateAssignmentFieldsTool extends BaseTool {
     // Validate whens array if present
     if (calculations.whens !== undefined) {
       if (!Array.isArray(calculations.whens) || calculations.whens.length === 0) {
-        return `## Error: Invalid Parameters\n\n**Assignment ID**: ${assignmentID}\n**Action ID**: ${actionID}\n**Error**: Invalid calculations.whens parameter. Must be a non-empty array of when objects.\n\n---\n*Error occurred at: ${new Date().toISOString()}*`;
+        return `## Error: Invalid Parameters\n\n**Assignment ID**: ${assignmentID}\n**Action ID**: ${actionID}\n**Error**: Invalid calculations.whens parameter. a non-empty array of when objects.\n\n---\n*Error occurred at: ${new Date().toISOString()}*`;
       }
 
       for (let i = 0; i < calculations.whens.length; i++) {
@@ -189,12 +189,12 @@ export class RecalculateAssignmentFieldsTool extends BaseTool {
 
     // Validate content parameter
     if (content !== undefined && (typeof content !== 'object' || Array.isArray(content))) {
-      return `## Error: Invalid Parameters\n\n**Assignment ID**: ${assignmentID}\n**Action ID**: ${actionID}\n**Error**: Invalid content parameter. Must be an object containing property name-value pairs.\n\n---\n*Error occurred at: ${new Date().toISOString()}*`;
+      return `## Error: Invalid Parameters\n\n**Assignment ID**: ${assignmentID}\n**Action ID**: ${actionID}\n**Error**: Invalid content parameter. an object containing property name-value pairs.\n\n---\n*Error occurred at: ${new Date().toISOString()}*`;
     }
 
     // Validate pageInstructions parameter
     if (pageInstructions !== undefined && !Array.isArray(pageInstructions)) {
-      return `## Error: Invalid Parameters\n\n**Assignment ID**: ${assignmentID}\n**Action ID**: ${actionID}\n**Error**: Invalid pageInstructions parameter. Must be an array of page instruction objects.\n\n---\n*Error occurred at: ${new Date().toISOString()}*`;
+      return `## Error: Invalid Parameters\n\n**Assignment ID**: ${assignmentID}\n**Action ID**: ${actionID}\n**Error**: Invalid pageInstructions parameter. an array of page instruction objects.\n\n---\n*Error occurred at: ${new Date().toISOString()}*`;
     }
 
     // Execute the API call with error handling
@@ -230,7 +230,7 @@ export class RecalculateAssignmentFieldsTool extends BaseTool {
     
     // Validate eTag format (should be a timestamp-like string)
     if (typeof finalETag !== 'string' || finalETag.trim().length === 0) {
-      return `## Error: Assignment Field Recalculation Failed\n\n**Assignment ID**: ${assignmentID}\n**Action ID**: ${actionID}\n**Error**: Invalid eTag parameter. Must be a non-empty string representing case save date time.\n\n---\n*Error occurred at: ${new Date().toISOString()}*`;
+      return `## Error: Assignment Field Recalculation Failed\n\n**Assignment ID**: ${assignmentID}\n**Action ID**: ${actionID}\n**Error**: Invalid eTag parameter. a non-empty string representing case save date time.\n\n---\n*Error occurred at: ${new Date().toISOString()}*`;
     }
 
 

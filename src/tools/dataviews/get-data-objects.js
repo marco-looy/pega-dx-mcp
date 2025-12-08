@@ -22,7 +22,7 @@ export class GetDataObjectsTool extends BaseTool {
           type: {
             type: 'string',
             enum: ['data', 'case'],
-            description: 'Optional filter for data object type. "data" returns data type objects, "case" returns case type objects. If not provided, returns all data objects.'
+            description: 'Filter for data object type. Returns "data" or "case" type objects.'
           },
           sessionCredentials: getSessionCredentialsSchema()
         },

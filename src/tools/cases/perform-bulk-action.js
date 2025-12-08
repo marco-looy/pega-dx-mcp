@@ -22,7 +22,7 @@ export class PerformBulkActionTool extends BaseTool {
         properties: {
           actionID: {
             type: 'string',
-            description: 'ID of the case action to be performed on all specified cases (e.g., "pyUpdateCaseDetails"). This action must be a case-wide action that updates cases directly.'
+            description: 'Action ID for case/stage action (Example: "pyUpdateCaseDetails", "pyApproval"). CRITICAL: Action IDs are CASE-SENSITIVE and have no spaces even if display names do ("Edit details" → "pyUpdateCaseDetails"). Use get_case to find correct ID from availableActions array - use "ID" field not "name" field. This action must be a case-wide action that updates cases directly.'
           },
           cases: {
             type: 'array',
@@ -32,7 +32,7 @@ export class PerformBulkActionTool extends BaseTool {
               properties: {
                 ID: {
                   type: 'string',
-                  description: 'Full case handle (e.g., "ON6E5R-DIYRECIPE-WORK-RECIPECOLLECTION R-1008")'
+                  description: 'Case ID. Example: "MYORG-APP-WORK C-1001". Complete identifier including spaces.'
                 }
               },
               required: ['ID']
@@ -56,11 +56,11 @@ export class PerformBulkActionTool extends BaseTool {
                 instruction: {
                   type: 'string',
                   enum: ['UPDATE', 'REPLACE', 'DELETE', 'APPEND', 'INSERT', 'MOVE'],
-                  description: 'The type of page instruction: UPDATE (add fields to page), REPLACE (replace entire page), DELETE (remove page), APPEND (add item to page list), INSERT (insert item in page list), MOVE (reorder page list items)'
+                  description: 'Page instruction type. UPDATE (add fields to page), REPLACE (replace entire page), DELETE (remove page), APPEND (add item to page list), INSERT (insert item in page list), MOVE (reorder page list items)'
                 },
                 target: {
                   type: 'string',
-                  description: 'The target embedded page name'
+                  description: 'Target embedded page name'
                 },
                 content: {
                   type: 'object',
@@ -137,19 +137,19 @@ export class PerformBulkActionTool extends BaseTool {
     // 4. Validate optional complex parameters
     if (content !== undefined && (typeof content !== 'object' || Array.isArray(content))) {
       return {
-        error: 'Invalid content parameter. Must be an object containing scalar properties and embedded page properties.'
+        error: 'Invalid content parameter. an object containing scalar properties and embedded page properties.'
       };
     }
 
     if (pageInstructions !== undefined && !Array.isArray(pageInstructions)) {
       return {
-        error: 'Invalid pageInstructions parameter. Must be an array of page-related operations.'
+        error: 'Invalid pageInstructions parameter. an array of page-related operations.'
       };
     }
 
     if (attachments !== undefined && !Array.isArray(attachments)) {
       return {
-        error: 'Invalid attachments parameter. Must be an array of attachment objects.'
+        error: 'Invalid attachments parameter. an array of attachment objects.'
       };
     }
 

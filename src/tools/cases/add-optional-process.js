@@ -21,7 +21,7 @@ export class AddOptionalProcessTool extends BaseTool {
         properties: {
           caseID: {
             type: 'string',
-            description: 'Full case handle (case ID) to add optional process to. Example: "MYORG-SERVICES-WORK S-293001". Must be a complete case identifier including spaces and special characters.'
+            description: 'Case ID. Example: "MYORG-APP-WORK C-1001". Complete identifier including spaces."MYORG-SERVICES-WORK S-293001". a complete case identifier including spaces and special characters.'
           },
           processID: {
             type: 'string',
@@ -30,7 +30,7 @@ export class AddOptionalProcessTool extends BaseTool {
           viewType: {
             type: 'string',
             enum: ['none', 'form', 'page'],
-            description: 'Type of view data to return. "none" returns no uiResources, data.caseInfo.content contains the fields of the pyDetails view (default), "form" returns the form UI metadata (read-only review mode, without page-specific metadata) in the uiResources object, "page" returns the full page (read-only review mode) UI metadata in the uiResources object.',
+            description: 'UI resources to return. "none" returns no uiResources, data.caseInfo.content contains the fields of the pyDetails view (default), "form" returns the form UI metadata (read-only review mode, without page-specific metadata) in the uiResources object, "page" returns the full page (read-only review mode) UI metadata in the uiResources object.',
             default: 'none'
           },
           sessionCredentials: getSessionCredentialsSchema()

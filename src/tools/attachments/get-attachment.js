@@ -84,7 +84,7 @@ export class GetAttachmentTool extends BaseTool {
     if (!attachmentID || typeof attachmentID !== 'string' || attachmentID.trim() === '') {
       return {
         valid: false,
-        error: 'Invalid attachmentID parameter. Attachment ID must be a non-empty string containing the full Link-Attachment instance handle (e.g., "LINK-ATTACHMENT MYCO-PAC-WORK E-47009!20231016T062800.275 GMT").'
+        error: 'Invalid attachmentID parameter. Attachment ID must be a non-empty string containing the full Link-Attachment instance handle (Example: "LINK-ATTACHMENT MYCO-PAC-WORK E-47009!20231016T062800.275 GMT").'
       };
     }
 
@@ -92,7 +92,7 @@ export class GetAttachmentTool extends BaseTool {
     if (!attachmentID.includes('LINK-ATTACHMENT')) {
       return {
         valid: false,
-        error: 'Invalid attachmentID format. Expected Link-Attachment instance pzInsKey format (e.g., "LINK-ATTACHMENT MYCO-PAC-WORK E-47009!20231016T062800.275 GMT").'
+        error: 'Invalid attachmentID format. Expected Link-Attachment instance pzInsKey format (Example: "LINK-ATTACHMENT MYCO-PAC-WORK E-47009!20231016T062800.275 GMT").'
       };
     }
 

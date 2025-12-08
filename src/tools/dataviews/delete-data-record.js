@@ -21,11 +21,11 @@ export class DeleteDataRecordTool extends BaseTool {
         properties: {
           dataViewID: {
             type: 'string',
-            description: 'ID of savable Data Page containing the record to delete. Must be a valid data page identifier configured for delete operations.'
+            description: 'ID of savable Data Page containing the record to delete. a valid data page identifier configured for delete operations.'
           },
           dataViewParameters: {
             type: 'string',
-            description: 'Primary key(s) as JSON string to uniquely identify the data record to delete. Must be a valid JSON object containing key-value pairs. For example: "{\\"CustomerID\\": \\"12345\\"}" or "{\\"OrderID\\": \\"O-1001\\", \\"CustomerID\\": \\"C-5678\\"}". Note: String format like "CustomerID=12345" will cause validation errors.'
+            description: 'Primary key(s) as JSON string to uniquely identify the data record to delete. a valid JSON object containing key-value pairs. For example: "{\\"CustomerID\\": \\"12345\\"}" or "{\\"OrderID\\": \\"O-1001\\", \\"CustomerID\\": \\"C-5678\\"}". Note: String format like "CustomerID=12345" will cause validation errors.'
           },
           sessionCredentials: getSessionCredentialsSchema()
         },

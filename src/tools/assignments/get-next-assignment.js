@@ -22,7 +22,7 @@ export class GetNextAssignmentTool extends BaseTool {
           viewType: {
             type: 'string',
             enum: ['form', 'page'],
-            description: 'Type of view data to return. "form" returns only assignment UI metadata in uiResources object, "page" returns full page (read-only review mode) UI metadata in uiResources object',
+            description: 'UI resources to return. "form" returns only assignment UI metadata in uiResources object, "page" returns full page (read-only review mode) UI metadata in uiResources object',
             default: 'page'
           },
           pageName: {

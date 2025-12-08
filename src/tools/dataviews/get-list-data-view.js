@@ -37,11 +37,11 @@ Aggregation functions: COUNT, MAX, MIN, DISTINCT_COUNT. For numbers: SUM, AVG.`,
         properties: {
           dataViewID: {
             type: 'string',
-            description: 'ID of the data view to retrieve data from. Must be a valid data view identifier that exists in the Pega system. Example: "D_Employees", "D_CustomerList"'
+            description: 'Data view ID. Example: "D_CaseList"'
           },
           dataViewParameters: {
             type: 'object',
-            description: 'Optional parameters for the data view if it has mandatory parameters. Key-value pairs where keys are parameter names and values are parameter values. Example: {"param1": "value1", "param2": "value2"}'
+            description: 'Parameters for parameterized data views. Key-value pairs. Example: {"CustomerID": "C-123"}'
           },
           query: {
             type: 'object',

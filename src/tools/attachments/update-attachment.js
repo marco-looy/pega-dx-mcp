@@ -25,11 +25,11 @@ export class UpdateAttachmentTool extends BaseTool {
           },
           name: {
             type: 'string',
-            description: 'New name of the attachment. This will be the display name shown for the attachment in the case. Must be a non-empty string.'
+            description: 'New name of the attachment. This will be the display name shown for the attachment in the case. a non-empty string.'
           },
           category: {
             type: 'string',
-            description: 'New attachment category. Must be a valid attachment category that exists in the system and that the user has edit permissions for. The category determines the attachment type and associated permissions.'
+            description: 'New attachment category. a valid attachment category that exists in the system and that the user has edit permissions for. The category determines the attachment type and associated permissions.'
           },
           sessionCredentials: getSessionCredentialsSchema()
         },
@@ -86,7 +86,7 @@ export class UpdateAttachmentTool extends BaseTool {
         content: [
           {
             type: 'text',
-            text: `## Parameter Validation Error\n\n**Error**: Invalid attachmentID parameter.\n\n**Details**: Attachment ID must be a non-empty string containing the full Link-Attachment instance handle (e.g., "LINK-ATTACHMENT OSIEO3-TESTAPP03-WORK T-672011!20240104T100246.978 GMT").\n\n**Solution**: Please provide a valid attachmentID value and try again.`
+            text: `## Parameter Validation Error\n\n**Error**: Invalid attachmentID parameter.\n\n**Details**: Attachment ID must be a non-empty string containing the full Link-Attachment instance handle (Example: "LINK-ATTACHMENT OSIEO3-TESTAPP03-WORK T-672011!20240104T100246.978 GMT").\n\n**Solution**: Please provide a valid attachmentID value and try again.`
           }
         ]
       };
@@ -98,7 +98,7 @@ export class UpdateAttachmentTool extends BaseTool {
         content: [
           {
             type: 'text',
-            text: `## Parameter Validation Error\n\n**Error**: Invalid attachmentID format.\n\n**Details**: Expected Link-Attachment instance pzInsKey format (e.g., "LINK-ATTACHMENT OSIEO3-TESTAPP03-WORK T-672011!20240104T100246.978 GMT").\n\n**Solution**: Please provide a valid Link-Attachment instance handle and try again.`
+            text: `## Parameter Validation Error\n\n**Error**: Invalid attachmentID format.\n\n**Details**: Expected Link-Attachment instance pzInsKey format (Example: "LINK-ATTACHMENT OSIEO3-TESTAPP03-WORK T-672011!20240104T100246.978 GMT").\n\n**Solution**: Please provide a valid Link-Attachment instance handle and try again.`
           }
         ]
       };

@@ -21,7 +21,7 @@ export class GetAttachmentCategoriesTool extends BaseTool {
         properties: {
           caseID: {
             type: 'string',
-            description: 'Full case handle (case ID) to retrieve attachment categories for. Must be the complete case identifier including spaces and special characters. Example: "OSIEO3-DOCSAPP-WORK T-561003". The API uses the class name from this caseID to determine which attachment categories are associated with the case type.'
+            description: 'Case ID. Example: "MYORG-APP-WORK C-1001". Complete identifier including spaces."OSIEO3-DOCSAPP-WORK T-561003". The API uses the class name from this caseID to determine which attachment categories are associated with the case type.'
           },
           type: {
             type: 'string',
@@ -87,7 +87,7 @@ export class GetAttachmentCategoriesTool extends BaseTool {
     if (!caseID || typeof caseID !== 'string' || caseID.trim() === '') {
       return {
         valid: false,
-        error: 'Invalid caseID parameter. Case ID must be a non-empty string containing the full case handle (e.g., "OSIEO3-DOCSAPP-WORK T-561003").'
+        error: 'Invalid caseID parameter. Case ID must be a non-empty string containing the Case ID. Example: "MYORG-APP-WORK C-1001". Complete identifier including spaces.'
       };
     }
 
@@ -96,7 +96,7 @@ export class GetAttachmentCategoriesTool extends BaseTool {
       if (typeof type !== 'string') {
         return {
           valid: false,
-          error: 'Invalid type parameter. Must be a string value ("File" or "URL").'
+          error: 'Invalid type parameter. a string value ("File" or "URL").'
         };
       }
 
@@ -306,7 +306,7 @@ export class GetAttachmentCategoriesTool extends BaseTool {
 
     // Display troubleshooting context
     response += '\n### Troubleshooting Context\n';
-    response += `- **Case ID Format**: Ensure full case handle format (e.g., "OSIEO3-DOCSAPP-WORK T-561003")\n`;
+    response += `- **Case ID Format**: Ensure full case handle format (Example: "OSIEO3-DOCSAPP-WORK T-561003")\n`;
     response += `- **Type Parameter**: Must be exactly "File" or "URL" (case insensitive)\n`;
     response += `- **Attachment Categories**: Must be configured in Attachment Category rule for case type\n`;
     response += `- **User Permissions**: Attachment category viewing requires appropriate case access rights\n`;

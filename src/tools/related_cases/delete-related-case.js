@@ -21,11 +21,11 @@ export class DeleteRelatedCaseTool extends BaseTool {
         properties: {
           caseID: {
             type: 'string',
-            description: 'Primary case ID from which to remove the related case. Example: "ON6E5R-DIYRecipe-Work-RecipeCollection R-1008". Must be a complete case identifier including spaces and special characters.'
+            description: 'Primary case ID from which to remove the related case. Example: "ON6E5R-DIYRecipe-Work-RecipeCollection R-1008". a complete case identifier including spaces and special characters.'
           },
           related_caseID: {
             type: 'string',
-            description: 'Related case ID to be removed from the primary case. Example: "ON6E5R-DIYRecipe-Work-RecipeCollection R-1009". Must be a complete case identifier including spaces and special characters.'
+            description: 'Related case ID to be removed from the primary case. Example: "ON6E5R-DIYRecipe-Work-RecipeCollection R-1009". a complete case identifier including spaces and special characters.'
           },
           sessionCredentials: getSessionCredentialsSchema()
         },

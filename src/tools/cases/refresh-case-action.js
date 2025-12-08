@@ -1,5 +1,11 @@
 import { BaseTool } from '../../registry/base-tool.js';
 import { getSessionCredentialsSchema } from '../../utils/tool-schema.js';
+import {
+  extractFieldsFromViews,
+  extractValidationErrors,
+  groupFieldsByRequired,
+  formatValidationErrors
+} from '../../utils/field-extractor.js';
 
 export class RefreshCaseActionTool extends BaseTool {
   /**
@@ -21,23 +27,23 @@ export class RefreshCaseActionTool extends BaseTool {
         properties: {
           caseID: {
             type: 'string',
-            description: 'Full case handle (case ID) to perform refresh on. Format: {OrgID}-{AppName}-{CaseType} {CaseNumber}. Example: "ON6E5R-DIYRecipe-Work-RecipeCollection R-1008". Must be a complete case identifier including spaces and special characters.'
+            description: 'Case ID. Example: "MYORG-APP-WORK C-1001". Complete identifier including spaces.'
           },
           actionID: {
             type: 'string',
-            description: 'Name of the case action - ID of the flow action rule. This corresponds to the Flow Action rule configured in the Pega application where form refresh settings are defined. Example: "pyUpdateCaseDetails", "CompleteReview", "Approve".'
+            description: 'Action ID for case/stage action (Example: "pyUpdateCaseDetails", "pyApproval"). CRITICAL: Action IDs are CASE-SENSITIVE and have no spaces even if display names do ("Edit details" → "pyUpdateCaseDetails"). Use get_case to find correct ID from availableActions array - use "ID" field not "name" field.'
           },
           eTag: {
             type: 'string',
-            description: 'Optional eTag unique value representing the most recent save date time (pxSaveDateTime) of the case. If not provided, the tool will automatically fetch the latest eTag from the case action. For manual eTag management, provide the eTag from a previous case operation. Used for optimistic locking to prevent concurrent modification conflicts.'
+            description: 'eTag for optimistic locking. If not provided, automatically fetches latest eTag. Represents case pxSaveDateTime.'
           },
           refreshFor: {
             type: 'string',
-            description: 'Name of the property which, when changed, triggers refresh after executing the Data Transform configured under form refresh settings of the flow action. When provided, the corresponding Data Transform is executed to provide updated default values. Replaces the deprecated pyRefreshData Data Transform approach. Only change property events are supported in form refresh settings.'
+            description: 'Property name that triggers refresh when changed. Executes Data Transform from form refresh settings.'
           },
           fillFormWithAI: {
             type: 'boolean',
-            description: 'Boolean value indicating whether to fill form with sample values using generative AI. This parameter works in conjunction with the EnableGenerativeAI toggle. When EnableGenerativeAI is turned on and fillFormWithAI=true, the system will attempt to generate appropriate form values using AI. Default: false.'
+            description: 'Whether to fill form with AI-generated sample values. Requires EnableGenerativeAI toggle. Default: false'
           },
           operation: {
             type: 'string',
@@ -56,11 +62,11 @@ export class RefreshCaseActionTool extends BaseTool {
                 instruction: {
                   type: 'string',
                   enum: ['UPDATE', 'REPLACE', 'DELETE', 'APPEND', 'INSERT', 'MOVE'],
-                  description: 'The type of page instruction: UPDATE (add fields to page), REPLACE (replace entire page), DELETE (remove page), APPEND (add item to page list), INSERT (insert item in page list), MOVE (reorder page list items)'
+                  description: 'Page instruction type. UPDATE (add fields to page), REPLACE (replace entire page), DELETE (remove page), APPEND (add item to page list), INSERT (insert item in page list), MOVE (reorder page list items)'
                 },
                 target: {
                   type: 'string',
-                  description: 'The target embedded page name'
+                  description: 'Target embedded page name'
                 },
                 content: {
                   type: 'object',
@@ -142,13 +148,13 @@ export class RefreshCaseActionTool extends BaseTool {
 
     if (fillFormWithAI !== undefined && typeof fillFormWithAI !== 'boolean') {
       return {
-        error: 'Invalid fillFormWithAI parameter. Must be a boolean value (true or false).'
+        error: 'Invalid fillFormWithAI parameter. a boolean value (true or false).'
       };
     }
 
     if (contextData !== undefined && typeof contextData !== 'boolean') {
       return {
-        error: 'Invalid contextData parameter. Must be a boolean value (true or false).'
+        error: 'Invalid contextData parameter. a boolean value (true or false).'
       };
     }
 
@@ -207,28 +213,28 @@ export class RefreshCaseActionTool extends BaseTool {
     // Validate eTag format (should be a timestamp-like string)
     if (typeof finalETag !== 'string' || finalETag.trim().length === 0) {
       return {
-        error: 'Invalid eTag parameter. Must be a non-empty string representing case save date time.'
+        error: 'Invalid eTag parameter. a non-empty string representing case save date time.'
       };
     }
 
     // Validate content parameter
     if (content !== undefined && (typeof content !== 'object' || Array.isArray(content))) {
       return {
-        error: 'Invalid content parameter. Must be an object containing property name-value pairs.'
+        error: 'Invalid content parameter. an object containing property name-value pairs.'
       };
     }
 
     // Validate pageInstructions parameter
     if (pageInstructions !== undefined && !Array.isArray(pageInstructions)) {
       return {
-        error: 'Invalid pageInstructions parameter. Must be an array of page instruction objects.'
+        error: 'Invalid pageInstructions parameter. an array of page instruction objects.'
       };
     }
 
     // Validate originChannel parameter
     if (originChannel !== undefined && (typeof originChannel !== 'string' || originChannel.trim() === '')) {
       return {
-        error: 'Invalid originChannel parameter. Must be a non-empty string.'
+        error: 'Invalid originChannel parameter. a non-empty string.'
       };
     }
 
@@ -634,7 +640,7 @@ export class RefreshCaseActionTool extends BaseTool {
         response += '\n**Suggestion**: Authentication may have expired. The system will attempt to refresh the token on the next request.\n';
         break;
       case 'BAD_REQUEST':
-        response += '\n**Suggestion**: Check the case ID format and action ID. Case IDs should follow the pattern: {OrgID}-{AppName}-{CaseType} {CaseNumber}. Verify form refresh settings are properly configured in the Flow Action rule. For table operations, ensure interestPage format is correct (e.g., ".OrderItems(1)").\n';
+        response += '\n**Suggestion**: Check the case ID format and action ID. Case IDs should follow the pattern: {OrgID}-{AppName}-{CaseType} {CaseNumber}. Verify form refresh settings are properly configured in the Flow Action rule. For table operations, ensure interestPage format is correct (Example: ".OrderItems(1)").\n';
         break;
       case 'VALIDATION_FAIL':
         response += '\n**Suggestion**: The submitted data failed validation rules. This could be due to:\n';

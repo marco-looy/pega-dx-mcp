@@ -21,7 +21,7 @@ export class GetCaseViewCalculatedFieldsTool extends BaseTool {
         properties: {
           caseID: {
             type: 'string',
-            description: 'Full case handle (case ID) to retrieve calculated fields from. Example: "MYORG-SERVICES-WORK S-293001". Must be a complete case identifier including spaces and special characters.'
+            description: 'Case ID. Example: "MYORG-APP-WORK C-1001". Complete identifier including spaces."MYORG-SERVICES-WORK S-293001". a complete case identifier including spaces and special characters.'
           },
           viewID: {
             type: 'string',
@@ -39,7 +39,7 @@ export class GetCaseViewCalculatedFieldsTool extends BaseTool {
                   properties: {
                     name: {
                       type: 'string',
-                      description: 'Name of the calculated field to retrieve. Can include property references starting with dot notation (e.g., ".LoanEligibilityCheckListCountAll").'
+                      description: 'Name of the calculated field to retrieve. Can include property references starting with dot notation (Example: ".LoanEligibilityCheckListCountAll").'
                     },
                     context: {
                       type: 'string',
@@ -102,13 +102,13 @@ export class GetCaseViewCalculatedFieldsTool extends BaseTool {
     // Additional validation for calculations structure
     if (!calculations || typeof calculations !== 'object' || Array.isArray(calculations)) {
       return {
-        error: 'Invalid calculations parameter. Must be an object containing field specifications.'
+        error: 'Invalid calculations parameter. an object containing field specifications.'
       };
     }
 
     if (!calculations.fields || !Array.isArray(calculations.fields) || calculations.fields.length === 0) {
       return {
-        error: 'Invalid calculations.fields parameter. Must be a non-empty array of field objects.'
+        error: 'Invalid calculations.fields parameter. a non-empty array of field objects.'
       };
     }
 
@@ -118,13 +118,13 @@ export class GetCaseViewCalculatedFieldsTool extends BaseTool {
       
       if (!field || typeof field !== 'object' || Array.isArray(field)) {
         return {
-          error: `Invalid field object at index ${i}. Must be an object with required 'name' property.`
+          error: `Invalid field object at index ${i}. an object with required 'name' property.`
         };
       }
 
       if (!field.name || typeof field.name !== 'string' || field.name.trim() === '') {
         return {
-          error: `Invalid field name at index ${i}. Must be a non-empty string.`
+          error: `Invalid field name at index ${i}. a non-empty string.`
         };
       }
 
@@ -139,7 +139,7 @@ export class GetCaseViewCalculatedFieldsTool extends BaseTool {
     if (calculations.whens !== undefined) {
       if (!Array.isArray(calculations.whens)) {
         return {
-          error: 'Invalid calculations.whens parameter. Must be an array of when condition objects.'
+          error: 'Invalid calculations.whens parameter. an array of when condition objects.'
         };
       }
 
@@ -148,13 +148,13 @@ export class GetCaseViewCalculatedFieldsTool extends BaseTool {
         
         if (!when || typeof when !== 'object' || Array.isArray(when)) {
           return {
-            error: `Invalid when object at index ${i}. Must be an object with required 'name' property.`
+            error: `Invalid when object at index ${i}. an object with required 'name' property.`
           };
         }
 
         if (!when.name || typeof when.name !== 'string' || when.name.trim() === '') {
           return {
-            error: `Invalid when name at index ${i}. Must be a non-empty string.`
+            error: `Invalid when name at index ${i}. a non-empty string.`
           };
         }
 

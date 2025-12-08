@@ -23,11 +23,11 @@ export class NavigateAssignmentPreviousTool extends BaseTool {
         properties: {
           assignmentID: {
             type: 'string',
-            description: 'Full handle of the assignment to navigate. Format: ASSIGN-WORKLIST {caseID}!{processID}. Example: "ASSIGN-WORKLIST PBANK-LOAN-WORK V-76003!REVIEW_FLOW". Must be a complete assignment identifier that uniquely identifies the specific assignment instance.'
+            description: 'Assignment ID. Format: ASSIGN-WORKLIST {caseID}!{processID}. Example: "ASSIGN-WORKLIST MYORG-APP-WORK C-1001!PROCESS""ASSIGN-WORKLIST PBANK-LOAN-WORK V-76003!REVIEW_FLOW". a complete assignment identifier that uniquely identifies the specific assignment instance.'
           },
           eTag: {
             type: 'string',
-            description: 'Optional finalETag.trim() unique value representing the most recent save date time (pxSaveDateTime) of the case. If not provided, the tool will automatically fetch the latest finalETag.trim() from the assignment. For manual finalETag.trim() management, provide the finalETag.trim() from a previous assignment operation. Used for optimistic locking to prevent concurrent modification conflicts.'
+            description: 'eTag for optimistic locking. If not provided, automatically fetches latest eTag. Represents case pxSaveDateTime.'
           },
           content: {
             type: 'object',
@@ -41,11 +41,11 @@ export class NavigateAssignmentPreviousTool extends BaseTool {
                 instruction: {
                   type: 'string',
                   enum: ['UPDATE', 'REPLACE', 'DELETE', 'APPEND', 'INSERT', 'MOVE'],
-                  description: 'The type of page instruction: UPDATE (add fields to page), REPLACE (replace entire page), DELETE (remove page), APPEND (add item to page list), INSERT (insert item in page list), MOVE (reorder page list items)'
+                  description: 'Page instruction type. UPDATE (add fields to page), REPLACE (replace entire page), DELETE (remove page), APPEND (add item to page list), INSERT (insert item in page list), MOVE (reorder page list items)'
                 },
                 target: {
                   type: 'string',
-                  description: 'The target embedded page name'
+                  description: 'Target embedded page name'
                 },
                 content: {
                   type: 'object',
@@ -82,7 +82,7 @@ export class NavigateAssignmentPreviousTool extends BaseTool {
           viewType: {
             type: 'string',
             enum: ['none', 'form', 'page'],
-            description: 'Type of view data to return. "none" returns no UI resources (default), "form" returns form UI metadata in read-only review mode, "page" returns full page UI metadata in read-only review mode. Navigation breadcrumb information is included under uiResources when not "none".',
+            description: 'UI resources to return. "none" returns no UI resources (default), "form" returns form UI metadata in read-only review mode, "page" returns full page UI metadata in read-only review mode. Navigation breadcrumb information is included under uiResources when not "none".',
             default: 'none'
           },
           sessionCredentials: getSessionCredentialsSchema()
@@ -175,7 +175,7 @@ export class NavigateAssignmentPreviousTool extends BaseTool {
     // Validate eTag format (should be a timestamp-like string)
     if (typeof finalETag !== 'string' || finalETag.trim().length === 0) {
       return {
-        error: 'Invalid finalETag.trim() parameter. Must be a non-empty string representing case save date time.'
+        error: 'Invalid finalETag.trim() parameter. a non-empty string representing case save date time.'
       };
     }
 

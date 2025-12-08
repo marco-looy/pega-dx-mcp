@@ -21,11 +21,11 @@ export class GetCaseTypeBulkActionTool extends BaseTool {
         properties: {
           caseTypeID: {
             type: 'string',
-            description: 'ID of the case type for which the case action metadata is being retrieved (e.g., "Bug")'
+            description: 'ID of the case type for which the case action metadata is being retrieved (Example: "Bug")'
           },
           actionID: {
             type: 'string',
-            description: 'ID of the action for which the metadata is being retrieved (e.g., "Clone")'
+            description: 'Action ID for case type bulk action (Example: "Clone", "pyUpdateCaseDetails"). CRITICAL: Action IDs are CASE-SENSITIVE and have no spaces even if display names do ("Edit details" → "pyUpdateCaseDetails"). Use get_case_types to discover available case types and their supported actions.'
           },
           sessionCredentials: getSessionCredentialsSchema()
         },

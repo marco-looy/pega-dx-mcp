@@ -1,5 +1,13 @@
 import { BaseTool } from '../../registry/base-tool.js';
 import { getSessionCredentialsSchema } from '../../utils/tool-schema.js';
+import {
+  extractFieldsFromViews,
+  extractValidationErrors,
+  groupFieldsByRequired,
+  formatValidationErrors,
+  extractFieldMetadata,
+  formatFieldMetadata
+} from '../../utils/field-extractor.js';
 
 export class RefreshAssignmentActionTool extends BaseTool {
   /**
@@ -15,25 +23,25 @@ export class RefreshAssignmentActionTool extends BaseTool {
   static getDefinition() {
     return {
       name: 'refresh_assignment_action',
-      description: 'Refresh assignment action form data with updated values after property changes, execute Data Transforms, and handle table row operations in modals. Supports form refresh settings configured in Flow Action rules, generative AI form filling, and embedded list operations with comprehensive validation and preprocessing execution. The API validates assignment and action IDs, retrieves view data, and returns information about fields affected by the refresh action. Supports Pega Infinity \'25 features including table row operations in modals.',
+      description: 'Refresh assignment action form data with updated values after property changes, execute Data Transforms, and handle table row operations in modals. Supports form refresh settings configured in Flow Action rules, generative AI form filling, and embedded list operations with comprehensive validation and preprocessing execution. The API validates assignment and action IDs, retrieves view data, and returns information about fields affected by the refresh action. Supports Pega Infinity \'25 features including table row operations in modals. OPTIONAL tool for progressive filling (multiple calls OK). Use refresh for partial updates with validation; use perform_assignment_action for final submission. Same eTag across refresh calls; NEW eTag after perform.',
       inputSchema: {
         type: 'object',
         properties: {
           assignmentID: {
             type: 'string',
-            description: 'Full handle of an assignment. Example: ASSIGN-WORKLIST MYORG-SERVICES-WORK S-293001!APPROVAL_FLOW. This uniquely identifies the specific assignment instance where the refresh action will be performed.'
+            description: 'Assignment ID. Format: ASSIGN-WORKLIST {caseID}!{processID}. Example: "ASSIGN-WORKLIST MYORG-APP-WORK C-1001!PROCESS"'
           },
           actionID: {
             type: 'string',
-            description: 'Name of the assignment action - ID of the flow action rule. This corresponds to the Flow Action rule configured in the Pega application where form refresh settings are defined. Example: CompleteVerification, Approve, Reject.'
+            description: 'Action ID from assignment (Example: "pyApproval", "Submit"). CRITICAL: Action IDs are CASE-SENSITIVE and have no spaces even if display names do ("Complete Review" → "CompleteReview"). Use get_assignment to find correct ID from actions array - use "ID" field not "name" field.'
           },
           refreshFor: {
             type: 'string',
-            description: 'Name of the property which, when changed, triggers refresh after executing the Data Transform configured under form refresh settings of the flow action. When provided, the corresponding Data Transform is executed to provide updated default values. Replaces the deprecated pyRefreshData Data Transform approach. Only change property events are supported in form refresh settings.'
+            description: 'Property name that triggers refresh when changed. Executes Data Transform from form refresh settings.'
           },
           fillFormWithAI: {
             type: 'boolean',
-            description: 'Boolean value indicating whether to fill form with sample values using generative AI. This parameter works in conjunction with the EnableGenerativeAI toggle. When EnableGenerativeAI is turned on and fillFormWithAI=true, the system will attempt to generate appropriate form values using AI. Default: false.'
+            description: 'Whether to fill form with AI-generated sample values. Requires EnableGenerativeAI toggle. Default: false'
           },
           operation: {
             type: 'string',
@@ -60,11 +68,11 @@ export class RefreshAssignmentActionTool extends BaseTool {
                 instruction: {
                   type: 'string',
                   enum: ['UPDATE', 'REPLACE', 'DELETE', 'APPEND', 'INSERT', 'MOVE'],
-                  description: 'The type of page instruction: UPDATE (add fields to page), REPLACE (replace entire page), DELETE (remove page), APPEND (add item to page list), INSERT (insert item in page list), MOVE (reorder page list items)'
+                  description: 'Page instruction type. UPDATE (add fields to page), REPLACE (replace entire page), DELETE (remove page), APPEND (add item to page list), INSERT (insert item in page list), MOVE (reorder page list items)'
                 },
                 target: {
                   type: 'string',
-                  description: 'The target embedded page name'
+                  description: 'Target embedded page name'
                 },
                 content: {
                   type: 'object',
@@ -127,7 +135,7 @@ export class RefreshAssignmentActionTool extends BaseTool {
 
     if (fillFormWithAI !== undefined && typeof fillFormWithAI !== 'boolean') {
       return {
-        error: 'Invalid fillFormWithAI parameter. Must be a boolean value (true or false).'
+        error: 'Invalid fillFormWithAI parameter. a boolean value (true or false).'
       };
     }
 
@@ -156,14 +164,14 @@ export class RefreshAssignmentActionTool extends BaseTool {
     // Validate content parameter
     if (content !== undefined && (typeof content !== 'object' || Array.isArray(content))) {
       return {
-        error: 'Invalid content parameter. Must be an object containing property name-value pairs.'
+        error: 'Invalid content parameter. an object containing property name-value pairs.'
       };
     }
 
     // Validate pageInstructions parameter
     if (pageInstructions !== undefined && !Array.isArray(pageInstructions)) {
       return {
-        error: 'Invalid pageInstructions parameter. Must be an array of page instruction objects.'
+        error: 'Invalid pageInstructions parameter. an array of page instruction objects.'
       };
     }
 
@@ -204,7 +212,7 @@ export class RefreshAssignmentActionTool extends BaseTool {
     // Validate eTag format (should be a timestamp-like string)
     if (typeof finalETag !== 'string' || finalETag.trim().length === 0) {
       return {
-        error: 'Invalid eTag parameter. Must be a non-empty string representing case save date time.'
+        error: 'Invalid eTag parameter. a non-empty string representing case save date time.'
       };
     }
 
@@ -437,14 +445,14 @@ export class RefreshAssignmentActionTool extends BaseTool {
     if (data.uiResources) {
       response += '\n### UI Resources Updated\n';
       response += '- **Form Metadata**: UI resources refreshed with updated field states\n';
-      
+
       if (data.uiResources.root) {
         response += `- **Root Component**: ${data.uiResources.root.type || 'Form'}\n`;
         if (data.uiResources.root.config?.name) {
           response += `- **View Name**: ${data.uiResources.root.config.name}\n`;
         }
       }
-      
+
       if (data.uiResources.resources) {
         // Display updated fields
         if (data.uiResources.resources.fields) {
@@ -458,12 +466,18 @@ export class RefreshAssignmentActionTool extends BaseTool {
             }
           }
         }
-        
+
         // Display available views after refresh
         if (data.uiResources.resources.views) {
           const viewCount = Object.keys(data.uiResources.resources.views).length;
           response += `- **Available Views**: ${viewCount}\n`;
         }
+      }
+
+      // Extract and display field metadata including dropdown options
+      const fieldMetadata = extractFieldMetadata(data.uiResources);
+      if (fieldMetadata.length > 0) {
+        response += formatFieldMetadata(fieldMetadata);
       }
 
       // Display field state changes
@@ -584,7 +598,7 @@ export class RefreshAssignmentActionTool extends BaseTool {
         response += '\n**Suggestion**: Authentication may have expired. The system will attempt to refresh the token on the next request.\n';
         break;
       case 'BAD_REQUEST':
-        response += '\n**Suggestion**: Check the assignment ID format and action ID. Assignment IDs should follow the pattern: ASSIGN-WORKLIST MYORG-SERVICES-WORK S-293001!APPROVAL_FLOW. Verify form refresh settings are properly configured in the Flow Action rule. For table operations, ensure interestPage format is correct (e.g., ".OrderItems(1)").\n';
+        response += '\n**Suggestion**: Check the assignment ID format and action ID. Assignment IDs should follow the pattern: ASSIGN-WORKLIST MYORG-SERVICES-WORK S-293001!APPROVAL_FLOW. Verify form refresh settings are properly configured in the Flow Action rule. For table operations, ensure interestPage format is correct (Example: ".OrderItems(1)").\n';
         break;
       case 'VALIDATION_FAIL':
         response += '\n**Suggestion**: The submitted data failed validation rules. This could be due to:\n';

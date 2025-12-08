@@ -1,5 +1,11 @@
 import { BaseTool } from '../../registry/base-tool.js';
 import { getSessionCredentialsSchema } from '../../utils/tool-schema.js';
+import {
+  extractFieldsFromViews,
+  extractValidationErrors,
+  groupFieldsByRequired,
+  formatValidationErrors
+} from '../../utils/field-extractor.js';
 
 export class GetCaseActionTool extends BaseTool {
   /**
@@ -21,16 +27,16 @@ export class GetCaseActionTool extends BaseTool {
         properties: {
           caseID: {
             type: 'string',
-            description: 'Full case handle (e.g.,ON6E5R-DIYRECIPE-WORK-RECIPECOLLECTION R-1008)'
+            description: 'Case ID. Example: "MYORG-APP-WORK C-1001". Complete identifier including spaces.'
           },
           actionID: {
             type: 'string',
-            description: 'Flow action name of a case/stage action that the client requests - ID of the flow action rule. IMPORTANT: Action IDs typically do not contain spaces even if the display name does. Use get_case to retrieve the correct action ID from the availableActions array. Common IDs: "pyUpdateCaseDetails", "pyChangeStage", "pyApproval", "pyReject".'
+            description: 'Action ID for case/stage action (Example: "pyUpdateCaseDetails", "pyApproval"). CRITICAL: Action IDs are CASE-SENSITIVE and have no spaces even if display names do ("Edit details" → "pyUpdateCaseDetails"). Use get_case to find correct ID from availableActions array - use "ID" field not "name" field.'
           },
           viewType: {
             type: 'string',
             enum: ['none', 'form', 'page'],
-            description: 'Type of view data to return. "none" returns no UI resources, "form" returns only form UI metadata, "page" returns full case page UI metadata',
+            description: 'UI resources to return. "none" returns no UI resources, "form" returns only form UI metadata, "page" returns full case page UI metadata',
             default: 'page'
           },
           excludeAdditionalActions: {
@@ -73,7 +79,7 @@ export class GetCaseActionTool extends BaseTool {
     // Validate excludeAdditionalActions if provided
     if (excludeAdditionalActions !== undefined && typeof excludeAdditionalActions !== 'boolean') {
       return {
-        error: 'Invalid excludeAdditionalActions parameter. Must be a boolean value.'
+        error: 'Invalid excludeAdditionalActions parameter. a boolean value.'
       };
     }
 

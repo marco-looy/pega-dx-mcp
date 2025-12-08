@@ -21,7 +21,7 @@ export class GetRelatedCasesTool extends BaseTool {
         properties: {
           caseID: {
             type: 'string',
-            description: 'Full case handle to retrieve related cases for. Example: "ON6E5R-DIYRecipe-Work-RecipeCollection R-1008". Must be a complete case identifier including spaces and special characters.'
+            description: 'Case ID. Example: "MYORG-APP-WORK C-1001". Complete identifier including spaces.'
           },
           sessionCredentials: getSessionCredentialsSchema()
         },

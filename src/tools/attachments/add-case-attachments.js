@@ -21,7 +21,7 @@ export class AddCaseAttachmentsTool extends BaseTool {
         properties: {
           caseID: {
             type: 'string',
-            description: 'Full case handle (case ID) to attach files/URLs to. Example: "OSIEO3-DOCSAPP-WORK T-561003". Must be a complete case identifier including spaces and special characters.'
+            description: 'Case ID. Example: "MYORG-APP-WORK C-1001". Complete identifier including spaces."OSIEO3-DOCSAPP-WORK T-561003". a complete case identifier including spaces and special characters.'
           },
           attachments: {
             type: 'array',
@@ -32,7 +32,7 @@ export class AddCaseAttachmentsTool extends BaseTool {
                 type: {
                   type: 'string',
                   enum: ['File', 'URL'],
-                  description: 'Attachment type. Must be "File" for file attachments or "URL" for URL/link attachments.'
+                  description: 'Attachment type. "File" for file attachments or "URL" for URL/link attachments.'
                 },
                 category: {
                   type: 'string',
@@ -45,7 +45,7 @@ export class AddCaseAttachmentsTool extends BaseTool {
                 },
                 url: {
                   type: 'string',
-                  description: 'URL/link to attach to the case (required for URL type). Example: "https://www.google.com". Must be a valid URL format.'
+                  description: 'URL/link to attach to the case (required for URL type). Example: "https://www.google.com". a valid URL format.'
                 },
                 name: {
                   type: 'string',
@@ -228,7 +228,7 @@ export class AddCaseAttachmentsTool extends BaseTool {
       } catch (urlError) {
         return {
           valid: false,
-          error: `Invalid URL format in URL attachment at index ${index}: "${url}". Please provide a valid URL (e.g., "https://www.example.com").`
+          error: `Invalid URL format in URL attachment at index ${index}: "${url}". Please provide a valid URL (Example: "https://www.example.com").`
         };
       }
 

@@ -78,7 +78,7 @@ export class DeleteAttachmentTool extends BaseTool {
     if (!attachmentID || typeof attachmentID !== 'string' || attachmentID.trim() === '') {
       return {
         valid: false,
-        error: 'Invalid attachmentID parameter. Attachment ID must be a non-empty string containing the full Link-Attachment instance handle (e.g., "LINK-ATTACHMENT ONNS8O-TESTAPP-WORK B-2001!20211115T061748.900 GMT").'
+        error: 'Invalid attachmentID parameter. Attachment ID must be a non-empty string containing the full Link-Attachment instance handle (Example: "LINK-ATTACHMENT ONNS8O-TESTAPP-WORK B-2001!20211115T061748.900 GMT").'
       };
     }
 
@@ -86,7 +86,7 @@ export class DeleteAttachmentTool extends BaseTool {
     if (!attachmentID.includes('LINK-ATTACHMENT')) {
       return {
         valid: false,
-        error: 'Invalid attachmentID format. Expected Link-Attachment instance pzInsKey format (e.g., "LINK-ATTACHMENT ONNS8O-TESTAPP-WORK B-2001!20211115T061748.900 GMT").'
+        error: 'Invalid attachmentID format. Expected Link-Attachment instance pzInsKey format (Example: "LINK-ATTACHMENT ONNS8O-TESTAPP-WORK B-2001!20211115T061748.900 GMT").'
       };
     }
 

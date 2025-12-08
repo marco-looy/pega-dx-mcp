@@ -21,7 +21,7 @@ export class GetCaseAncestorsTool extends BaseTool {
         properties: {
           caseID: {
             type: 'string',
-            description: 'Full case handle (case ID) to retrieve ancestors from. Example: "OSIEO3-DOCSAPP-WORK T-561003". Must be a complete case identifier including spaces and special characters. The case must exist and be accessible to the current user.'
+            description: 'Case ID. Example: "MYORG-APP-WORK C-1001". Complete identifier including spaces."OSIEO3-DOCSAPP-WORK T-561003". a complete case identifier including spaces and special characters. The case must exist and be accessible to the current user.'
           },
           sessionCredentials: getSessionCredentialsSchema()
         },

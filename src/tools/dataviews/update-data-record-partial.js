@@ -21,7 +21,7 @@ export class UpdateDataRecordPartialTool extends BaseTool {
         properties: {
           dataViewID: {
             type: 'string',
-            description: 'ID of savable Data Page to update. Must be a valid, existing data view identifier.'
+            description: 'ID of savable Data Page to update. a valid, existing data view identifier.'
           },
           data: {
             type: 'object',
@@ -40,11 +40,11 @@ export class UpdateDataRecordPartialTool extends BaseTool {
                 instruction: {
                   type: 'string',
                   enum: ['UPDATE', 'REPLACE', 'DELETE', 'APPEND', 'INSERT', 'MOVE'],
-                  description: 'The type of page instruction: UPDATE (add fields to page), REPLACE (replace entire page), DELETE (remove page), APPEND (add item to page list), INSERT (insert item in page list), MOVE (reorder page list items)'
+                  description: 'Page instruction type. UPDATE (add fields to page), REPLACE (replace entire page), DELETE (remove page), APPEND (add item to page list), INSERT (insert item in page list), MOVE (reorder page list items)'
                 },
                 target: {
                   type: 'string',
-                  description: 'The target embedded page name'
+                  description: 'Target embedded page name'
                 },
                 content: {
                   type: 'object',

@@ -1,5 +1,11 @@
 import { BaseTool } from '../../registry/base-tool.js';
 import { getSessionCredentialsSchema } from '../../utils/tool-schema.js';
+import {
+  extractFieldsFromViews,
+  extractValidationErrors,
+  groupFieldsByRequired,
+  formatValidationErrors
+} from '../../utils/field-extractor.js';
 
 export class GetAssignmentActionTool extends BaseTool {
   /**
@@ -15,27 +21,27 @@ export class GetAssignmentActionTool extends BaseTool {
   static getDefinition() {
     return {
       name: 'get_assignment_action',
-      description: 'Get detailed information about a specific action that can be performed on an assignment. Retrieves assignment action defined for an assignment step in a case process, including UI metadata and preprocessing execution. If the case type uses pessimistic locking and the client uses Constellation, this request may lock the case.',
+      description: 'Get detailed information about a specific action that can be performed on an assignment. Retrieves assignment action defined for an assignment step in a case process, including UI metadata and preprocessing execution. If the case type uses pessimistic locking and the client uses Constellation, this request may lock the case. Get details for ONE specific action. Often optional - most workflows use: get_assignment (all actions + eTag) → perform_assignment_action. Use this when you need action-specific details.',
       inputSchema: {
         type: 'object',
         properties: {
           assignmentID: {
             type: 'string',
-            description: 'Full handle of the assignment. Example: ASSIGN-WORKLIST O1UGTM-TESTAPP13-WORK T-36004!APPROVAL_FLOW'
+            description: 'Assignment ID. Format: ASSIGN-WORKLIST {caseID}!{processID}. Example: "ASSIGN-WORKLIST MYORG-APP-WORK C-1001!PROCESS"'
           },
           actionID: {
             type: 'string',
-            description: 'Name of the action to be retrieved - ID of the flow action rule. IMPORTANT: Action IDs typically do not contain spaces even if the display name does. Use get_assignment to retrieve the correct action ID from the actions array. Example IDs: "pyApproval", "pyReject", "Submit".'
+            description: 'Action ID from assignment (Example: "pyApproval", "Submit"). CRITICAL: Action IDs are CASE-SENSITIVE and have no spaces even if display names do ("Complete Review" → "CompleteReview"). Use get_assignment to find correct ID from actions array - use "ID" field not "name" field.'
           },
           viewType: {
             type: 'string',
             enum: ['form', 'page'],
-            description: 'Type of view data to return. "form" returns the form UI metadata (in read-only review mode, without page-specific metadata), "page" returns the full page (in read-only review mode) UI metadata in the uiResources object',
+            description: 'UI resources to return. "form" returns the form UI metadata (in read-only review mode, without page-specific metadata), "page" returns the full page (in read-only review mode) UI metadata in the uiResources object',
             default: 'page'
           },
           excludeAdditionalActions: {
             type: 'boolean',
-            description: 'When true, excludes information on all actions performable on the case. Set to true if action information was already retrieved in a previous call. When false, response includes data.caseInfo.availableActions and data.caseInfo.assignments.actions fields',
+            description: 'Whether to exclude additional action information. Set true if actions already retrieved. Default: false',
             default: false
           },
           sessionCredentials: getSessionCredentialsSchema()
@@ -73,23 +79,39 @@ export class GetAssignmentActionTool extends BaseTool {
       // Validate excludeAdditionalActions if provided
       if (excludeAdditionalActions !== undefined && typeof excludeAdditionalActions !== 'boolean') {
         return {
-          error: 'Invalid excludeAdditionalActions parameter. Must be a boolean value.'
+          error: 'Invalid excludeAdditionalActions parameter. a boolean value.'
         };
       }
 
-      // Execute with standardized error handling
-      return await this.executeWithErrorHandling(
-        `Assignment Action: ${actionID} for ${assignmentID}`,
-        async () => await this.pegaClient.getAssignmentAction(
-          assignmentID.trim(),
-          actionID.trim(),
-          {
-            viewType,
-            excludeAdditionalActions
-          }
-        ),
-        { assignmentID, actionID, viewType, excludeAdditionalActions, sessionInfo }
+      // Execute API call
+      const result = await this.pegaClient.getAssignmentAction(
+        assignmentID.trim(),
+        actionID.trim(),
+        {
+          viewType,
+          excludeAdditionalActions
+        }
       );
+
+      // Check if API call was successful
+      if (result.success) {
+        return this.formatSuccessResponse(
+          `Assignment Action: ${actionID} for ${assignmentID}`,
+          result.data,
+          { assignmentID, actionID, viewType, excludeAdditionalActions, sessionInfo }
+        );
+      } else {
+        // Check if this is an invalid action ID error
+        const isInvalidActionError = this.isInvalidActionIdError(result.error);
+
+        if (isInvalidActionError) {
+          // Auto-discover available actions and show user the correct IDs
+          return await this.discoverActionsAndGuide(assignmentID, actionID, result.error);
+        }
+
+        // Format and return error response from API
+        return this.formatErrorResponse(result.error, { assignmentID, actionID, sessionInfo });
+      }
     } catch (error) {
       return {
         content: [{
@@ -97,6 +119,162 @@ export class GetAssignmentActionTool extends BaseTool {
           text: `## Error: Assignment Action\n\n**Unexpected Error**: ${error.message}\n\n${sessionInfo ? `**Session**: ${sessionInfo.sessionId} (${sessionInfo.authMode} mode)\n` : ''}*Error occurred at: ${new Date().toISOString()}*`
         }]
       };
+    }
+  }
+
+  /**
+   * Check if error indicates invalid action ID
+   * Handles both NOT_FOUND and CONFLICT errors with invalid action messages
+   */
+  isInvalidActionIdError(error) {
+    if (!error) return false;
+
+    // Check for NOT_FOUND error type
+    if (error.type === 'NOT_FOUND') {
+      return true;
+    }
+
+    // Check for CONFLICT error with "not a valid action" message
+    if (error.type === 'CONFLICT') {
+      const message = error.message?.toLowerCase() || '';
+      const details = typeof error.details === 'string' ? error.details.toLowerCase() : '';
+
+      // Check main message and details
+      if (message.includes('not a valid action') ||
+          details.includes('not a valid action') ||
+          (message.includes('action') && message.includes('invalid'))) {
+        return true;
+      }
+
+      // Check errorDetails array for specific action validation errors
+      if (error.errorDetails && Array.isArray(error.errorDetails)) {
+        for (const errorDetail of error.errorDetails) {
+          const detailMessage = (errorDetail.message || '').toLowerCase();
+          const detailLocalized = (errorDetail.localizedValue || '').toLowerCase();
+
+          if (detailMessage.includes('not a valid action') ||
+              detailLocalized.includes('not a valid action') ||
+              detailMessage.includes('is not a valid action to use') ||
+              detailLocalized.includes('is not a valid action to use')) {
+            return true;
+          }
+        }
+      }
+    }
+
+    return false;
+  }
+
+  /**
+   * Discover available actions when action ID is not found
+   * Shows user the correct action IDs to use
+   */
+  async discoverActionsAndGuide(assignmentID, attemptedActionID, originalError) {
+    try {
+      // Fetch assignment to get available actions
+      const assignmentResponse = await this.pegaClient.getAssignment(assignmentID, 'none');
+
+      if (!assignmentResponse.success) {
+        // If we can't fetch assignment, return original error
+        return this.formatErrorResponse('Get Assignment Action', originalError, { assignmentID, actionID: attemptedActionID });
+      }
+
+      const assignmentData = assignmentResponse.data;
+      const actions = assignmentData?.data?.caseInfo?.assignments?.[0]?.actions || [];
+
+      if (actions.length === 0) {
+        // No actions found, return original error
+        return this.formatErrorResponse('Get Assignment Action', originalError, { assignmentID, actionID: attemptedActionID });
+      }
+
+      // Build guidance response with available actions
+      let response = `# Assignment Action Not Found\n\n`;
+      response += `**Attempted Action ID**: \`${attemptedActionID}\`\n`;
+      response += `**Assignment ID**: ${assignmentID}\n\n`;
+
+      response += `## ⚠️ Action ID Issue - CASE SENSITIVE!\n\n`;
+      response += `The action ID "${attemptedActionID}" was not found for this assignment.\n\n`;
+      response += `**Action IDs are CASE-SENSITIVE:**\n`;
+      response += `- "Submit" ≠ "submit" ≠ "SUBMIT"\n`;
+      response += `- "Complete Review" → usually "CompleteReview" (no spaces)\n`;
+      response += `- Always use the exact ID from the "ID" field, not the "name" field\n\n`;
+
+      response += `## ✅ Available Actions (${actions.length})\n\n`;
+      response += `Copy the exact action ID from this table:\n\n`;
+
+      response += `| Action ID | Display Name | Type |\n`;
+      response += `|-----------|--------------|------|\n`;
+
+      actions.forEach(action => {
+        const actionID = action.ID || 'Unknown';
+        const actionName = action.name || actionID;
+        const actionType = action.type || 'FlowAction';
+        response += `| \`${actionID}\` | ${actionName} | ${actionType} |\n`;
+      });
+
+      response += `\n`;
+
+      // Show actionButtons if available (these are the recommended actions)
+      const actionButtons = assignmentData?.uiResources?.actionButtons;
+      if (actionButtons) {
+        const mainButtons = actionButtons.main || [];
+        const secondaryButtons = actionButtons.secondary || [];
+
+        if (mainButtons.length > 0 || secondaryButtons.length > 0) {
+          response += `## 🎯 Recommended Actions (from UI)\n\n`;
+
+          if (mainButtons.length > 0) {
+            response += `**Primary Actions** (submit buttons):\n`;
+            mainButtons.forEach(button => {
+              response += `- \`${button.actionID}\` - ${button.name}\n`;
+            });
+            response += `\n`;
+          }
+
+          if (secondaryButtons.length > 0) {
+            response += `**Secondary Actions** (cancel, save, etc.):\n`;
+            secondaryButtons.forEach(button => {
+              response += `- \`${button.actionID}\` - ${button.name}\n`;
+            });
+            response += `\n`;
+          }
+        }
+      }
+
+      response += `## 💡 Next Steps\n\n`;
+      response += `1. **Copy the exact action ID** from the table above (case-sensitive!)\n`;
+      response += `2. Retry your call with the correct action ID\n\n`;
+
+      response += `**Example:**\n`;
+      if (actions.length > 0) {
+        const exampleAction = actions[0];
+        response += `\`\`\`javascript\n`;
+        response += `get_assignment_action({\n`;
+        response += `  assignmentID: "${assignmentID}",\n`;
+        response += `  actionID: "${exampleAction.ID}"  // ⚠️ CASE-SENSITIVE - copy exactly!\n`;
+        response += `})\n`;
+        response += `\`\`\`\n\n`;
+      }
+
+      response += `*Action discovery completed at ${new Date().toISOString()}*`;
+
+      return {
+        content: [{
+          type: 'text',
+          text: response
+        }]
+      };
+
+    } catch (discoveryError) {
+      // If discovery fails, return original error with additional context
+      return this.formatErrorResponse(
+        'Get Assignment Action',
+        {
+          ...originalError,
+          message: `${originalError.message}\n\nFailed to auto-discover available actions: ${discoveryError.message}`
+        },
+        { assignmentID, actionID: attemptedActionID }
+      );
     }
   }
 
@@ -301,6 +479,18 @@ export class GetAssignmentActionTool extends BaseTool {
       response += '- Additional actions excluded from response (optimization enabled)\n';
     }
 
+    // Display next steps guidance
+    response += '\n### Next Steps\n\n';
+    response += `To execute this action:\n`;
+    response += `1. Prepare content with field values (see fields above)\n`;
+    response += `2. Use \`perform_assignment_action\` with:\n`;
+    response += `   - assignmentID: "${assignmentID}"\n`;
+    response += `   - actionID: "${actionID}"\n`;
+    if (eTag) {
+      response += `   - eTag: "${eTag}" (from this response)\n`;
+    }
+    response += `   - content: {field values}\n\n`;
+
     response += '\n---\n';
     response += `*Retrieved at: ${new Date().toISOString()}*`;
 
@@ -339,7 +529,7 @@ export class GetAssignmentActionTool extends BaseTool {
         response += '\n**Suggestion**: Authentication may have expired. The system will attempt to refresh the token on the next request.\n';
         break;
       case 'BAD_REQUEST':
-        response += '\n**Suggestion**: Check the assignment ID and action ID format. Assignment IDs should follow the pattern: ASSIGN-WORKLIST O1UGTM-TESTAPP13-WORK T-36004!APPROVAL_FLOW. Action IDs should match the flow action rule names (e.g., "Verify", "Approve").\n';
+        response += '\n**Suggestion**: Check the assignment ID and action ID format. Assignment IDs should follow the pattern: ASSIGN-WORKLIST O1UGTM-TESTAPP13-WORK T-36004!APPROVAL_FLOW. Action IDs should match the flow action rule names (Example: "Verify", "Approve").\n';
         break;
       case 'LOCKED':
         response += '\n**Suggestion**: This assignment or its associated case is currently locked by another user. Wait for the lock to be released or contact the user who has the lock. With pessimistic locking, only one user can access the assignment at a time.\n';

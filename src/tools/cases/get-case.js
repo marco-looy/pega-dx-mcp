@@ -15,18 +15,18 @@ export class GetCaseTool extends BaseTool {
   static getDefinition() {
     return {
       name: 'get_case',
-      description: 'Get detailed information about a Pega case by case ID',
+      description: 'Get comprehensive case information including status, stage, assignments, and available actions. Use AFTER workflow completion or for case overview. Not recommended immediately after create_case (redundant). For working on assignments, use get_assignment instead.',
       inputSchema: {
         type: 'object',
         properties: {
           caseID: {
             type: 'string',
-            description: 'Full case handle (e.g.,ON6E5R-DIYRECIPE-WORK-RECIPECOLLECTION R-1008)'
+            description: 'Case ID. Example: "MYORG-APP-WORK C-1001". Complete identifier including spaces.'
           },
           viewType: {
             type: 'string',
             enum: ['none', 'page'],
-            description: 'Type of view data to return. "none" returns no UI resources, "page" returns full page UI metadata',
+            description: 'UI resources to return. "none" returns no UI resources, "page" returns full page UI metadata',
             default: 'none'
           },
           pageName: {
@@ -120,7 +120,26 @@ ${sessionInfo ? `**Session**: ${sessionInfo.sessionId} (${sessionInfo.authMode} 
       response += '- **Usage**: Use this exact value as eTag parameter for update operations\n';
       response += '- **Format**: ISO date-time representing pxSaveDateTime\n\n';
     }
-    
+
+    // Add workflow guidance based on case state
+    response += '\n### Next Steps\n\n';
+
+    if (data.assignments && data.assignments.length > 0) {
+      response += '**Available Assignments**: This case has open assignments:\n';
+      data.assignments.forEach(assignment => {
+        response += `- Use \`get_assignment\` with ID "${assignment.ID}" to work on this assignment\n`;
+      });
+    } else if (data.availableProcesses && data.availableProcesses.length > 0) {
+      response += '**Available Processes**: This case can have optional processes added:\n';
+      data.availableProcesses.forEach(process => {
+        response += `- Use \`add_optional_process\` with process ID "${process.ID}"\n`;
+      });
+    } else {
+      response += '**Case Status**: No open assignments. Case may be completed or waiting for external event.\n';
+      response += '- Use `get_case_history` to view case audit trail\n';
+      response += '- Use `get_case_stages` to view stage progression\n';
+    }
+
     // Add the standard data formatting
     if (data && typeof data === 'object') {
       response += this.formatDataSection(data);

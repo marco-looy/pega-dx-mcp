@@ -71,8 +71,8 @@ export class PegaV2Client extends BaseApiClient {
    * Create a new case
    */
   async createCase(options = {}) {
-    const { caseTypeID, parentCaseID, content, pageInstructions, attachments, viewType, pageName } = options;
-    
+    const { caseTypeID, parentCaseID, processID, content, pageInstructions, attachments, viewType, pageName } = options;
+
     let url = `${this.getApiBaseUrl()}/cases`;
 
     // Add query parameters if provided
@@ -83,7 +83,7 @@ export class PegaV2Client extends BaseApiClient {
     if (pageName) {
       queryParams.append('pageName', pageName);
     }
-    
+
     if (queryParams.toString()) {
       url += `?${queryParams.toString()}`;
     }
@@ -96,6 +96,9 @@ export class PegaV2Client extends BaseApiClient {
     // Add optional parameters if provided
     if (parentCaseID) {
       requestBody.parentCaseID = parentCaseID;
+    }
+    if (processID) {
+      requestBody.processID = processID;
     }
     if (content) {
       requestBody.content = content;

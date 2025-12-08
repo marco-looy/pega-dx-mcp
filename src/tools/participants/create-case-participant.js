@@ -21,11 +21,11 @@ export class CreateCaseParticipantTool extends BaseTool {
         properties: {
           caseID: {
             type: 'string',
-            description: 'Full case handle (case ID) to add participant to. Example: "ON6E5R-DIYRecipe-Work-RecipeCollection R-1008". Must be a complete case identifier including spaces and special characters.'
+            description: 'Case ID. Example: "MYORG-APP-WORK C-1001". Complete identifier including spaces."ON6E5R-DIYRecipe-Work-RecipeCollection R-1008". a complete case identifier including spaces and special characters.'
           },
           eTag: {
             type: 'string',
-            description: 'Optional eTag unique value representing the most recent save date time (pxSaveDateTime) of the case. If not provided, the tool will automatically fetch the latest eTag from the case. For manual eTag management, provide the eTag from a previous case operation. Used for optimistic locking to prevent concurrent modification conflicts.'
+            description: 'eTag for optimistic locking. If not provided, automatically fetches latest eTag. Represents case pxSaveDateTime.'
           },
           content: {
             type: 'object',
@@ -47,7 +47,7 @@ export class CreateCaseParticipantTool extends BaseTool {
           viewType: {
             type: 'string',
             enum: ['form', 'none'],
-            description: 'Type of view data to return. "form" returns form UI metadata, "none" returns no UI resources (default: "form")',
+            description: 'UI resources to return. "form" returns form UI metadata, "none" returns no UI resources (default: "form")',
             default: 'form'
           },
           pageInstructions: {
@@ -58,11 +58,11 @@ export class CreateCaseParticipantTool extends BaseTool {
                 instruction: {
                   type: 'string',
                   enum: ['UPDATE', 'REPLACE', 'DELETE', 'APPEND', 'INSERT', 'MOVE'],
-                  description: 'The type of page instruction: UPDATE (add fields to page), REPLACE (replace entire page), DELETE (remove page), APPEND (add item to page list), INSERT (insert item in page list), MOVE (reorder page list items)'
+                  description: 'Page instruction type. UPDATE (add fields to page), REPLACE (replace entire page), DELETE (remove page), APPEND (add item to page list), INSERT (insert item in page list), MOVE (reorder page list items)'
                 },
                 target: {
                   type: 'string',
-                  description: 'The target embedded page name'
+                  description: 'Target embedded page name'
                 },
                 content: {
                   type: 'object',
@@ -142,7 +142,7 @@ export class CreateCaseParticipantTool extends BaseTool {
       // Validate eTag format (should be a timestamp-like string)
       if (typeof finalETag !== 'string' || finalETag.trim().length === 0) {
         return {
-          error: 'Invalid eTag parameter. Must be a non-empty string representing case save date time.'
+          error: 'Invalid eTag parameter. a non-empty string representing case save date time.'
         };
       }
 

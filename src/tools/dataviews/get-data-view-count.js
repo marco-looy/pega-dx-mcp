@@ -46,11 +46,11 @@ Note: Maximum result count is 5000 for queryable data views. The hasMoreResults 
         properties: {
           dataViewID: {
             type: 'string',
-            description: 'ID of the data view to count results for. Must be a valid data view identifier that exists in the Pega system. Example: "D_Employees", "D_CustomerList"'
+            description: 'Data view ID. Example: "D_CaseList"'
           },
           dataViewParameters: {
             type: 'object',
-            description: 'Optional parameters for parameterized data views. Key-value pairs where keys are parameter names and values are parameter values. Example: {"CustomerID": "C-123", "Status": "Active"}'
+            description: 'Parameters for parameterized data views. Key-value pairs. Example: {"CustomerID": "C-123"}'
           },
           query: {
             type: 'object',

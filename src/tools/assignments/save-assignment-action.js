@@ -23,15 +23,15 @@ export class SaveAssignmentActionTool extends BaseTool {
         properties: {
           assignmentID: {
             type: 'string',
-            description: 'Full handle of the assignment to save form data for. Format: ASSIGN-WORKLIST {caseID}!{processID}. Example: "ASSIGN-WORKLIST PBANK-LOAN-WORK V-76003!REVIEW_FLOW". This uniquely identifies the specific assignment instance where form data will be saved.'
+            description: 'Assignment ID. Format: ASSIGN-WORKLIST {caseID}!{processID}. Example: "ASSIGN-WORKLIST MYORG-APP-WORK C-1001!PROCESS""ASSIGN-WORKLIST PBANK-LOAN-WORK V-76003!REVIEW_FLOW". This uniquely identifies the specific assignment instance where form data will be saved.'
           },
           actionID: {
             type: 'string',
-            description: 'Name of the assignment action - ID of the flow action rule for which form data is being saved. This corresponds to the Flow Action rule configured in the Pega application where the save functionality is available. Example: "CompleteVerification", "CollectInformation".'
+            description: 'Action ID from assignment (Example: "pyApproval", "Submit"). CRITICAL: Action IDs are CASE-SENSITIVE and have no spaces even if display names do ("Complete Review" → "CompleteReview"). Use get_assignment to find correct ID from actions array - use "ID" field not "name" field.'
           },
           eTag: {
             type: 'string',
-            description: 'Optional eTag unique value representing the most recent save date time (pxSaveDateTime) of the case. If not provided, the tool will automatically fetch the latest eTag from the assignment. For manual eTag management, provide the eTag from a previous assignment operation. Used for optimistic locking to prevent concurrent modification conflicts.'
+            description: 'eTag for optimistic locking. If not provided, automatically fetches latest eTag. Represents case pxSaveDateTime.'
           },
           content: {
             type: 'object',
@@ -45,11 +45,11 @@ export class SaveAssignmentActionTool extends BaseTool {
                 instruction: {
                   type: 'string',
                   enum: ['UPDATE', 'REPLACE', 'DELETE', 'APPEND', 'INSERT', 'MOVE'],
-                  description: 'The type of page instruction: UPDATE (add fields to page), REPLACE (replace entire page), DELETE (remove page), APPEND (add item to page list), INSERT (insert item in page list), MOVE (reorder page list items)'
+                  description: 'Page instruction type. UPDATE (add fields to page), REPLACE (replace entire page), DELETE (remove page), APPEND (add item to page list), INSERT (insert item in page list), MOVE (reorder page list items)'
                 },
                 target: {
                   type: 'string',
-                  description: 'The target embedded page name'
+                  description: 'Target embedded page name'
                 },
                 content: {
                   type: 'object',
@@ -169,7 +169,7 @@ export class SaveAssignmentActionTool extends BaseTool {
     // Validate eTag format (should be a timestamp-like string)
     if (typeof finalETag !== 'string' || finalETag.trim().length === 0) {
       return {
-        error: 'Invalid eTag parameter. Must be a non-empty string representing case save date time.'
+        error: 'Invalid eTag parameter. a non-empty string representing case save date time.'
       };
     }
 
@@ -434,7 +434,7 @@ export class SaveAssignmentActionTool extends BaseTool {
         markdown += `**Note:** Save operations skip required field validations but still apply server-side validations.\n\n`;
         markdown += `**Possible Causes:**\n`;
         markdown += `- Field values don't meet dictionary validation criteria\n`;
-        markdown += `- Data type mismatches (e.g., text in numeric field)\n`;
+        markdown += `- Data type mismatches (Example: text in numeric field)\n`;
         markdown += `- Business rule violations at the server level\n`;
         markdown += `- Invalid format for specific field types\n\n`;
         markdown += `**Next Steps:**\n`;

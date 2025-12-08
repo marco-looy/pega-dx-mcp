@@ -21,11 +21,11 @@ export class GetCaseAttachmentsTool extends BaseTool {
         properties: {
           caseID: {
             type: 'string',
-            description: 'Full case handle (case ID) to retrieve attachments from. Example: "ON6E5R-DIYRecipe-Work-RecipeCollection R-1008". Must be a complete case identifier including spaces and special characters. The case must exist and be accessible to the current user.'
+            description: 'Case ID. Example: "MYORG-APP-WORK C-1001". Complete identifier including spaces.'
           },
           includeThumbnails: {
             type: 'boolean',
-            description: 'When set to true, thumbnails are added as part of the response as base64 encoded strings. Thumbnails are available for images of the following types: gif, jpg, jpeg, png, and others. Default: false. Note: Enabling thumbnails significantly increases response size.',
+            description: 'Whether to include thumbnails as base64 strings. For images: gif, jpg, jpeg, png. Default: false',
             default: false
           },
           sessionCredentials: getSessionCredentialsSchema()
@@ -83,7 +83,7 @@ export class GetCaseAttachmentsTool extends BaseTool {
     if (!caseID || typeof caseID !== 'string' || caseID.trim() === '') {
       return {
         valid: false,
-        error: 'Invalid caseID parameter. Case ID must be a non-empty string containing the full case handle (e.g., "ON6E5R-DIYRecipe-Work-RecipeCollection R-1008").'
+        error: 'Invalid caseID parameter. Case ID must be a non-empty string containing the Case ID. Example: "MYORG-APP-WORK C-1001". Complete identifier including spaces.'
       };
     }
 
@@ -91,7 +91,7 @@ export class GetCaseAttachmentsTool extends BaseTool {
     if (includeThumbnails !== undefined && typeof includeThumbnails !== 'boolean') {
       return {
         valid: false,
-        error: 'Invalid includeThumbnails parameter. Must be a boolean value (true or false).'
+        error: 'Invalid includeThumbnails parameter. a boolean value (true or false).'
       };
     }
 

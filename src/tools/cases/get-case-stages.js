@@ -21,7 +21,7 @@ export class GetCaseStagesTool extends BaseTool {
         properties: {
           caseID: {
             type: 'string',
-            description: 'Full case handle (e.g.,ON6E5R-DIYRECIPE-WORK-RECIPECOLLECTION R-1008)'
+            description: 'Case ID. Example: "MYORG-APP-WORK C-1001". Complete identifier including spaces.'
           },
           sessionCredentials: getSessionCredentialsSchema()
         },
