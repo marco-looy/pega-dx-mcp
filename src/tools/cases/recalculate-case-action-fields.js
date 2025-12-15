@@ -298,6 +298,7 @@ export class RecalculateCaseActionFieldsTool extends BaseTool {
                 content,
                 pageInstructions,
                 originChannel,
+                newETag: apiResult.eTag,
                 sessionInfo
               })
             }
@@ -333,7 +334,7 @@ export class RecalculateCaseActionFieldsTool extends BaseTool {
    * Format successful response for display
    */
   formatSuccessResponse(caseID, actionID, data, eTag, options) {
-    const { calculations, content, pageInstructions, originChannel, sessionInfo } = options;
+    const { calculations, content, pageInstructions, originChannel, newETag, sessionInfo } = options;
 
     let response = `## Case Action Field Recalculation Results: ${actionID}\n\n`;
     response += `*Operation completed at: ${new Date().toISOString()}*\n\n`;
@@ -344,6 +345,13 @@ export class RecalculateCaseActionFieldsTool extends BaseTool {
       response += `- **Session ID**: ${sessionInfo.sessionId}\n`;
       response += `- **Authentication Mode**: ${sessionInfo.authMode.toUpperCase()}\n`;
       response += `- **Configuration Source**: ${sessionInfo.configSource}\n\n`;
+    }
+
+    // Display new eTag prominently for subsequent operations
+    if (newETag) {
+      response += `## 🔑 New eTag for Subsequent Operations\n\n`;
+      response += `\`\`\`\n${newETag}\n\`\`\`\n\n`;
+      response += `**Tip:** Provide this eTag in your next operation to skip auto-fetch (faster).\n\n`;
     }
 
     response += `**Case ID**: ${caseID}\n`;
@@ -572,13 +580,6 @@ export class RecalculateCaseActionFieldsTool extends BaseTool {
     response += '- **Data Availability**: Calculations use current case data plus any merged content\n';
     response += '- **UI Updates**: Only visible and accessible fields will reflect calculation results in the UI\n';
     response += '- **Error Handling**: Individual field or when calculation errors do not stop other calculations\n';
-
-    // Display new eTag if available for future operations
-    if (data.eTag) {
-      response += '\n### Operation Support\n';
-      response += `- **New eTag Captured**: ${data.eTag}\n`;
-      response += '- **Ready for Next Action**: Use new eTag for subsequent case operations\n';
-    }
 
     response += '\n---\n';
     response += `*Recalculation completed at: ${new Date().toISOString()}*`;

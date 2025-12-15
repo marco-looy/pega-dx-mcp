@@ -177,7 +177,7 @@ export class PerformCaseActionTool extends BaseTool {
         async () => {
           // Build options object for API call
           const options = {};
-        
+
         if (content) options.content = content;
         if (pageInstructions) options.pageInstructions = pageInstructions;
         if (attachments) options.attachments = attachments;
@@ -244,6 +244,13 @@ ${sessionInfo ? `**Session**: ${sessionInfo.sessionId} (${sessionInfo.authMode} 
       response += `- **Session ID**: ${sessionInfo.sessionId}\n`;
       response += `- **Authentication Mode**: ${sessionInfo.authMode.toUpperCase()}\n`;
       response += `- **Configuration Source**: ${sessionInfo.configSource}\n\n`;
+    }
+
+    // Display new eTag prominently for subsequent operations
+    if (options.newETag) {
+      response += `## 🔑 New eTag for Subsequent Operations\n\n`;
+      response += `\`\`\`\n${options.newETag}\n\`\`\`\n\n`;
+      response += `**Tip:** Provide this eTag in your next operation to skip auto-fetch (faster).\n\n`;
     }
     
     // Display action execution summary
@@ -331,14 +338,6 @@ ${sessionInfo ? `**Session**: ${sessionInfo.sessionId} (${sessionInfo.authMode} 
       } else {
         response += '- Full page UI metadata included\n';
       }
-    }
-
-    // Display new eTag information for future operations
-    if (data.eTag) {
-      response += '\n### Future Operations\n';
-      response += `- **New eTag**: ${data.eTag}\n`;
-      response += '- This eTag should be used for subsequent operations on this case\n';
-      response += '- The case state has been updated and committed to the database\n';
     }
 
     response += '\n### Operation Notes\n';

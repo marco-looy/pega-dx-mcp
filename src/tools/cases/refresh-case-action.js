@@ -271,6 +271,7 @@ export class RefreshCaseActionTool extends BaseTool {
                 interestPage,
                 interestPageActionID,
                 originChannel,
+                newETag: apiResult.eTag,
                 sessionInfo
               })
             }
@@ -309,7 +310,7 @@ export class RefreshCaseActionTool extends BaseTool {
    * Format successful response for display
    */
   formatSuccessResponse(caseID, actionID, data, eTag, options) {
-    const { refreshFor, fillFormWithAI, operation, content, pageInstructions, contextData, interestPage, interestPageActionID, originChannel, sessionInfo } = options;
+    const { refreshFor, fillFormWithAI, operation, content, pageInstructions, contextData, interestPage, interestPageActionID, originChannel, newETag, sessionInfo } = options;
 
     let response = `## Case Action Refresh Results: ${actionID}\n\n`;
     response += `*Operation completed at: ${new Date().toISOString()}*\n\n`;
@@ -320,6 +321,13 @@ export class RefreshCaseActionTool extends BaseTool {
       response += `- **Session ID**: ${sessionInfo.sessionId}\n`;
       response += `- **Authentication Mode**: ${sessionInfo.authMode.toUpperCase()}\n`;
       response += `- **Configuration Source**: ${sessionInfo.configSource}\n\n`;
+    }
+
+    // Display new eTag prominently for subsequent operations
+    if (newETag) {
+      response += `## 🔑 New eTag for Subsequent Operations\n\n`;
+      response += `\`\`\`\n${newETag}\n\`\`\`\n\n`;
+      response += `**Tip:** Provide this eTag in your next operation to skip auto-fetch (faster).\n\n`;
     }
 
     response += `**Case ID**: ${caseID}\n`;
@@ -570,13 +578,6 @@ export class RefreshCaseActionTool extends BaseTool {
     }
     if (contextData) {
       response += '- **Context Data Mode**: UI metadata not included for performance optimization\n';
-    }
-
-    // Display new eTag if available for future operations
-    if (data.eTag) {
-      response += '\n### Operation Support\n';
-      response += `- **New eTag Captured**: ${data.eTag}\n`;
-      response += '- **Ready for Next Action**: Use new eTag for subsequent case operations\n';
     }
 
     response += '\n---\n';

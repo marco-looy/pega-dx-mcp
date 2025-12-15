@@ -446,9 +446,11 @@ export class BaseTool {
   async executeWithErrorHandling(operation, apiCall, options = {}) {
     try {
       const result = await apiCall();
-      
+
       if (result.success) {
-        return this.createResponse(true, operation, result.data, options);
+        // Pass newETag from result to options for formatSuccessResponse
+        const optionsWithETag = { ...options, newETag: result.eTag };
+        return this.createResponse(true, operation, result.data, optionsWithETag);
       } else {
         return this.createErrorResponse(operation, result.error, options);
       }
