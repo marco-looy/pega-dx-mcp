@@ -160,6 +160,11 @@ Simple questions you can ask the MCP to perform tasks with V2 endpoints.
 - "Execute assignment action with content updates and progress the workflow to the next step"
 - "Run my assignment action without providing eTag (let the tool handle it automatically)"
 
+### eTag Optimization
+- "Perform the assignment action using the eTag I received from the last call"
+- "Execute with this eTag: 20251215T120000.000 GMT"
+- "Use the new eTag from the previous response"
+
 ## get_next_assignment
 - "What's the next assignment I should work on?"
 - "Get my next work item from the queue"
