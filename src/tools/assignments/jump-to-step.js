@@ -213,7 +213,7 @@ export class JumpToStepTool extends BaseTool {
    * Format successful response for display
    */
   formatSuccessResponse(operation, data, options = {}) {
-    return this.buildSuccessMarkdown(data, options.params || {});
+    return this.buildSuccessMarkdown(data, { ...(options.params || {}), newETag: options.newETag });
   }
 
   /**
