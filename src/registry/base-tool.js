@@ -236,6 +236,13 @@ export class BaseTool {
       response += `\n`;
     }
 
+    // Display new eTag prominently for subsequent operations
+    if (options.newETag) {
+      response += `## 🔑 New eTag for Subsequent Operations\n\n`;
+      response += `\`\`\`\n${options.newETag}\n\`\`\`\n\n`;
+      response += `**Tip:** Provide this eTag in your next operation to skip auto-fetch (faster).\n\n`;
+    }
+
     // Add data if available
     if (data && typeof data === 'object') {
       response += this.formatDataSection(data);
