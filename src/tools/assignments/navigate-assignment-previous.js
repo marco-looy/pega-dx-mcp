@@ -200,7 +200,7 @@ export class NavigateAssignmentPreviousTool extends BaseTool {
       // Check if API call was successful
       if (result.success) {
         // Format and return successful response
-        return this.formatSuccessResponse(result.data, params);
+        return this.formatSuccessResponse(result.data, { ...params, newETag: result.eTag });
       } else {
         // Format and return error response from API
         return this.formatErrorResponse(result.error);
@@ -242,6 +242,13 @@ export class NavigateAssignmentPreviousTool extends BaseTool {
     markdown += `**Assignment ID:** ${params.assignmentID}\n`;
     markdown += `**Navigation:** Moved to previous step\n`;
     markdown += `**Timestamp:** ${new Date().toISOString()}\n\n`;
+
+    // Display new eTag prominently for subsequent operations
+    if (params.newETag) {
+      markdown += `## 🔑 New eTag for Subsequent Operations\n\n`;
+      markdown += `\`\`\`\n${params.newETag}\n\`\`\`\n\n`;
+      markdown += `**Tip:** Provide this eTag in your next operation to skip auto-fetch (faster).\n\n`;
+    }
 
     // Case Information
     if (data.data && data.data.caseInfo) {

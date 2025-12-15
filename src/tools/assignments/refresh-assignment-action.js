@@ -246,7 +246,8 @@ export class RefreshAssignmentActionTool extends BaseTool {
                 interestPageActionID,
                 content,
                 pageInstructions,
-                autoFetchedETag
+                autoFetchedETag,
+                newETag: result.eTag
               })
             }
           ]
@@ -286,9 +287,17 @@ export class RefreshAssignmentActionTool extends BaseTool {
    * Format successful response for display
    */
   formatSuccessResponse(assignmentID, actionID, data, eTag, options) {
-    const { refreshFor, fillFormWithAI, operation, interestPage, interestPageActionID, content, pageInstructions, autoFetchedETag } = options;
-    
+    const { refreshFor, fillFormWithAI, operation, interestPage, interestPageActionID, content, pageInstructions, autoFetchedETag, newETag } = options;
+
     let response = `## Assignment Action Refresh Results: ${actionID}\n\n`;
+
+    // Display new eTag prominently for subsequent operations
+    if (newETag) {
+      response += `## 🔑 New eTag for Subsequent Operations\n\n`;
+      response += `\`\`\`\n${newETag}\n\`\`\`\n\n`;
+      response += `**Tip:** Provide this eTag in your next operation to skip auto-fetch (faster).\n\n`;
+    }
+
     response += `**Assignment ID**: ${assignmentID}\n`;
     response += `**Action ID**: ${actionID}\n`;
     response += `**Refresh Operation**: ${operation || 'Basic form refresh'}\n\n`;
@@ -530,16 +539,6 @@ export class RefreshAssignmentActionTool extends BaseTool {
     if (operation) {
       response += '- **Table Operations**: Pre/post-processing only supported for modal-based operations\n';
       response += '- **Page Lists**: Cannot be added/updated/deleted from Data Transform\n';
-    }
-
-    // Display eTag if available for future operations
-    if (eTag) {
-      response += '\n### Operation Support\n';
-      response += `- **eTag Captured**: ${eTag}\n`;
-      if (autoFetchedETag) {
-        response += '- **Auto-eTag Management**: ✅ Automatically retrieved latest eTag from assignment\n';
-      }
-      response += '- **Ready for Assignment Action**: Use captured eTag for subsequent PATCH operations\n';
     }
 
     response += '\n---\n';

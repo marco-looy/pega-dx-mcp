@@ -251,7 +251,8 @@ export class RecalculateAssignmentFieldsTool extends BaseTool {
         return this.formatSuccessResponse(assignmentID, actionID, result.data, result.eTag, {
           calculations,
           content,
-          pageInstructions
+          pageInstructions,
+          newETag: result.eTag
         });
       } else {
         return this.formatErrorResponse(assignmentID, actionID, result.error, {
@@ -288,9 +289,17 @@ export class RecalculateAssignmentFieldsTool extends BaseTool {
    * Format successful response for display
    */
   formatSuccessResponse(assignmentID, actionID, data, eTag, options) {
-    const { calculations, content, pageInstructions } = options;
-    
+    const { calculations, content, pageInstructions, newETag } = options;
+
     let response = `## Assignment Field Recalculation Results: ${actionID}\n\n`;
+
+    // Display new eTag prominently for subsequent operations
+    if (newETag) {
+      response += `## 🔑 New eTag for Subsequent Operations\n\n`;
+      response += `\`\`\`\n${newETag}\n\`\`\`\n\n`;
+      response += `**Tip:** Provide this eTag in your next operation to skip auto-fetch (faster).\n\n`;
+    }
+
     response += `**Assignment ID**: ${assignmentID}\n`;
     response += `**Action ID**: ${actionID}\n`;
     response += `**eTag Used**: ${eTag}\n\n`;

@@ -220,7 +220,7 @@ export class JumpToStepTool extends BaseTool {
    * Build success response markdown with navigation context
    */
   buildSuccessMarkdown(data, params) {
-    const { sessionInfo } = params;
+    const { sessionInfo, newETag } = params;
     let markdown = `# Assignment Step Navigation Successful\n\n`;
     markdown += `**Assignment ID:** ${params.assignmentID}\n`;
     markdown += `**Target Step ID:** ${params.stepID}\n`;
@@ -232,6 +232,13 @@ export class JumpToStepTool extends BaseTool {
       markdown += `- **Session ID**: ${sessionInfo.sessionId}\n`;
       markdown += `- **Authentication Mode**: ${sessionInfo.authMode.toUpperCase()}\n`;
       markdown += `- **Configuration Source**: ${sessionInfo.configSource}\n\n`;
+    }
+
+    // Display new eTag prominently for subsequent operations
+    if (newETag) {
+      markdown += `## 🔑 New eTag for Subsequent Operations\n\n`;
+      markdown += `\`\`\`\n${newETag}\n\`\`\`\n\n`;
+      markdown += `**Tip:** Provide this eTag in your next operation to skip auto-fetch (faster).\n\n`;
     }
 
     // Current Step Information
