@@ -230,7 +230,8 @@ export class PerformAssignmentActionTool extends BaseTool {
           ...params,
           sessionInfo,
           nextAssignmentFields,
-          nextAssignmentNavigation
+          nextAssignmentNavigation,
+          newETag: result.eTag
         });
       } else {
         // Check if this is an invalid action ID error (can be NOT_FOUND or CONFLICT)
@@ -283,11 +284,11 @@ export class PerformAssignmentActionTool extends BaseTool {
     markdown += `**Action ID:** ${params.actionID}\n`;
     markdown += `**Timestamp:** ${new Date().toISOString()}\n\n`;
 
-    // Add eTag information if available
-    if (data.etag) {
-      markdown += `## eTag Information\n\n`;
-      markdown += `**New eTag:** ${data.etag}\n`;
-      markdown += `*The case has been updated and a new eTag has been issued. Use this eTag for subsequent operations on this case.*\n\n`;
+    // Add new eTag prominently at the top (from response header)
+    if (params.newETag) {
+      markdown += `## 🔑 New eTag for Subsequent Operations\n\n`;
+      markdown += `\`\`\`\n${params.newETag}\n\`\`\`\n\n`;
+      markdown += `**Tip:** Provide this eTag in your next operation to skip auto-fetch (faster).\n\n`;
     }
 
     // Session Information (if applicable)
