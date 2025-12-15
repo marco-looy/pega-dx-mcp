@@ -33,7 +33,7 @@ export class UpdateCaseTool extends BaseTool {
           },
           eTag: {
             type: 'string',
-            description: 'eTag for optimistic locking. If not provided, automatically fetches latest eTag. Format: "20251016T120000.000 GMT"'
+            description: 'Optional. Auto-fetched if omitted. For faster execution, use eTag from previous response.'
           },
           pageInstructions: {
             type: 'array',

@@ -30,7 +30,7 @@ export class UpdateDataRecordPartialTool extends BaseTool {
           },
           eTag: {
             type: 'string',
-            description: 'eTag unique value for optimistic locking. Used to ensure the record has not been modified since the last read. Recommended for concurrent access scenarios.'
+            description: 'Optional. Auto-fetched if omitted. For faster execution, use eTag from previous response.'
           },
           pageInstructions: {
             type: 'array',

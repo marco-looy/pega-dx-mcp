@@ -27,7 +27,7 @@ export class NavigateAssignmentPreviousTool extends BaseTool {
           },
           eTag: {
             type: 'string',
-            description: 'eTag for optimistic locking. If not provided, automatically fetches latest eTag. Represents case pxSaveDateTime.'
+            description: 'Optional. Auto-fetched if omitted. For faster execution, use eTag from previous response.'
           },
           content: {
             type: 'object',
