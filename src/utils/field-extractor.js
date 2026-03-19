@@ -557,6 +557,17 @@ export function formatFieldMetadata(fields) {
       const optionsList = field.options.map(o => o.value).join(', ');
       output += `| ${field.label || field.name} | ${optionsList} |\n`;
     }
+
+    output += `\n### Dropdown Options (${dropdownFields.length})\n\n`;
+    output += `When updating an assignment action, ALWAYS use the key of the dropdown option, NOT the value\n`;
+    output += `| Field | Option | Key |\n`;
+    output += `|-------|--------|-----|\n`;
+
+    for (const field of dropdownFields) {
+      for (const option of field.options) {
+        output += `| ${field.label || field.name} | ${option.value} | ${option.key} |\n`;
+      }
+    }
   }
 
   // Show fields that get options from Data Pages
