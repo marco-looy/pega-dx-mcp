@@ -7,9 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.1.16] - 2026-03-23
+
 ### Fixed
-- eTag propagation: New eTag from response headers now displayed prominently after successful operations
-- Sequential operations can now optionally provide eTag to skip auto-fetch (faster)
+- **Attachment field guidance**: Corrected misleading `attachments` parameter description in `perform_assignment_action` and `perform_case_action` — clarified it is for inline binary uploads, not for linking a previously uploaded temporary attachment to a form field
+- **Upload attachment response**: Added usage example for linking uploaded attachments to assignment/case action form fields using `pageInstructions` with a `REPLACE` instruction targeting the field name
+
+### Added
+- **`contextID` support in `upload_attachment`**: Optionally associate a temporary upload with a specific case at storage level via the new `contextID` parameter
 
 ## [0.1.13] - 2025-10-24
 

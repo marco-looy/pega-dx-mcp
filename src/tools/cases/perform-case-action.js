@@ -61,7 +61,7 @@ export class PerformCaseActionTool extends BaseTool {
           },
           attachments: {
             type: 'array',
-            description: 'Optional list of attachments to be added to or deleted from specific attachment fields included in the case action\'s view. Each attachment entry specifies the operation (add/delete) and attachment details. Only attachment fields included in the case action\'s view can be modified.',
+            description: 'Optional list of binary file attachments to upload inline during action execution. NOTE: This is NOT the correct way to link a previously uploaded temporary attachment (from upload_attachment) to an attachment field in the form. For that use case, use pageInstructions with instruction "REPLACE", target ".FieldName", and content {"ID": "temporary-attachment-id"} instead.',
             items: {
               type: 'object'
             }

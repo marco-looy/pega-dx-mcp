@@ -1110,15 +1110,20 @@ export class PegaV2Client extends BaseApiClient {
    * @returns {Promise<Object>} API response with temporary attachment ID
    */
   async uploadAttachment(fileBuffer, options = {}) {
-    const { fileName, mimeType, appendUniqueIdToFileName = true } = options;
-    
+    const { fileName, mimeType, appendUniqueIdToFileName = true, contextID } = options;
+
     try {
       // Create web standard FormData for use with fetch()
       const formData = new globalThis.FormData();
-      
+
       // Add form fields as specified in Pega API documentation
       formData.append('appendUniqueIdToFileName', appendUniqueIdToFileName.toString());
-      
+
+      // Associate upload with a specific case if provided
+      if (contextID) {
+        formData.append('contextID', contextID);
+      }
+
       // Create a Blob from the buffer for web standard FormData
       const fileBlob = new Blob([fileBuffer], { type: mimeType });
       formData.append('file', fileBlob, fileName);

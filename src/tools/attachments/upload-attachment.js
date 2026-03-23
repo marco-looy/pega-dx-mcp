@@ -47,6 +47,10 @@ export class UploadAttachmentTool extends BaseTool {
             description: 'Whether to append a unique identifier to the filename to prevent naming conflicts. Pega will add timestamp-based unique ID to filename.',
             default: true
           },
+          contextID: {
+            type: 'string',
+            description: 'Case ID to associate the upload with at storage level. Example: "MYORG-APP-WORK C-1001". Recommended when uploading a file that will be linked to a specific case via perform_assignment_action.'
+          },
           sessionCredentials: getSessionCredentialsSchema()
         }
       }
@@ -57,7 +61,7 @@ export class UploadAttachmentTool extends BaseTool {
    * Execute the upload attachment operation
    */
   async execute(params) {
-    const { filePath, fileContent, fileUrl, fileName, mimeType, appendUniqueIdToFileName = true } = params;
+    const { filePath, fileContent, fileUrl, fileName, mimeType, appendUniqueIdToFileName = true, contextID } = params;
 
     let sessionInfo = null;
     try {
@@ -120,13 +124,15 @@ export class UploadAttachmentTool extends BaseTool {
         async () => await this.pegaClient.uploadAttachment(fileBuffer, {
           fileName: finalFileName,
           mimeType: finalMimeType,
-          appendUniqueIdToFileName
+          appendUniqueIdToFileName,
+          contextID
         }),
         {
           fileName: finalFileName,
           mimeType: finalMimeType,
           fileSize: fileBuffer.length,
           appendUniqueIdToFileName,
+          contextID,
           sessionInfo
         }
       );
@@ -342,11 +348,17 @@ export class UploadAttachmentTool extends BaseTool {
     response += '- Or use the attachment ID in case creation with the `attachments` parameter\n';
     response += '- **Remember**: Unlinked attachments are automatically deleted after 2 hours\n';
 
-    // Display usage example
+    // Display usage examples
     if (data.ID) {
-      response += '\n### Usage Example\n';
+      response += '\n### Usage Example: Standalone case attachment\n';
       response += '```\n';
       response += `add_case_attachments(caseID="YOUR-CASE-ID", attachments=[{"type": "File", "category": "File", "ID": "${data.ID}"}])\n`;
+      response += '```\n';
+
+      response += '\n### Usage Example: Attachment field inside an assignment/case action form\n';
+      response += 'Use `pageInstructions` with a REPLACE instruction targeting the field name (do NOT use the `attachments` parameter for this):\n';
+      response += '```\n';
+      response += `perform_assignment_action(assignmentID="...", actionID="...", content={}, pageInstructions=[{"instruction": "REPLACE", "target": ".YourAttachmentFieldName", "content": {"ID": "${data.ID}"}}])\n`;
       response += '```\n';
     }
     
