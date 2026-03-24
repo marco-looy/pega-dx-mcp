@@ -76,7 +76,7 @@ export class ChangeToNextStageTool extends BaseTool {
     
     if (!finalETag) {
       try {
-        console.log(`Auto-fetching latest eTag for next stage change on case ${caseID}...`);
+        console.error(`Auto-fetching latest eTag for next stage change on case ${caseID}...`);
         const caseActionResponse = await this.pegaClient.getCaseAction(caseID.trim(), 'pyChangeStage', {
           viewType: 'form',  // getCaseAction only accepts 'form' or 'page', not 'none'
           excludeAdditionalActions: true
@@ -91,7 +91,7 @@ export class ChangeToNextStageTool extends BaseTool {
         
         finalETag = caseActionResponse.eTag;
         autoFetchedETag = true;
-        console.log(`Successfully auto-fetched eTag: ${finalETag}`);
+        console.error(`Successfully auto-fetched eTag: ${finalETag}`);
         
         if (!finalETag) {
           const errorMsg = 'Auto-fetch succeeded but no eTag was returned from get_case_action. This may indicate a server issue.';

@@ -60,11 +60,11 @@ export class BaseTool {
 
       // If it's a string, try to parse it as JSON
       if (typeof sessionCredentials === 'string') {
-        console.log(`🔧 Parsing session credentials from string: ${sessionCredentials.substring(0, 100)}...`);
+        console.error(`🔧 Parsing session credentials from string: ${sessionCredentials.substring(0, 100)}...`);
         sessionCredentials = JSON.parse(sessionCredentials);
       }
 
-      console.log(`🔧 Session credentials type: ${typeof sessionCredentials}`, sessionCredentials);
+      console.error(`🔧 Session credentials type: ${typeof sessionCredentials}`, sessionCredentials);
 
       // DETECT SESSION REUSE: Only sessionId provided, no baseUrl
       const isSessionReuse = sessionCredentials.sessionId && !sessionCredentials.baseUrl;
@@ -72,7 +72,7 @@ export class BaseTool {
       if (isSessionReuse) {
         // SESSION REUSE: Retrieve existing session config
         const sessionId = sessionCredentials.sessionId;
-        console.log(`🔄 Reusing existing session: ${sessionId}`);
+        console.error(`🔄 Reusing existing session: ${sessionId}`);
 
         const config = getSessionConfig(sessionId);
 
@@ -83,7 +83,7 @@ export class BaseTool {
         this._sessionConfig = config;
         this.resetClient();
 
-        console.log(`✅ Tool initialized with existing session ${sessionId}`);
+        console.error(`✅ Tool initialized with existing session ${sessionId}`);
 
         return {
           sessionId,
@@ -105,7 +105,7 @@ export class BaseTool {
       // Reset client to ensure it uses the new session config
       this.resetClient();
 
-      console.log(`🔧 Tool initialized with session ${sessionInfo.sessionId} (${existingSessionId ? 'updated' : 'created'})`);
+      console.error(`🔧 Tool initialized with session ${sessionInfo.sessionId} (${existingSessionId ? 'updated' : 'created'})`);
 
       return {
         sessionId: sessionInfo.sessionId,

@@ -142,7 +142,7 @@ export class NavigateAssignmentPreviousTool extends BaseTool {
     
     if (!finalETag) {
       try {
-        console.log(`Auto-fetching latest eTag for assignment navigation on ${assignmentID}...`);
+          console.error(`Auto-fetching latest eTag for assignment navigation on ${assignmentID}...`);
         const response = await this.pegaClient.getAssignment(assignmentID.trim(), {
           viewType: 'form'  // Use form view for eTag retrieval
         });
@@ -156,7 +156,7 @@ export class NavigateAssignmentPreviousTool extends BaseTool {
         
         finalETag = response.eTag;
         autoFetchedETag = true;
-        console.log(`Successfully auto-fetched eTag: ${finalETag}`);
+          console.error(`Successfully auto-fetched eTag: ${finalETag}`);
         
         if (!finalETag) {
           const errorMsg = 'Auto-fetch succeeded but no finalETag.trim() was returned from getAssignment. This may indicate a server issue.';

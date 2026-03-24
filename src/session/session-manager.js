@@ -62,7 +62,7 @@ export class SessionManager {
 
     this.sessions.set(sessionId, sessionData);
 
-    console.log(`📋 Session created: ${sessionId} (${authMode} mode, expires in ${Math.round(ttl / (1000 * 60))} minutes)`);
+    console.error(`📋 Session created: ${sessionId} (${authMode} mode, expires in ${Math.round(ttl / (1000 * 60))} minutes)`);
 
     return sessionId;
   }
@@ -85,7 +85,7 @@ export class SessionManager {
     // Check if session is expired
     if (Date.now() > session.expiresAt) {
       this.sessions.delete(sessionId);
-      console.log(`🕒 Session expired and removed: ${sessionId}`);
+      console.error(`🕒 Session expired and removed: ${sessionId}`);
       return null;
     }
 
@@ -93,7 +93,7 @@ export class SessionManager {
     if (session.authMode === 'token' && session.credentials.tokenExpiry) {
       if (Date.now() > session.credentials.tokenExpiry) {
         this.sessions.delete(sessionId);
-        console.log(`🔐 Token expired, session removed: ${sessionId}`);
+        console.error(`🔐 Token expired, session removed: ${sessionId}`);
         return null;
       }
     }
@@ -139,7 +139,7 @@ export class SessionManager {
       })
     };
 
-    console.log(`🔄 Session updated: ${sessionId} (${authMode} mode)`);
+    console.error(`🔄 Session updated: ${sessionId} (${authMode} mode)`);
 
     return true;
   }
@@ -152,7 +152,7 @@ export class SessionManager {
   deleteSession(sessionId) {
     const existed = this.sessions.delete(sessionId);
     if (existed) {
-      console.log(`🗑️ Session deleted: ${sessionId}`);
+      console.error(`🗑️ Session deleted: ${sessionId}`);
     }
     return existed;
   }
@@ -201,7 +201,7 @@ export class SessionManager {
     }
 
     if (cleanedUp > 0) {
-      console.log(`🧹 Cleaned up ${cleanedUp} expired sessions`);
+      console.error(`🧹 Cleaned up ${cleanedUp} expired sessions`);
     }
 
     return cleanedUp;
@@ -230,9 +230,9 @@ export class SessionManager {
    * @throws {Error} If credentials are invalid
    */
   validateCredentials(credentials) {
-    console.log('🔍 SessionManager validateCredentials called with:', typeof credentials, credentials);
+    console.error('🔍 SessionManager validateCredentials called with:', typeof credentials, credentials);
     if (!credentials || typeof credentials !== 'object') {
-      console.log('❌ Validation failed: credentials is not an object');
+      console.error('❌ Validation failed: credentials is not an object');
       throw new Error('Credentials must be an object');
     }
 

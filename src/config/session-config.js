@@ -28,7 +28,7 @@ export class SessionConfig {
     // Build session-specific configuration
     const sessionConfig = this.buildSessionConfig(session);
 
-    console.log(`🔧 Using session config for ${sessionId} (${session.authMode} mode)`);
+    console.error(`🔧 Using session config for ${sessionId} (${session.authMode} mode)`);
     return sessionConfig;
   }
 

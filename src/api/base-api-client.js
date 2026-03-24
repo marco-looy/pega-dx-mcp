@@ -24,11 +24,6 @@ export class BaseApiClient {
 
     // Store base URL for convenience
     this.baseUrl = this.config.pega.apiBaseUrl;
-
-    // Log configuration source for debugging
-    const configSource = this.config._sessionMeta ?
-      `session ${this.config._sessionMeta.sessionId}` : 'environment';
-    console.log(`🔧 ${this.constructor.name} initialized with ${configSource} config (${this.oauth2Client.authMode} mode)`);
   }
 
   /**

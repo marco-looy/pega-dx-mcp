@@ -242,7 +242,7 @@ export class PegaV1Client extends BaseApiClient {
    *
    * @example
    * const result = await client.getAllCases();
-   * console.log(result.data.cases.length);
+   * console.error(result.data.cases.length);
    */
   async getAllCases() {
     const url = `${this.getApiBaseUrl()}/cases`;
@@ -439,7 +439,7 @@ export class PegaV1Client extends BaseApiClient {
     let autoFetchedETag = false;
 
     if (!finalETag) {
-      console.log(`Auto-fetching latest eTag for case ${caseID}...`);
+      console.error(`Auto-fetching latest eTag for case ${caseID}...`);
       const caseResponse = await this.getCase(caseID);
 
       if (!caseResponse.success) {
@@ -468,7 +468,7 @@ export class PegaV1Client extends BaseApiClient {
         };
       }
 
-      console.log(`Successfully auto-fetched eTag: ${finalETag}`);
+      console.error(`Successfully auto-fetched eTag: ${finalETag}`);
     }
 
     const encodedID = this.encodeParam(caseID);
