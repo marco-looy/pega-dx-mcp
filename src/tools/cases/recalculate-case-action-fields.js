@@ -216,7 +216,7 @@ export class RecalculateCaseActionFieldsTool extends BaseTool {
     
     if (!finalETag) {
       try {
-        console.log(`Auto-fetching latest eTag for case action field recalculation on ${caseID}...`);
+        console.error(`Auto-fetching latest eTag for case action field recalculation on ${caseID}...`);
         const caseActionResponse = await this.pegaClient.getCaseAction(caseID.trim(), actionID.trim(), {
           viewType: 'form',  // Use form view for eTag retrieval
           excludeAdditionalActions: true
@@ -231,7 +231,7 @@ export class RecalculateCaseActionFieldsTool extends BaseTool {
         
         finalETag = caseActionResponse.eTag;
         autoFetchedETag = true;
-        console.log(`Successfully auto-fetched eTag: ${finalETag}`);
+        console.error(`Successfully auto-fetched eTag: ${finalETag}`);
         
         if (!finalETag) {
           const errorMsg = 'Auto-fetch succeeded but no eTag was returned from get_case_action. This may indicate a server issue.';

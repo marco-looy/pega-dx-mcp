@@ -53,7 +53,7 @@ export class ChangeToStageTool extends BaseTool {
    * Execute the change to stage operation
    */
   async execute(params) {
-    console.log(`[DEBUG] change_to_stage execute called with params:`, JSON.stringify(params, null, 2));
+    console.error(`[DEBUG] change_to_stage execute called with params:`, JSON.stringify(params, null, 2));
     const { caseID, stageID, eTag, viewType, cleanupProcesses } = params;
     let sessionInfo = null;
 
@@ -80,19 +80,19 @@ export class ChangeToStageTool extends BaseTool {
     let autoFetchedETag = false;
     
     if (!finalETag) {
-      console.log(`[DEBUG] Starting auto-fetch for case ${caseID}`);
+      console.error(`[DEBUG] Starting auto-fetch for case ${caseID}`);
       try {
-        console.log(`Auto-fetching latest eTag for stage change on case ${caseID}...`);
+        console.error(`Auto-fetching latest eTag for stage change on case ${caseID}...`);
         const caseActionResponse = await this.pegaClient.getCaseAction(caseID.trim(), 'pyChangeStage', {
           viewType: 'form',  // getCaseAction only accepts 'form' or 'page', not 'none'
           excludeAdditionalActions: true
         });
         
-        console.log(`[DEBUG] getCaseAction response:`, JSON.stringify(caseActionResponse, null, 2));
+        console.error(`[DEBUG] getCaseAction response:`, JSON.stringify(caseActionResponse, null, 2));
         
         if (!caseActionResponse || !caseActionResponse.success) {
           const errorMsg = `Failed to auto-fetch eTag: ${caseActionResponse?.error?.message || 'Unknown error'}`;
-          console.log(`[DEBUG] Auto-fetch failed: ${errorMsg}`);
+          console.error(`[DEBUG] Auto-fetch failed: ${errorMsg}`);
           return {
             error: errorMsg
           };
@@ -100,19 +100,19 @@ export class ChangeToStageTool extends BaseTool {
         
         finalETag = caseActionResponse.eTag;
         autoFetchedETag = true;
-        console.log(`Successfully auto-fetched eTag: ${finalETag}`);
+        console.error(`Successfully auto-fetched eTag: ${finalETag}`);
         
         if (!finalETag) {
           const errorMsg = 'Auto-fetch succeeded but no eTag was returned from get_case_action. This may indicate a server issue.';
-          console.log(`[DEBUG] ${errorMsg}`);
+          console.error(`[DEBUG] ${errorMsg}`);
           return {
             error: errorMsg
           };
         }
       } catch (error) {
         const errorMsg = `Failed to auto-fetch eTag: ${error.message}`;
-        console.log(`[DEBUG] Exception during auto-fetch: ${errorMsg}`);
-        console.log(`[DEBUG] Stack trace:`, error.stack);
+        console.error(`[DEBUG] Exception during auto-fetch: ${errorMsg}`);
+        console.error(`[DEBUG] Stack trace:`, error.stack);
         return {
           error: errorMsg
         };

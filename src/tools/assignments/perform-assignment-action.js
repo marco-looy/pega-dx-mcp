@@ -144,7 +144,7 @@ export class PerformAssignmentActionTool extends BaseTool {
     
     if (!finalETag) {
       try {
-        console.log(`Auto-fetching latest eTag for assignment action on ${assignmentID}...`);
+        console.error(`Auto-fetching latest eTag for assignment action on ${assignmentID}...`);
         const assignmentResponse = await this.pegaClient.getAssignment(assignmentID.trim(), {
           viewType: 'form'  // Use form view for eTag retrieval
         });
@@ -158,7 +158,7 @@ export class PerformAssignmentActionTool extends BaseTool {
         
         finalETag = assignmentResponse.eTag;
         autoFetchedETag = true;
-        console.log(`Successfully auto-fetched eTag: ${finalETag}`);
+        console.error(`Successfully auto-fetched eTag: ${finalETag}`);
         
         if (!finalETag) {
           const errorMsg = 'Auto-fetch succeeded but no eTag was returned from get_assignment. This may indicate a server issue.';
@@ -207,7 +207,7 @@ export class PerformAssignmentActionTool extends BaseTool {
 
         if (result.data?.nextAssignmentInfo?.ID) {
           try {
-            console.log(`Auto-fetching next assignment fields for ${result.data.nextAssignmentInfo.ID}...`);
+            console.error(`Auto-fetching next assignment fields for ${result.data.nextAssignmentInfo.ID}...`);
             const nextAssignmentResponse = await this.pegaClient.getAssignment(
               result.data.nextAssignmentInfo.ID,
               { viewType: 'form' }
@@ -217,10 +217,10 @@ export class PerformAssignmentActionTool extends BaseTool {
               const uiResources = nextAssignmentResponse.data.uiResources;
               nextAssignmentFields = extractFieldsForCurrentView(uiResources);
               nextAssignmentNavigation = uiResources.navigation;
-              console.log(`Found ${nextAssignmentFields.length} fields for next step`);
+              console.error(`Found ${nextAssignmentFields.length} fields for next step`);
             }
           } catch (fetchError) {
-            console.log(`Could not auto-fetch next assignment: ${fetchError.message}`);
+            console.error(`Could not auto-fetch next assignment: ${fetchError.message}`);
             // Continue without next assignment fields - not a critical error
           }
         }

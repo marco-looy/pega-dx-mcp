@@ -136,7 +136,7 @@ export class SaveAssignmentActionTool extends BaseTool {
     
     if (!finalETag) {
       try {
-        console.log(`Auto-fetching latest eTag for assignment save on ${assignmentID}...`);
+        console.error(`Auto-fetching latest eTag for assignment save on ${assignmentID}...`);
         const assignmentResponse = await this.pegaClient.getAssignment(assignmentID.trim(), {
           viewType: 'form'  // Use form view for eTag retrieval
         });
@@ -150,7 +150,7 @@ export class SaveAssignmentActionTool extends BaseTool {
         
         finalETag = assignmentResponse.eTag;
         autoFetchedETag = true;
-        console.log(`Successfully auto-fetched eTag: ${finalETag}`);
+        console.error(`Successfully auto-fetched eTag: ${finalETag}`);
         
         if (!finalETag) {
           const errorMsg = 'Auto-fetch succeeded but no eTag was returned from get_assignment. This may indicate a server issue.';
