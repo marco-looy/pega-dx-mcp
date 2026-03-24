@@ -19,11 +19,11 @@ export function extractSessionParams(params) {
 
     // If it's a string, try to parse it as JSON
     if (typeof sessionCredentials === 'string') {
-      console.log(`🔧 Parsing session credentials from string: ${sessionCredentials.substring(0, 100)}...`);
+      console.error(`🔧 Parsing session credentials from string: ${sessionCredentials.substring(0, 100)}...`);
       sessionCredentials = JSON.parse(sessionCredentials);
     }
 
-    console.log(`🔧 Session credentials type: ${typeof sessionCredentials}`, sessionCredentials);
+    console.error(`🔧 Session credentials type: ${typeof sessionCredentials}`, sessionCredentials);
 
     // Validate the structure
     if (!sessionCredentials || typeof sessionCredentials !== 'object') {

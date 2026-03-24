@@ -58,11 +58,6 @@ export class PegaClient {
     } else {
       throw new Error(`Unsupported API version: ${apiVersion}. Supported versions: v1, v2`);
     }
-
-    // Store configuration source for debugging
-    this.configSource = sessionConfig ? 'session' : 'environment';
-
-    console.log(`🔀 PegaClient router initialized: API ${this.apiVersion.toUpperCase()} (${this.configSource} config)`);
   }
 
   /**

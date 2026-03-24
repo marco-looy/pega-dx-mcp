@@ -209,15 +209,15 @@ export function logVersionInfo(sessionConfig = null) {
   const versionName = getVersionName(sessionConfig);
   const unavailableFeatures = getUnavailableFeatures(sessionConfig);
 
-  console.log(`\n🔧 Pega API Version: ${versionName}`);
-  console.log(`📊 API Base Path: ${version === API_VERSION.V1 ? '/prweb/api/v1' : '/prweb/api/application/v2'}`);
+  console.error(`\n🔧 Pega API Version: ${versionName}`);
+  console.error(`📊 API Base Path: ${version === API_VERSION.V1 ? '/prweb/api/v1' : '/prweb/api/application/v2'}`);
 
   if (unavailableFeatures.length > 0) {
-    console.log(`⚠️  Unavailable Features (${unavailableFeatures.length}):`);
+    console.error(`⚠️  Unavailable Features (${unavailableFeatures.length}):`);
     unavailableFeatures.forEach(feature => {
-      console.log(`   - ${feature}`);
+      console.error(`   - ${feature}`);
     });
   }
 
-  console.log('');
+  console.error('');
 }

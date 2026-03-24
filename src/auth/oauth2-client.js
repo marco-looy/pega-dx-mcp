@@ -68,7 +68,7 @@ export class OAuth2Client {
         this.tokenExpiry = pega.tokenExpiry;
       }
 
-      console.log(`🔐 Direct token initialized for ${this.cacheKey}`);
+      console.error(`🔐 Direct token initialized for ${this.cacheKey}`);
     }
   }
 
@@ -195,7 +195,7 @@ export class OAuth2Client {
       this.authMode = 'token';
     }
 
-    console.log(`🔐 Access token explicitly set for ${this.cacheKey} (expires in ${expiresInSeconds}s)`);
+    console.error(`🔐 Access token explicitly set for ${this.cacheKey} (expires in ${expiresInSeconds}s)`);
   }
 
   /**

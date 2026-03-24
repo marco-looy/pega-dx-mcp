@@ -146,7 +146,7 @@ export class JumpToStepTool extends BaseTool {
     
     if (!finalETag) {
       try {
-        console.log(`Auto-fetching latest eTag for step jump on ${assignmentID}...`);
+          console.error(`Auto-fetching latest eTag for step jump on ${assignmentID}...`);
         const response = await this.pegaClient.getAssignment(assignmentID.trim(), {
           viewType: 'form'  // Use form view for eTag retrieval
         });
@@ -160,7 +160,7 @@ export class JumpToStepTool extends BaseTool {
         
         finalETag = response.eTag;
         autoFetchedETag = true;
-        console.log(`Successfully auto-fetched eTag: ${finalETag}`);
+          console.error(`Successfully auto-fetched eTag: ${finalETag}`);
         
         if (!finalETag) {
           const errorMsg = 'Auto-fetch succeeded but no eTag was returned from getAssignment. This may indicate a server issue.';
