@@ -310,7 +310,7 @@ PEGA_CLIENT_SECRET=your-oauth-client-secret
 3. **Set Redirect URIs** if using authorization code flow
 4. **Update Environment** with client credentials
 
-For detailed setup instructions, see our [Configuration Guide](docs/configuration.md).
+For the full list of settings, see [Environment Variables](#environment-variables) above.
 
 ## 🤝 Contributing
 
