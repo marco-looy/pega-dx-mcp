@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.1.19] - 2026-11-02
+
+### Changed
+- **Release workflow**: npm publishing now uses trusted publishing (OIDC) instead of a stored token. 0.1.18 was only published to GitHub Packages; this release carries its README fix to npmjs.com
+
 ## [0.1.18] - 2026-11-02
 
 ### Fixed
