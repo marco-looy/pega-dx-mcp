@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.1.18] - 2026-11-02
+
+### Fixed
+- **README**: Replaced broken link to non-existent `docs/configuration.md` with a link to the Environment Variables section
+
 ## [0.1.16] - 2026-03-23
 
 ### Fixed
